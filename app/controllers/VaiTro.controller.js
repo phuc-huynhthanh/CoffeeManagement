@@ -38,17 +38,17 @@ export const VaiTroController = {
   },
 
   // ➕ Thêm vai trò
-  async them(req, res) {
-    try {
-      const { ten_vai_tro } = req.body;
-      if (!ten_vai_tro) return res.status(400).json({ message: "Thiếu tên vai trò" });
+//   async them(req, res) {
+//     try {
+//       const { ten_vai_tro } = req.body;
+//       if (!ten_vai_tro) return res.status(400).json({ message: "Thiếu tên vai trò" });
 
-      const id = await VaiTroModel.them({ ten_vai_tro });
-      res.status(201).json({ message: "Thêm vai trò thành công", id });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
+//       const id = await VaiTroModel.them({ ten_vai_tro });
+//       res.status(201).json({ message: "Thêm vai trò thành công", id });
+//     } catch (err) {
+//       res.status(500).json({ error: err.message });
+//     }
+//   },
 
   // ✏️ Cập nhật vai trò
   async capNhat(req, res) {

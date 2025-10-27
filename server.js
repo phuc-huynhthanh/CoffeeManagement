@@ -5,7 +5,8 @@ import NhanVienRoutes from "./app/routes/NhanVien.routes.js";
 import ProductRoutes from "./app/routes/Product.routes.js";
 import TaiKhoanRoutes from "./app/routes/TaiKhoan.routes.js";
 import LoaiSanPhamRoutes from "./app/routes/LoaiSanPham.routes.js";
-import VaiTroRoutes from "./app/routes/VaiTro.routes.js";   
+import VaiTroRoutes from "./app/routes/VaiTro.routes.js";  
+import DonHangRoutes from "./app/routes/DonHang.routes.js"; 
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,7 @@ app.use("/nhanvien", NhanVienRoutes);
 app.use("/taikhoan", TaiKhoanRoutes);
 app.use("/loaisanpham", LoaiSanPhamRoutes);
 app.use("/vaitro", VaiTroRoutes);
+app.use("/donhang", DonHangRoutes);
 
 app.get("/", (req, res) => {
   res.send("☕ Coffee Management API đang chạy!");
