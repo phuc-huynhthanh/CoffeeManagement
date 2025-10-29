@@ -10,6 +10,7 @@ import DonHangRoutes from "./app/routes/DonHang.routes.js";
 import ChiTietDonHangRoutes from "./app/routes/ChiTietDonHang.routes.js";
 import BanRoutes from "./app/routes/Ban.routes.js";
 import KichCoRoutes from "./app/routes/KichCo.routes.js";
+import ToppingRoutes from "./app/routes/Topping.routes.js";
 
 dotenv.config();
 const app = express();
@@ -28,6 +29,7 @@ app.use("/donhang", DonHangRoutes);
 app.use("/chitietdonhang", ChiTietDonHangRoutes);
 app.use("/ban", BanRoutes);
 app.use("/kichco", KichCoRoutes);
+app.use("/topping", ToppingRoutes);
 
 app.get("/", (req, res) => {
   res.send("☕ Coffee Management API đang chạy!");
