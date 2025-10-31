@@ -12,6 +12,7 @@ import BanRoutes from "./app/routes/Ban.routes.js";
 import KichCoRoutes from "./app/routes/KichCo.routes.js";
 import ToppingRoutes from "./app/routes/Topping.routes.js";
 import MucGiamGiaRoutes from "./app/routes/MucGiamGia.routes.js";
+import MailRoutes from "./app/routes/Mail.routes.js";
 
 dotenv.config();
 const app = express();
@@ -32,6 +33,7 @@ app.use("/ban", BanRoutes);
 app.use("/kichco", KichCoRoutes);
 app.use("/topping", ToppingRoutes);
 app.use("/mucgiamgia", MucGiamGiaRoutes);
+app.use("/mail", MailRoutes);
 
 app.get("/", (req, res) => {
   res.send("☕ Coffee Management API đang chạy!");
