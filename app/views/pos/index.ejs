@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>POS - Quản lý bán hàng</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 flex justify-between items-center shadow-md">
+    <h1 class="text-2xl font-bold tracking-wide">☕ POS - Coffee Management</h1>
+    <div class="flex gap-3 items-center">
+      <input id="search" type="text" placeholder="Tìm kiếm sản phẩm..."
+             class="px-4 py-2 rounded-lg text-gray-800 w-64 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+      <select id="filter" class="px-3 py-2 rounded-lg text-gray-800">
+        <option value="">Tất cả loại</option>
+        <% loai.forEach(l => { %>
+          <option value="<%= l %>"><%= l %></option>
+        <% }) %>
+      </select>
+    </div>
+  </header>
+
+  <!-- Nội dung -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Danh sách sản phẩm -->
+    <main id="product-list" class="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6 overflow-y-auto">
+      <% sanPham.forEach(p => { %>
+        <div 
+          class="product bg-white rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-4"
+          data-id="<%= p.san_pham_id %>"
+          data-ten="<%= p.ten_san_pham %>"
+          data-gia="<%= p.gia_co_ban %>"
+          data-loai="<%= p.ten_loai %>"
+        >
+          <img src="<%= p.hinh_anh %>" alt="<%= p.ten_san_pham %>" 
+               class="w-28 h-28 object-cover rounded-xl mb-3">
+          <h3 class="text-lg font-semibold text-gray-800"><%= p.ten_san_pham %></h3>
+          <p class="text-gray-500 text-sm mb-1"><%= p.ten_loai %></p>
+          <p class="text-blue-600 font-bold"><%= Number(p.gia_co_ban).toLocaleString() %> đ</p>
+        </div>
+      <% }) %>
+    </main>
+
+    <!-- Hóa đơn -->
+    <aside class="w-full sm:w-96 bg-white shadow-xl border-l rounded-tl-2xl flex flex-col">
+      <div class="p-4 bg-blue-600 text-white font-semibold text-lg rounded-tl-2xl">
+        🧾 Hóa đơn
+      </div>
+      <div id="bill" class="flex-1 p-4 overflow-y-auto">
+        <p id="empty" class="text-gray-400 text-center mt-10">Chưa có sản phẩm nào</p>
+      </div>
+
+      <div class="border-t p-4 bg-gray-50">
+        <div class="flex justify-between mb-2 text-lg">
+          <span>Tổng tiền:</span>
+          <span id="total" class="font-bold text-blue-600">0 đ</span>
+        </div>
+        <button id="checkoutBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition">
+          ✅ Thanh toán
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const bill = [];
+    const billContainer = document.getElementById('bill');
+    const totalEl = document.getElementById('total');
+    const emptyEl = document.getElementById('empty');
+
+    // ✅ Lấy danh sách sản phẩm
+    document.querySelectorAll('.product').forEach(el => {
+      el.addEventListener('click', () => {
+        const sp = {
+          san_pham_id: +el.dataset.id,
+          ten_san_pham: el.dataset.ten,
+          gia_co_ban: +el.dataset.gia,
+          ten_loai: el.dataset.loai
+        };
+        addToBill(sp);
+      });
+    });
+
+    // ✅ Thêm sản phẩm vào hóa đơn
+    function addToBill(sp) {
+      const existing = bill.find(item => item.san_pham_id === sp.san_pham_id);
+      if (existing) {
+        existing.so_luong++;
+      } else {
+        bill.push({ ...sp, so_luong: 1 });
+      }
+      renderBill();
+    }
+
+    // ✅ Hiển thị hóa đơn
+    function renderBill() {
+      billContainer.innerHTML = '';
+      if (bill.length === 0) {
+        emptyEl.style.display = 'block';
+      } else {
+        emptyEl.style.display = 'none';
+        bill.forEach((item, i) => {
+          const div = document.createElement('div');
+          div.className = 'flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm';
+          div.innerHTML = `
+            <div class="flex-1">
+              <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
+              <p class="text-sm text-gray-500">${Number(item.gia_co_ban).toLocaleString()} đ</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, -1)">-</button>
+              <span class="w-6 text-center">${item.so_luong}</span>
+              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, 1)">+</button>
+              <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+            </div>
+          `;
+          billContainer.appendChild(div);
+        });
+      }
+
+      const total = bill.reduce((sum, item) => sum + item.gia_co_ban * item.so_luong, 0);
+      totalEl.textContent = total.toLocaleString() + ' đ';
+    }
+
+    // ✅ Tăng / giảm số lượng
+    function changeQty(index, delta) {
+      bill[index].so_luong += delta;
+      if (bill[index].so_luong <= 0) bill.splice(index, 1);
+      renderBill();
+    }
+
+    // ✅ Xóa sản phẩm
+    function removeItem(index) {
+      bill.splice(index, 1);
+      renderBill();
+    }
+
+    // ✅ Tìm kiếm + Lọc
+    const searchInput = document.getElementById('search');
+    const filterSelect = document.getElementById('filter');
+    searchInput.addEventListener('input', filterProducts);
+    filterSelect.addEventListener('change', filterProducts);
+
+    function filterProducts() {
+      const keyword = searchInput.value.toLowerCase();
+      const type = filterSelect.value;
+      document.querySelectorAll('.product').forEach(div => {
+        const name = div.dataset.ten.toLowerCase();
+        const category = div.dataset.loai;
+        const match = (!keyword || name.includes(keyword)) && (!type || category === type);
+        div.style.display = match ? '' : 'none';
+      });
+    }
+
+    // ✅ Thanh toán
+    document.getElementById('checkoutBtn').addEventListener('click', () => {
+      if (bill.length === 0) return alert('Chưa có sản phẩm nào!');
+      alert('Thanh toán thành công!');
+      bill.length = 0;
+      renderBill();
+    });
+  </script>
+</body>
+</html>
