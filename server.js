@@ -18,6 +18,7 @@ import MailRoutes from "./app/routes/Mail.routes.js";
 import ChiTietToppingRoutes from "./app/routes/ChiTietTopping.routes.js";
 import ThanhVienRoutes from "./app/routes/ThanhVien.routes.js";
 import ViewsRoutes from "./app/routes/View.routes.js";
+import DoanhThuCaRoutes from "./app/routes/DoanhThuCa.routes.js";
 
 dotenv.config();
 const app = express();
@@ -49,6 +50,7 @@ app.use("/mail", MailRoutes);
 app.use("/chitiettopping", ChiTietToppingRoutes);
 app.use("/thanhvien", ThanhVienRoutes);
 app.use("/view", ViewsRoutes);
+app.use("/doanhthuca", DoanhThuCaRoutes);
 
 app.get("/", (req, res) => {
   res.send("☕ Coffee Management API đang chạy!");
