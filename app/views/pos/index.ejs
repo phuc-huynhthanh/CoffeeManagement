@@ -63,103 +63,174 @@
     </aside>
   </div>
 
-  <script>
-    const bill = [];
-    const billContainer = document.getElementById('bill');
-    const totalEl = document.getElementById('total');
-    const emptyEl = document.getElementById('empty');
+<script>
+  const bill = [];
+  const billContainer = document.getElementById('bill');
+  const totalEl = document.getElementById('total');
+  const emptyEl = document.getElementById('empty');
 
-    // ✅ Lấy danh sách sản phẩm
-    document.querySelectorAll('.product').forEach(el => {
-      el.addEventListener('click', () => {
-        const sp = {
-          san_pham_id: +el.dataset.id,
-          ten_san_pham: el.dataset.ten,
-          gia_co_ban: +el.dataset.gia,
-          ten_loai: el.dataset.loai
-        };
-        addToBill(sp);
-      });
+  // ✅ Lấy danh sách kích cỡ từ API
+  let kichCoList = [];
+  fetch('/kichco/laytatca')
+    .then(res => res.json())
+    .then(data => (kichCoList = data))
+    .catch(err => console.error('Lỗi tải kích cỡ:', err));
+
+  // ✅ Khi click sản phẩm → thêm vào hóa đơn (chưa chọn kích cỡ)
+  document.querySelectorAll('.product').forEach(el => {
+    el.addEventListener('click', () => {
+      const sp = {
+        san_pham_id: +el.dataset.id,
+        ten_san_pham: el.dataset.ten,
+        gia_co_ban: +el.dataset.gia,
+        ten_loai: el.dataset.loai,
+        kich_co: null,
+        gia_them: 0
+      };
+      addToBill(sp);
     });
+  });
 
-    // ✅ Thêm sản phẩm vào hóa đơn
-    function addToBill(sp) {
-      const existing = bill.find(item => item.san_pham_id === sp.san_pham_id);
-      if (existing) {
-        existing.so_luong++;
-      } else {
-        bill.push({ ...sp, so_luong: 1 });
-      }
-      renderBill();
+  // ✅ Thêm sản phẩm vào hóa đơn
+  function addToBill(sp) {
+    const existing = bill.find(
+      item => item.san_pham_id === sp.san_pham_id && !item.kich_co
+    );
+    if (existing) {
+      existing.so_luong++;
+    } else {
+      bill.push({ ...sp, so_luong: 1 });
     }
+    renderBill();
+  }
 
-    // ✅ Hiển thị hóa đơn
-    function renderBill() {
-      billContainer.innerHTML = '';
-      if (bill.length === 0) {
-        emptyEl.style.display = 'block';
-      } else {
-        emptyEl.style.display = 'none';
-        bill.forEach((item, i) => {
-          const div = document.createElement('div');
-          div.className = 'flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm';
-          div.innerHTML = `
-            <div class="flex-1">
-              <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
-              <p class="text-sm text-gray-500">${Number(item.gia_co_ban).toLocaleString()} đ</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, -1)">-</button>
-              <span class="w-6 text-center">${item.so_luong}</span>
-              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, 1)">+</button>
-              <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
-            </div>
-          `;
-          billContainer.appendChild(div);
-        });
-      }
-
-      const total = bill.reduce((sum, item) => sum + item.gia_co_ban * item.so_luong, 0);
-      totalEl.textContent = total.toLocaleString() + ' đ';
-    }
-
-    // ✅ Tăng / giảm số lượng
-    function changeQty(index, delta) {
-      bill[index].so_luong += delta;
-      if (bill[index].so_luong <= 0) bill.splice(index, 1);
-      renderBill();
-    }
-
-    // ✅ Xóa sản phẩm
-    function removeItem(index) {
-      bill.splice(index, 1);
-      renderBill();
-    }
-
-    // ✅ Tìm kiếm + Lọc
-    const searchInput = document.getElementById('search');
-    const filterSelect = document.getElementById('filter');
-    searchInput.addEventListener('input', filterProducts);
-    filterSelect.addEventListener('change', filterProducts);
-
-    function filterProducts() {
-      const keyword = searchInput.value.toLowerCase();
-      const type = filterSelect.value;
-      document.querySelectorAll('.product').forEach(div => {
-        const name = div.dataset.ten.toLowerCase();
-        const category = div.dataset.loai;
-        const match = (!keyword || name.includes(keyword)) && (!type || category === type);
-        div.style.display = match ? '' : 'none';
+  // ✅ Hiển thị hóa đơn
+  function renderBill() {
+    billContainer.innerHTML = '';
+    if (bill.length === 0) {
+      emptyEl.style.display = 'block';
+    } else {
+      emptyEl.style.display = 'none';
+      bill.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className =
+          'flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition';
+        div.innerHTML = `
+          <div class="flex-1" onclick="chonKichCo(${i})">
+            <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
+            <p class="text-sm text-gray-500">
+              ${item.kich_co ? item.kich_co + ' ' : '(Chưa chọn size)'} 
+              — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0)).toLocaleString()} đ
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, -1)">-</button>
+            <span class="w-6 text-center">${item.so_luong}</span>
+            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, 1)">+</button>
+            <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+          </div>
+        `;
+        billContainer.appendChild(div);
       });
     }
 
-    // ✅ Thanh toán
-    document.getElementById('checkoutBtn').addEventListener('click', () => {
-      if (bill.length === 0) return alert('Chưa có sản phẩm nào!');
-      alert('Thanh toán thành công!');
-      bill.length = 0;
-      renderBill();
+    const total = bill.reduce(
+      (sum, item) => sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0)) * item.so_luong,
+      0
+    );
+    totalEl.textContent = total.toLocaleString() + ' đ';
+  }
+
+  // ✅ Khi click vào món trong hóa đơn → chọn kích cỡ
+  window.chonKichCo = index => {
+    if (kichCoList.length === 0) {
+      alert('Không có dữ liệu kích cỡ!');
+      return;
+    }
+    const item = bill[index];
+
+    const modal = document.createElement('div');
+    modal.className =
+      'fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50';
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl p-6 w-80 shadow-lg">
+        <h2 class="text-lg font-semibold mb-4 text-center text-gray-800">Chọn kích cỡ cho <br><span class="text-blue-600">${item.ten_san_pham}</span></h2>
+        <div class="flex flex-col gap-2 mb-4">
+          ${kichCoList
+            .map(
+              kc => `
+              <button 
+                class="border rounded-lg py-2 hover:bg-blue-50"
+                onclick='chonKichCoXong(${index}, ${JSON.stringify(JSON.stringify(kc))})'>
+                ${kc.ten_kich_co} (+${kc.gia_them.toLocaleString()} đ)
+              </button>`
+            )
+            .join('')}
+        </div>
+        <button onclick="dongModal()" class="w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300">
+          Hủy
+        </button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+
+  // ✅ Chọn kích cỡ xong → cập nhật lại hóa đơn
+  window.chonKichCoXong = (index, kcJSON) => {
+    const kc = JSON.parse(kcJSON);
+    bill[index].kich_co = kc.ten_kich_co;
+    bill[index].gia_them = kc.gia_them;
+    dongModal();
+    renderBill();
+  };
+
+  // ✅ Đóng modal
+  window.dongModal = () => {
+    document.querySelectorAll('.fixed.inset-0').forEach(m => m.remove());
+  };
+
+  // ✅ Tăng / giảm số lượng
+  function changeQty(index, delta) {
+    bill[index].so_luong += delta;
+    if (bill[index].so_luong <= 0) bill.splice(index, 1);
+    renderBill();
+  }
+
+  // ✅ Xóa sản phẩm
+  function removeItem(index) {
+    bill.splice(index, 1);
+    renderBill();
+  }
+
+  // ✅ Tìm kiếm + Lọc
+  const searchInput = document.getElementById('search');
+  const filterSelect = document.getElementById('filter');
+  searchInput.addEventListener('input', filterProducts);
+  filterSelect.addEventListener('change', filterProducts);
+
+  function filterProducts() {
+    const keyword = searchInput.value.toLowerCase();
+    const type = filterSelect.value;
+    document.querySelectorAll('.product').forEach(div => {
+      const name = div.dataset.ten.toLowerCase();
+      const category = div.dataset.loai;
+      const match = (!keyword || name.includes(keyword)) && (!type || category === type);
+      div.style.display = match ? '' : 'none';
     });
-  </script>
+  }
+
+  // ✅ Thanh toán
+  document.getElementById('checkoutBtn').addEventListener('click', () => {
+    if (bill.length === 0) return alert('Chưa có sản phẩm nào!');
+    const chuaChonSize = bill.some(i => !i.kich_co);
+    if (chuaChonSize)
+      return alert('Vui lòng chọn kích cỡ cho tất cả sản phẩm trước khi thanh toán!');
+    alert('Thanh toán thành công!');
+    bill.length = 0;
+    renderBill();
+  });
+</script>
+
+
 </body>
 </html>
