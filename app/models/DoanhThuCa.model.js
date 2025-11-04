@@ -22,23 +22,23 @@ export const DoanhThuCaModel = {
     return rows;
   },
 
-  async them({ ca_id, ngay, tong_doanh_thu }) {
-    const [result] = await db.query(
-      "INSERT INTO doanh_thu_ca (ca_id, ngay, tong_doanh_thu) VALUES (?, ?, ?)",
-      [ca_id, ngay, tong_doanh_thu]
-    );
-    return result.insertId;
-  },
+//   async them({ ca_id, ngay, tong_doanh_thu }) {
+//     const [result] = await db.query(
+//       "INSERT INTO doanh_thu_ca (ca_id, ngay, tong_doanh_thu) VALUES (?, ?, ?)",
+//       [ca_id, ngay, tong_doanh_thu]
+//     );
+//     return result.insertId;
+//   },
 
-  async capNhat(id, data) {
-    const fields = Object.keys(data).map((col) => `${col} = ?`).join(", ");
-    const values = [...Object.values(data), id];
-    const [result] = await db.query(`UPDATE doanh_thu_ca SET ${fields} WHERE doanh_thu_id = ?`, values);
-    return result.affectedRows;
-  },
+//   async capNhat(id, data) {
+//     const fields = Object.keys(data).map((col) => `${col} = ?`).join(", ");
+//     const values = [...Object.values(data), id];
+//     const [result] = await db.query(`UPDATE doanh_thu_ca SET ${fields} WHERE doanh_thu_id = ?`, values);
+//     return result.affectedRows;
+//   },
 
-  async xoa(id) {
-    const [result] = await db.query("DELETE FROM doanh_thu_ca WHERE doanh_thu_id = ?", [id]);
-    return result.affectedRows;
-  },
+//   async xoa(id) {
+//     const [result] = await db.query("DELETE FROM doanh_thu_ca WHERE doanh_thu_id = ?", [id]);
+//     return result.affectedRows;
+//   },
 };

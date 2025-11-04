@@ -31,36 +31,36 @@ export const DoanhThuCaController = {
     }
   },
 
-  async them(req, res) {
-    try {
-      const { ca_id, ngay, tong_doanh_thu } = req.body;
-      if (!ca_id || !ngay)
-        return res.status(400).json({ error: "Thiếu ca_id hoặc ngày." });
+//   async them(req, res) {
+//     try {
+//       const { ca_id, ngay, tong_doanh_thu } = req.body;
+//       if (!ca_id || !ngay)
+//         return res.status(400).json({ error: "Thiếu ca_id hoặc ngày." });
 
-      const id = await DoanhThuCaModel.them({ ca_id, ngay, tong_doanh_thu });
-      res.status(201).json({ message: "Thêm thành công", doanh_thu_id: id });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
+//       const id = await DoanhThuCaModel.them({ ca_id, ngay, tong_doanh_thu });
+//       res.status(201).json({ message: "Thêm thành công", doanh_thu_id: id });
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   },
 
-  async capNhat(req, res) {
-    try {
-      const { id } = req.params;
-      const rows = await DoanhThuCaModel.capNhat(id, req.body);
-      res.json({ message: rows ? "Cập nhật thành công" : "Không tìm thấy!" });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
+//   async capNhat(req, res) {
+//     try {
+//       const { id } = req.params;
+//       const rows = await DoanhThuCaModel.capNhat(id, req.body);
+//       res.json({ message: rows ? "Cập nhật thành công" : "Không tìm thấy!" });
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   },
 
-  async xoa(req, res) {
-    try {
-      const { id } = req.params;
-      const rows = await DoanhThuCaModel.xoa(id);
-      res.json({ message: rows ? "Xóa thành công" : "Không tìm thấy!" });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
+//   async xoa(req, res) {
+//     try {
+//       const { id } = req.params;
+//       const rows = await DoanhThuCaModel.xoa(id);
+//       res.json({ message: rows ? "Xóa thành công" : "Không tìm thấy!" });
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   },
 };
