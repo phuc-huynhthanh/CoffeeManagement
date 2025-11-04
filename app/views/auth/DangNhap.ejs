@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập</title>
+  <link 
+    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" 
+    rel="stylesheet" 
+  />
+  <link rel="icon" href="data:," /> <!-- Ngăn lỗi favicon.ico 404 -->
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+  <div class="bg-white p-8 rounded-xl shadow-lg w-96">
+    <h2 class="text-2xl font-bold mb-6 text-center">Đăng nhập</h2>
+    
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-gray-700 mb-1">Tên đăng nhập</label>
+        <input 
+          type="text" 
+          name="ten_dang_nhap" 
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none" 
+          required 
+        />
+      </div>
+      <div>
+        <label class="block text-gray-700 mb-1">Mật khẩu</label>
+        <input 
+          type="password" 
+          name="mat_khau" 
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none" 
+          required 
+        />
+      </div>
+      <button 
+        type="submit" 
+        class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+      >
+        Đăng nhập
+      </button>
+    </form>
+
+    <p id="message" class="text-center mt-4 text-sm"></p>
+
+    <p class="text-center text-gray-500 mt-4">
+      Chưa có tài khoản?
+      <a href="/taikhoan/register" class="text-blue-500 hover:underline">Đăng ký ngay</a>
+    </p>
+  </div>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const msg = document.getElementById("message");
+      msg.textContent = "";
+      msg.className = "text-center mt-4 text-sm";
+
+      const formData = Object.fromEntries(new FormData(e.target).entries());
+
+      try {
+        // 🟢 Gửi yêu cầu đăng nhập
+        const resLogin = await fetch("http://localhost:3000/taikhoan/dangnhap", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        const dataLogin = await resLogin.json();
+        if (!resLogin.ok) throw new Error(dataLogin.thong_bao || "Đăng nhập thất bại");
+
+        // ✅ Lưu token vào localStorage
+        localStorage.setItem("token", dataLogin.token);
+
+        // 🟢 Gọi API lấy thông tin người dùng
+        const resInfo = await fetch("http://localhost:3000/taikhoan/thongtin", {
+          headers: { "Authorization": `Bearer ${dataLogin.token}` },
+        });
+
+        const dataInfo = await resInfo.json();
+        if (!resInfo.ok) throw new Error(dataInfo.thong_bao || "Không lấy được thông tin người dùng");
+
+        const user = dataInfo.du_lieu;
+
+        msg.textContent = "Đăng nhập thành công! Đang chuyển hướng...";
+        msg.classList.add("text-green-600");
+
+        // 🧭 Chuyển hướng theo vai trò
+        setTimeout(() => {
+          if (user.vai_tro_id === 1) {
+            window.location.href = "/admin";
+          } else {
+            window.location.href = "/pos";
+          }
+        }, 1000);
+
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.classList.add("text-red-600");
+      }
+    });
+  </script>
+
+</body>
+</html>

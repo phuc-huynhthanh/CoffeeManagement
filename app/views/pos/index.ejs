@@ -69,14 +69,21 @@
   const totalEl = document.getElementById('total');
   const emptyEl = document.getElementById('empty');
 
-  // ✅ Lấy danh sách kích cỡ từ API
+  // ✅ Lấy danh sách kích cỡ
   let kichCoList = [];
   fetch('/kichco/laytatca')
     .then(res => res.json())
     .then(data => (kichCoList = data))
     .catch(err => console.error('Lỗi tải kích cỡ:', err));
 
-  // ✅ Khi click sản phẩm → thêm vào hóa đơn (chưa chọn kích cỡ)
+  // ✅ Lấy danh sách topping
+  let toppingList = [];
+  fetch('/topping/laytatca')
+    .then(res => res.json())
+    .then(data => (toppingList = data))
+    .catch(err => console.error('Lỗi tải topping:', err));
+
+  // ✅ Khi click sản phẩm → thêm vào hóa đơn
   document.querySelectorAll('.product').forEach(el => {
     el.addEventListener('click', () => {
       const sp = {
@@ -85,13 +92,14 @@
         gia_co_ban: +el.dataset.gia,
         ten_loai: el.dataset.loai,
         kich_co: null,
-        gia_them: 0
+        gia_them: 0,
+        toppings: [], // 🧂 danh sách topping đã chọn
+        tong_topping: 0
       };
       addToBill(sp);
     });
   });
 
-  // ✅ Thêm sản phẩm vào hóa đơn
   function addToBill(sp) {
     const existing = bill.find(
       item => item.san_pham_id === sp.san_pham_id && !item.kich_co
@@ -104,7 +112,6 @@
     renderBill();
   }
 
-  // ✅ Hiển thị hóa đơn
   function renderBill() {
     billContainer.innerHTML = '';
     if (bill.length === 0) {
@@ -116,11 +123,12 @@
         div.className =
           'flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition';
         div.innerHTML = `
-          <div class="flex-1" onclick="chonKichCo(${i})">
+          <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
             <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
             <p class="text-sm text-gray-500">
-              ${item.kich_co ? item.kich_co + ' ' : '(Chưa chọn size)'} 
-              — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0)).toLocaleString()} đ
+              ${item.kich_co ? item.kich_co : '(Chưa chọn size)'} 
+              ${item.toppings.length ? ' + ' + item.toppings.map(t => t.ten_topping).join(', ') : ''}
+              — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -135,14 +143,19 @@
     }
 
     const total = bill.reduce(
-      (sum, item) => sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0)) * item.so_luong,
+      (sum, item) =>
+        sum +
+        (Number(item.gia_co_ban) +
+          Number(item.gia_them || 0) +
+          Number(item.tong_topping || 0)) *
+          item.so_luong,
       0
     );
     totalEl.textContent = total.toLocaleString() + ' đ';
   }
 
-  // ✅ Khi click vào món trong hóa đơn → chọn kích cỡ
-  window.chonKichCo = index => {
+  // ✅ Khi click vào món trong hóa đơn → chọn kích cỡ + topping
+  window.chonKichCoVaTopping = index => {
     if (kichCoList.length === 0) {
       alert('Không có dữ liệu kích cỡ!');
       return;
@@ -153,33 +166,74 @@
     modal.className =
       'fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50';
     modal.innerHTML = `
-      <div class="bg-white rounded-2xl p-6 w-80 shadow-lg">
-        <h2 class="text-lg font-semibold mb-4 text-center text-gray-800">Chọn kích cỡ cho <br><span class="text-blue-600">${item.ten_san_pham}</span></h2>
-        <div class="flex flex-col gap-2 mb-4">
-          ${kichCoList
-            .map(
-              kc => `
-              <button 
-                class="border rounded-lg py-2 hover:bg-blue-50"
-                onclick='chonKichCoXong(${index}, ${JSON.stringify(JSON.stringify(kc))})'>
-                ${kc.ten_kich_co} (+${kc.gia_them.toLocaleString()} đ)
-              </button>`
-            )
-            .join('')}
+      <div class="bg-white rounded-2xl p-6 w-96 shadow-lg max-h-[90vh] overflow-y-auto">
+        <h2 class="text-lg font-semibold mb-4 text-center text-gray-800">Chọn tùy chọn cho <br><span class="text-blue-600">${item.ten_san_pham}</span></h2>
+        
+        <!-- Kích cỡ -->
+        <div class="mb-4">
+          <h3 class="font-semibold text-gray-700 mb-2">Kích cỡ:</h3>
+          <div class="flex flex-col gap-2">
+            ${kichCoList
+              .map(
+                kc => `
+                <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
+                  <input type="radio" name="kichco" value='${JSON.stringify(
+                    kc
+                  )}' ${item.kich_co === kc.ten_kich_co ? 'checked' : ''}>
+                  <span>${kc.ten_kich_co}</span>
+                  <span class="text-gray-600">+${kc.gia_them.toLocaleString()} đ</span>
+                </label>`
+              )
+              .join('')}
+          </div>
         </div>
-        <button onclick="dongModal()" class="w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300">
-          Hủy
-        </button>
+
+        <!-- Topping -->
+        <div class="mb-4">
+          <h3 class="font-semibold text-gray-700 mb-2">Topping:</h3>
+          <div class="flex flex-col gap-2">
+            ${toppingList
+              .map(
+                t => `
+                <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
+                  <input type="checkbox" value='${JSON.stringify(
+                    t
+                  )}' ${item.toppings.some(tp => tp.topping_id === t.topping_id) ? 'checked' : ''}>
+                  <span>${t.ten_topping}</span>
+                  <span class="text-gray-600">+${t.gia_them.toLocaleString()} đ</span>
+                </label>`
+              )
+              .join('')}
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-4">
+          <button onclick="luuKichCoVaTopping(${index})" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Lưu</button>
+          <button onclick="dongModal()" class="flex-1 bg-gray-200 py-2 rounded-lg hover:bg-gray-300">Hủy</button>
+        </div>
       </div>
     `;
     document.body.appendChild(modal);
   };
 
-  // ✅ Chọn kích cỡ xong → cập nhật lại hóa đơn
-  window.chonKichCoXong = (index, kcJSON) => {
-    const kc = JSON.parse(kcJSON);
-    bill[index].kich_co = kc.ten_kich_co;
-    bill[index].gia_them = kc.gia_them;
+  // ✅ Lưu lựa chọn kích cỡ + topping
+  window.luuKichCoVaTopping = index => {
+    const modal = document.querySelector('.fixed.inset-0');
+    const item = bill[index];
+
+    // Lấy kích cỡ
+    const kichCoInput = modal.querySelector('input[name="kichco"]:checked');
+    if (!kichCoInput) return alert('Vui lòng chọn kích cỡ!');
+    const kc = JSON.parse(kichCoInput.value);
+    item.kich_co = kc.ten_kich_co;
+    item.gia_them = kc.gia_them;
+
+    // Lấy topping
+    const toppingInputs = modal.querySelectorAll('input[type="checkbox"]:checked');
+    const toppings = Array.from(toppingInputs).map(input => JSON.parse(input.value));
+    item.toppings = toppings;
+    item.tong_topping = toppings.reduce((sum, t) => sum + Number(t.gia_them), 0);
+
     dongModal();
     renderBill();
   };
@@ -214,7 +268,8 @@
     document.querySelectorAll('.product').forEach(div => {
       const name = div.dataset.ten.toLowerCase();
       const category = div.dataset.loai;
-      const match = (!keyword || name.includes(keyword)) && (!type || category === type);
+      const match =
+        (!keyword || name.includes(keyword)) && (!type || category === type);
       div.style.display = match ? '' : 'none';
     });
   }
@@ -230,6 +285,7 @@
     renderBill();
   });
 </script>
+
 
 
 </body>

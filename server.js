@@ -21,6 +21,8 @@ import ViewsRoutes from "./app/routes/View.routes.js";
 import DoanhThuCaRoutes from "./app/routes/DoanhThuCa.routes.js";
 import LichLamViecRoutes from "./app/routes/LichLamViec.routes.js";
 
+
+
 dotenv.config();
 const app = express();
 
@@ -54,6 +56,9 @@ app.use("/view", ViewsRoutes);
 app.use("/doanhthuca", DoanhThuCaRoutes);
 app.use("/lichlamviec", LichLamViecRoutes);
 
+
+
+
 app.get("/", (req, res) => {
   res.send("☕ Coffee Management API đang chạy!");
 });
@@ -63,6 +68,8 @@ app.use((err, req, res, next) => {
   console.error("❌ Lỗi:", err.message);
   res.status(500).json({ message: "Lỗi server", error: err.message });
 });
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server chạy tại http://localhost:${PORT}`));

@@ -1,4 +1,9 @@
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+const SECRET_KEY = "$2a$12$ZF9spVgpLpcerM/C7KOmi.cLXid5TjXEIpks/CzXkAQGXbomUjfui";
+
 import { TaiKhoanModel } from "../models/TaiKhoan.model.js";
+
 
 export const TaiKhoanController = {
   // 📋 Lấy tất cả tài khoản
@@ -91,4 +96,87 @@ export const TaiKhoanController = {
       next(loi);
     }
   },
+  async dangKy(req, res, next) {
+    try {
+      const { ten_dang_nhap, mat_khau, vai_tro_id } = req.body;
+
+      if (!ten_dang_nhap || !mat_khau)
+        return res.status(400).json({ thong_bao: "Thiếu thông tin đăng ký" });
+
+      // Kiểm tra trùng tên
+      const tonTai = await TaiKhoanModel.timMot({ ten_dang_nhap });
+      if (tonTai)
+        return res.status(409).json({ thong_bao: "Tên đăng nhập đã tồn tại" });
+
+      // Mã hóa mật khẩu
+      const hashMatKhau = await bcrypt.hash(mat_khau, 10);
+
+      // Lưu vào DB
+      const idMoi = await TaiKhoanModel.them({
+        ten_dang_nhap,
+        mat_khau: hashMatKhau,
+        vai_tro_id: vai_tro_id || 2, // mặc định user
+      });
+
+      res.status(201).json({ thong_bao: "Đăng ký thành công", id: idMoi });
+    } catch (loi) {
+      next(loi);
+    }
+  },
+
+  // 🔑 Đăng nhập
+  async dangNhap(req, res, next) {
+    try {
+      const { ten_dang_nhap, mat_khau } = req.body;
+
+      if (!ten_dang_nhap || !mat_khau)
+        return res.status(400).json({ thong_bao: "Thiếu thông tin đăng nhập" });
+
+      const taiKhoan = await TaiKhoanModel.timMot({ ten_dang_nhap });
+      if (!taiKhoan)
+        return res.status(401).json({ thong_bao: "Sai tên đăng nhập hoặc mật khẩu" });
+
+      // So sánh mật khẩu
+      const hopLe = await bcrypt.compare(mat_khau, taiKhoan.mat_khau);
+      if (!hopLe)
+        return res.status(401).json({ thong_bao: "Sai tên đăng nhập hoặc mật khẩu" });
+
+      // Tạo token
+      const token = jwt.sign(
+        {
+          tai_khoan_id: taiKhoan.tai_khoan_id,
+          ten_dang_nhap: taiKhoan.ten_dang_nhap,
+          vai_tro_id: taiKhoan.vai_tro_id,
+        },
+        SECRET_KEY,
+        { expiresIn: "8h" } // token có hiệu lực 1 giờ
+      );
+
+      res.json({ thong_bao: "Đăng nhập thành công", token });
+    } catch (loi) {
+      next(loi);
+    }
+  },
+
+  // 🧾 Lấy thông tin người dùng từ token
+async thongTinNguoiDung(req, res, next) {
+  try {
+    // Lấy thông tin từ middleware
+    const { tai_khoan_id } = req.nguoi_dung;
+
+    // Truy vấn DB để lấy thông tin chi tiết
+    const taiKhoan = await TaiKhoanModel.timTheoId(tai_khoan_id);
+
+    if (!taiKhoan)
+      return res.status(404).json({ thong_bao: "Không tìm thấy người dùng" });
+
+    // Không trả mật khẩu
+    delete taiKhoan.mat_khau;
+
+    res.json({ thong_bao: "Lấy thông tin thành công", du_lieu: taiKhoan });
+  } catch (loi) {
+    next(loi);
+  }
+},
+
 };
