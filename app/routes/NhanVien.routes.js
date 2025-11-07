@@ -10,5 +10,6 @@ router.post("/them", NhanVienController.them);
 router.put("/sua/:id", NhanVienController.capNhat);
 router.delete("/xoa/:id", NhanVienController.xoa);
 router.post("/tim", NhanVienController.timTheoGiaTri); 
+router.get("/taikhoan/:tai_khoan_id", NhanVienController.layTheoTaiKhoanId);
 
 export default router;

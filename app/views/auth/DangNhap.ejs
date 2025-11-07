@@ -44,10 +44,7 @@
 
     <p id="message" class="text-center mt-4 text-sm"></p>
 
-    <p class="text-center text-gray-500 mt-4">
-      Chưa có tài khoản?
-      <a href="/taikhoan/register" class="text-blue-500 hover:underline">Đăng ký ngay</a>
-    </p>
+
   </div>
 
   <script>
@@ -71,9 +68,6 @@
         const dataLogin = await resLogin.json();
         if (!resLogin.ok) throw new Error(dataLogin.thong_bao || "Đăng nhập thất bại");
 
-        // ✅ Lưu token vào localStorage
-        localStorage.setItem("token", dataLogin.token);
-
         // 🟢 Gọi API lấy thông tin người dùng
         const resInfo = await fetch("http://localhost:3000/taikhoan/thongtin", {
           headers: { "Authorization": `Bearer ${dataLogin.token}` },
@@ -84,6 +78,10 @@
 
         const user = dataInfo.du_lieu;
 
+        // ✅ Lưu thông tin người dùng và token vào localStorage
+        localStorage.setItem("token", dataLogin.token);
+        localStorage.setItem("user", JSON.stringify(user));
+
         msg.textContent = "Đăng nhập thành công! Đang chuyển hướng...";
         msg.classList.add("text-green-600");
 
@@ -92,7 +90,7 @@
           if (user.vai_tro_id === 1) {
             window.location.href = "/admin";
           } else {
-            window.location.href = "/pos";
+            window.location.href = "/view/pos";
           }
         }, 1000);
 

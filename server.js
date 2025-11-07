@@ -63,6 +63,12 @@ app.get("/", (req, res) => {
   res.send("☕ Coffee Management API đang chạy!");
 });
 
+// ✅ Route hiển thị trang Admin tĩnh
+app.get("/admin", (req, res) => {
+  res.render("admin/admin", { employees: [] }); // Hiển thị web tĩnh, chưa có dữ liệu
+});
+
+
 // Error Handler
 app.use((err, req, res, next) => {
   console.error("❌ Lỗi:", err.message);

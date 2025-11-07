@@ -23,6 +23,23 @@ export const NhanVienController = {
     }
   },
 
+  // 🧑‍💼 Lấy thông tin nhân viên theo tài khoản ID
+async layTheoTaiKhoanId(req, res, next) {
+  try {
+    const { tai_khoan_id } = req.params;
+
+    const nhanVien = await NhanVienModel.timTheoTaiKhoanId(tai_khoan_id);
+
+    if (!nhanVien)
+      return res.status(404).json({ thong_bao: "Không tìm thấy nhân viên với tài khoản này" });
+
+    res.json(nhanVien);
+  } catch (loi) {
+    next(loi);
+  }
+},
+
+
   // Thêm nhân viên mới
   async them(req, res, next) {
     try {

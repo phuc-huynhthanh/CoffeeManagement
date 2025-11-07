@@ -17,6 +17,7 @@ router.get("/dangnhap", (req, res) => res.render("auth/DangNhap"));
 router.post("/dangky", TaiKhoanController.dangKy);
 router.post("/dangnhap", TaiKhoanController.dangNhap);
 router.get("/laytatca", xacThucJWT, TaiKhoanController.layTatCa);
+router.get("/chitiet", TaiKhoanController.layTatCaChiTiet);
 
 router.get("/thongtin", xacThucJWT, TaiKhoanController.thongTinNguoiDung);
 export default router;

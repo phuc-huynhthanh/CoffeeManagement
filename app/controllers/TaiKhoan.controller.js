@@ -3,18 +3,34 @@ import jwt from "jsonwebtoken";
 const SECRET_KEY = "$2a$12$ZF9spVgpLpcerM/C7KOmi.cLXid5TjXEIpks/CzXkAQGXbomUjfui";
 
 import { TaiKhoanModel } from "../models/TaiKhoan.model.js";
-
+import { NhanVienModel } from "../models/NhanVien.model.js";
 
 export const TaiKhoanController = {
   // 📋 Lấy tất cả tài khoản
   async layTatCa(req, res, next) {
-    try {
-      const duLieu = await TaiKhoanModel.layTatCa();
-      res.json(duLieu);
-    } catch (loi) {
-      next(loi);
-    }
-  },
+  try {
+    const duLieu = await TaiKhoanModel.layTatCaChiTiet(); // ✅ gọi hàm mới
+    res.json(duLieu);
+  } catch (loi) {
+    console.error(loi);
+    next(loi);
+  }
+},
+
+// 📋 Lấy tất cả tài khoản kèm thông tin nhân viên chi tiết
+async layTatCaChiTiet(req, res, next) {
+  try {
+    const duLieu = await TaiKhoanModel.layTatCaChiTiet();
+    res.json({
+      thong_bao: "Lấy danh sách chi tiết tài khoản thành công",
+      du_lieu: duLieu,
+    });
+  } catch (loi) {
+    console.error(loi);
+    next(loi);
+  }
+},
+
 
   // 🔎 Lấy tài khoản theo ID
   async layTheoId(req, res, next) {
@@ -96,33 +112,49 @@ export const TaiKhoanController = {
       next(loi);
     }
   },
-  async dangKy(req, res, next) {
-    try {
-      const { ten_dang_nhap, mat_khau, vai_tro_id } = req.body;
-
-      if (!ten_dang_nhap || !mat_khau)
-        return res.status(400).json({ thong_bao: "Thiếu thông tin đăng ký" });
-
-      // Kiểm tra trùng tên
-      const tonTai = await TaiKhoanModel.timMot({ ten_dang_nhap });
-      if (tonTai)
-        return res.status(409).json({ thong_bao: "Tên đăng nhập đã tồn tại" });
-
-      // Mã hóa mật khẩu
-      const hashMatKhau = await bcrypt.hash(mat_khau, 10);
-
-      // Lưu vào DB
-      const idMoi = await TaiKhoanModel.them({
-        ten_dang_nhap,
-        mat_khau: hashMatKhau,
-        vai_tro_id: vai_tro_id || 2, // mặc định user
-      });
-
-      res.status(201).json({ thong_bao: "Đăng ký thành công", id: idMoi });
-    } catch (loi) {
-      next(loi);
+ async dangKy(req, res, next) {
+  try {
+    const { tai_khoan, nhan_vien } = req.body;
+    if (!tai_khoan || !nhan_vien) {
+      return res.status(400).json({ thong_bao: "Thiếu thông tin đăng ký" });
     }
-  },
+
+    const { ten_dang_nhap, mat_khau, vai_tro_id } = tai_khoan;
+    const { ho_ten, gioi_tinh, ngay_sinh, so_dien_thoai, email, dia_chi, ngay_vao_lam, luong } = nhan_vien;
+
+    if (!ten_dang_nhap || !mat_khau || !ho_ten || !so_dien_thoai) {
+      return res.status(400).json({ thong_bao: "Thiếu thông tin đăng ký" });
+    }
+
+    const tonTai = await TaiKhoanModel.timMot({ ten_dang_nhap });
+    if (tonTai)
+      return res.status(409).json({ thong_bao: "Tên đăng nhập đã tồn tại" });
+
+    const hashMatKhau = await bcrypt.hash(mat_khau, 10);
+    const taiKhoanIdMoi = await TaiKhoanModel.them({
+      ten_dang_nhap,
+      mat_khau: hashMatKhau,
+      vai_tro_id: vai_tro_id || 3,
+    });
+
+    const nhanVienIdMoi = await NhanVienModel.themNhanVien({
+      ho_ten,
+      sdt: so_dien_thoai,
+      email,
+      tai_khoan_id: taiKhoanIdMoi,
+      ca_id: null,
+    });
+
+    res.status(201).json({
+      thong_bao: "Đăng ký thành công",
+      tai_khoan_id: taiKhoanIdMoi,
+      nhan_vien_id: nhanVienIdMoi,
+    });
+  } catch (loi) {
+    next(loi);
+  }
+},
+
 
   // 🔑 Đăng nhập
   async dangNhap(req, res, next) {
