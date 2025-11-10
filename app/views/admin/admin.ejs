@@ -27,45 +27,74 @@
     <aside class="w-64 bg-blue-600 text-white flex flex-col pt-4">
       <nav class="flex-1 overflow-y-auto mt-4">
         <ul class="space-y-2 px-4">
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý tài khoản nhân viên</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý bàn</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500  tab-link active" data-tab="tai-khoan" >Quản lý tài khoản nhân viên</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="san-pham">Quản lý sản phẩm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý đơn hàng</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lịch làm</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý bàn</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lương</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý khuyến mãi</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý thành viên</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý sản phẩm</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lương</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý doanh thu</a></li>
         </ul>
       </nav>
     </aside>
   <!-- Main -->
-  <main class="flex-1 container mx-auto px-6 py-8">
+<main class="flex-1 container mx-auto px-6 py-8">
+  <!-- Quản lý tài khoản nhân viên -->
+  <div id="tab-tai-khoan" class="tab-content">
+    <!-- Nội dung code hiện tại của quản lý nhân viên -->
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-gray-700">Quản lý tài khoản nhân viên</h2>
       <button id="btnAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md">
         + Thêm tài khoản
       </button>
     </div>
+    <!-- Table tài khoản nhân viên -->
+    <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+      <table class="min-w-full text-left border border-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 border-b">STT</th>
+            <th class="px-4 py-3 border-b">Họ tên</th>
+            <th class="px-4 py-3 border-b">Số điện thoại</th>
+            <th class="px-4 py-3 border-b">Email</th>
+            <th class="px-4 py-3 border-b">Vai trò</th>
+            <th class="px-4 py-3 border-b">Tên đăng nhập</th>
+            <th class="px-4 py-3 border-b">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="accountTable" class="divide-y"></tbody>
+      </table>
+    </div>
+  </div>
 
-<div class="overflow-x-auto bg-white rounded-lg shadow-md">
-  <table class="min-w-full text-left border border-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-3 border-b">STT</th>
-        <th class="px-4 py-3 border-b">Họ tên</th>
-        <th class="px-4 py-3 border-b">Số điện thoại</th>
-        <th class="px-4 py-3 border-b">Email</th>
-        <th class="px-4 py-3 border-b">Vai trò</th>
-        <th class="px-4 py-3 border-b">Tên đăng nhập</th>
-        <th class="px-4 py-3 border-b">Thao tác</th>
-      </tr>
-    </thead>
-    <tbody id="accountTable" class="divide-y"></tbody>
-  </table>
-</div>
+  <!-- Quản lý sản phẩm -->
+  <div id="tab-san-pham" class="tab-content hidden">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-700">Quản lý sản phẩm</h2>
+      <button id="btnAddProduct" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md">
+        + Thêm sản phẩm
+      </button>
+    </div>
+    <div class= "overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+      <table class="min-w-full text-left border border-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 border-b">STT</th>
+            <th class="px-4 py-3 border-b">Tên sản phẩm</th>
+            <th class="px-4 py-3 border-b">Loại</th>
+            <th class="px-4 py-3 border-b">Giá</th>
+            <th class="px-4 py-3 border-b">Hình ảnh</th>
+            <th class="px-4 py-3 border-b">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="productTable" class="divide-y"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
 
-  </main>
 
   <!-- Modal -->
   <div id="employeeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
@@ -130,6 +159,63 @@
     </div>
   </div>
    </div>
+
+   <!-- Modal thêm sản phẩm -->
+<div id="productModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 id="productModalTitle" class="text-lg font-semibold mb-4">Thêm sản phẩm</h3>
+    <form id="productForm" class="space-y-4" enctype="multipart/form-data">
+      <input type="hidden" id="productId" name="id">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tên sản phẩm</label>
+        <input type="text" id="productName" name="ten_san_pham" 
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="VD: Cà phê sữa" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Mô tả</label>
+        <textarea id="productDesc" name="mo_ta"
+                  class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Mô tả sản phẩm"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Loại sản phẩm</label>
+        <select id="productCategory" name="loai_id" 
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" required>
+          <option value="">-- Chọn loại --</option>
+          <option value="1">Đồ uống</option>
+          <option value="2">Đồ ăn vặt</option>
+          <!-- Bạn có thể load động từ API loại sản phẩm -->
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Giá cơ bản</label>
+        <input type="number" id="productPrice" name="gia_co_ban"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="VD: 35000" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Hình ảnh</label>
+        <input type="file" id="productImage" name="hinh_anh"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               accept="image/*">
+      </div>
+
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancelProduct" 
+                class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit" 
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 <div id="toastContainer" class="fixed top-5 right-5 space-y-2 z-50"></div>
 <script>
@@ -298,21 +384,246 @@
   }
 
   // Xóa tài khoản
-  async function xoaTaiKhoan(id) {
-    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này không?")) return;
+  // Xóa tài khoản (thêm debug)
+async function xoaTaiKhoan(id) {
+  console.log("🧩 Đang yêu cầu xóa tài khoản ID:", id);
+
+  // Lấy toàn bộ thông tin tài khoản trước khi xóa
+  try {
+    const infoRes = await fetch(`http://localhost:3000/taikhoan/${id}`);
+    const infoData = await infoRes.json();
+    console.log("📋 Thông tin tài khoản cần xóa:", infoData);
+  } catch (err) {
+    console.warn("⚠️ Không thể lấy thông tin tài khoản trước khi xóa:", err);
+  }
+
+  if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này không?")) return;
+
+  try {
+    const res = await fetch(`http://localhost:3000/taikhoan/xoa/${id}`, {
+      method: "DELETE",
+    });
+
+    const resultText = await res.text(); // đọc text để xem có lỗi gì
+    console.log("📦 Kết quả phản hồi thô từ server:", resultText);
+
+    let result;
     try {
-      const res = await fetch(`http://localhost:3000/taikhoan/xoa/${id}`, { method: "DELETE" });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Không thể xóa tài khoản");
-      showToast("✅ Xóa tài khoản thành công!", "success");
-      loadAccounts();
-    } catch (err) {
-      console.error("❌ Lỗi khi xóa tài khoản:", err);
-      showToast("❌ Đã xảy ra lỗi: " + err.message, "error");
+      result = JSON.parse(resultText);
+    } catch {
+      result = { message: resultText };
+    }
+
+    if (!res.ok) throw new Error(result.message || "Không thể xóa tài khoản");
+
+    showToast("✅ Xóa tài khoản thành công!", "success");
+    loadAccounts();
+  } catch (err) {
+    console.error("❌ Lỗi khi xóa tài khoản:", err);
+    showToast("❌ Đã xảy ra lỗi: " + err.message, "error");
+  }
+}
+
+
+  window.addEventListener("DOMContentLoaded", loadAccounts);
+</script>
+<script>
+  const tabLinks = document.querySelectorAll(".tab-link");
+  const tabContents = document.querySelectorAll(".tab-content");
+
+  tabLinks.forEach(link => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      // Xóa active cũ
+      tabLinks.forEach(l => l.classList.remove("active"));
+      tabContents.forEach(c => c.classList.add("hidden"));
+
+      // Kích hoạt tab mới
+      link.classList.add("active");
+      const tabId = "tab-" + link.dataset.tab;
+      document.getElementById(tabId).classList.remove("hidden");
+    });
+  });
+
+  // Khi load trang, tab tài khoản là mặc định
+  document.getElementById("tab-tai-khoan").classList.remove("hidden");
+  async function loadProducts() {
+  try {
+    const res = await fetch("http://localhost:3000/sanpham/laytatca");
+    const data = await res.json();
+    const tbody = document.getElementById("productTable");
+    tbody.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Chưa có sản phẩm nào.</td></tr>`;
+      return;
+    }
+
+    data.forEach((item, index) => {
+      const row = document.createElement("tr");
+      row.classList.add("hover:bg-gray-50");
+      row.innerHTML = `
+        <td class="px-4 py-3">${index + 1}</td>
+        <td class="px-4 py-3">${item.ten_san_pham}</td>
+        <td class="px-4 py-3">${item.ten_loai || "—"}</td>
+        <td class="px-4 py-3">${item.gia_co_ban}</td>
+        <td class="px-4 py-3">
+          ${item.hinh_anh ? `<img src="${item.hinh_anh}" class="w-16 h-16 object-cover rounded">` : "—"}
+        </td>
+        <td class="px-4 py-3 text-center">
+  <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mr-1"
+          onclick="editProductFromRow(this, ${item.san_pham_id})">Sửa</button>
+          <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+          onclick="deleteProduct(${item.san_pham_id})">Xóa</button>
+</td>
+
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi tải sản phẩm:", err);
+  }
+}
+
+// Gọi khi load trang
+window.addEventListener("DOMContentLoaded", () => {
+  loadAccounts();
+  loadProducts();
+});
+
+// Load danh sách loại sản phẩm và điền vào select
+async function loadCategories() {
+  try {
+    const res = await fetch("http://localhost:3000/loaisanpham/laytatca");
+    const data = await res.json();
+
+    const select = document.getElementById("productCategory");
+    select.innerHTML = `<option value="">-- Chọn loại --</option>`; // reset
+
+    data.forEach(loai => {
+      const option = document.createElement("option");
+      option.value = loai.loai_id;
+      option.textContent = loai.ten_loai;
+      select.appendChild(option);
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi tải loại sản phẩm:", err);
+    showToast("❌ Không thể tải danh sách loại sản phẩm", "error");
+  }
+}
+
+// Hiển thị modal thêm sản phẩm
+document.getElementById("btnAddProduct").addEventListener("click", async () => {
+  document.getElementById("productModalTitle").textContent = "Thêm sản phẩm";
+  document.getElementById("productForm").reset();
+  
+  // Load danh sách loại trước khi hiển thị form
+  await loadCategories();
+  
+  document.getElementById("productModal").classList.remove("hidden");
+});
+
+// Hủy form
+document.getElementById("btnCancelProduct").addEventListener("click", () => {
+  document.getElementById("productModal").classList.add("hidden");
+  document.getElementById("productForm").reset();
+});
+
+// Submit form thêm sản phẩm
+document.getElementById("productForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const form = e.target;
+  const formData = new FormData(form);
+
+  // Lấy ID để biết là thêm hay sửa
+  const productId = document.getElementById("productId").value;
+  const url = productId 
+              ? `http://localhost:3000/sanpham/sua/${productId}` 
+              : "http://localhost:3000/sanpham/them";
+
+  try {
+    const res = await fetch(url, {
+      method: productId ? "PUT" : "POST",
+      body: formData
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Lỗi khi lưu sản phẩm");
+
+    showToast(productId ? "✅ Cập nhật sản phẩm thành công!" : "✅ Thêm sản phẩm thành công!", "success");
+    document.getElementById("productModal").classList.add("hidden");
+    form.reset();
+    loadProducts();
+  } catch (err) {
+    console.error("❌ Lỗi khi lưu sản phẩm:", err);
+    showToast("❌ Lỗi: " + err.message, "error");
+  }
+});
+
+// Gọi loadCategories() khi trang load để đảm bảo select luôn có dữ liệu
+window.addEventListener("DOMContentLoaded", loadCategories);
+
+async function editProduct(id) {
+  try {
+    // Lấy thông tin sản phẩm từ API
+    const res = await fetch(`http://localhost:3000/sanpham/${id}`);
+    const product = await res.json();
+
+    if (!product) {
+      showToast("❌ Không tìm thấy sản phẩm", "error");
+      return;
+    }
+
+    // Load danh sách loại sản phẩm trước
+    await loadCategories();
+
+    // Điền dữ liệu vào form
+    document.getElementById("productModalTitle").textContent = "Sửa sản phẩm";
+    document.getElementById("productId").value = product.san_pham_id;
+    document.getElementById("productName").value = product.ten_san_pham;
+    document.getElementById("productDesc").value = product.mo_ta || "";
+    document.getElementById("productPrice").value = product.gia_co_ban;
+    document.getElementById("productCategory").value = product.loai_id;
+
+    document.getElementById("productModal").classList.remove("hidden");
+  } catch (err) {
+    console.error("❌ Lỗi khi lấy sản phẩm:", err);
+    showToast("❌ Lỗi khi tải dữ liệu sản phẩm", "error");
+  }
+}
+
+async function editProductFromRow(button, productId) {
+  const row = button.closest("tr"); // Lấy hàng <tr> của nút Sửa
+  const cells = row.children;
+
+  // Lấy dữ liệu từ cột
+  const ten_san_pham = cells[1].textContent.trim();
+  const loai_text = cells[2].textContent.trim();
+  const gia_co_ban = cells[3].textContent.trim();
+
+  // Load danh sách loại sản phẩm để select có dữ liệu
+  await loadCategories();
+
+  // Chọn giá trị đúng trong select
+  const select = document.getElementById("productCategory");
+  for (let i = 0; i < select.options.length; i++) {
+    if (select.options[i].textContent === loai_text) {
+      select.selectedIndex = i;
+      break;
     }
   }
 
-  window.addEventListener("DOMContentLoaded", loadAccounts);
+  // Điền dữ liệu vào form
+  document.getElementById("productModalTitle").textContent = "Sửa sản phẩm";
+  document.getElementById("productId").value = productId;
+  document.getElementById("productName").value = ten_san_pham;
+  document.getElementById("productPrice").value = gia_co_ban;
+  document.getElementById("productDesc").value = ""; // Nếu muốn, có thể thêm cột mô tả vào bảng
+  document.getElementById("productModal").classList.remove("hidden");
+}
+
 </script>
 
 

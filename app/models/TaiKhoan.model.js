@@ -93,12 +93,17 @@ async layTatCaChiTiet() {
 
   // ❌ Xóa tài khoản
   async xoa(id) {
-    const [result] = await db.query(
-      `DELETE FROM tai_khoan WHERE tai_khoan_id = ?`,
-      [id]
-    );
-    return result.affectedRows;
-  },
+  // Xóa nhân viên liên quan trước
+  await db.query(`DELETE FROM nhan_vien WHERE tai_khoan_id = ?`, [id]);
+
+  // Xóa tài khoản
+  const [result] = await db.query(
+    `DELETE FROM tai_khoan WHERE tai_khoan_id = ?`,
+    [id]
+  );
+  return result.affectedRows;
+}
+
 
   
 };

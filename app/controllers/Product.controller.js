@@ -62,23 +62,43 @@ export const ProductController = {
   async update(req, res, next) {
     try {
       const { id } = req.params;
-      const { ten_san_pham, mo_ta, loai_id, hinh_anh, gia_co_ban } = req.body;
 
+      // Lấy sản phẩm hiện tại
       const product = await ProductModel.findById(id);
       if (!product) return res.status(404).json({ message: "Không tìm thấy sản phẩm." });
+
+      // Lấy dữ liệu text từ form-data
+      const { ten_san_pham, mo_ta, loai_id, gia_co_ban } = req.body;
+
+      let imageUrl = product.hinh_anh; // giữ ảnh cũ nếu không upload ảnh mới
+
+      // Nếu có file ảnh mới, upload lên ImgBB
+      if (req.file) {
+        const formData = new FormData();
+        formData.append("image", req.file.buffer.toString("base64"));
+
+        const response = await axios.post(
+          `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+          formData,
+          { headers: formData.getHeaders() }
+        );
+
+        imageUrl = response.data.data.url;
+      }
 
       const affected = await ProductModel.update(id, {
         ten_san_pham,
         mo_ta,
         loai_id,
-        hinh_anh,
+        hinh_anh: imageUrl,
         gia_co_ban,
       });
 
       if (affected > 0)
-        res.json({ message: "Cập nhật sản phẩm thành công!" });
+        res.json({ message: "Cập nhật sản phẩm thành công!", imageUrl });
       else res.status(400).json({ message: "Không có thay đổi nào được áp dụng." });
     } catch (error) {
+      console.error("Lỗi upload ảnh:", error.message);
       next(error);
     }
   },
