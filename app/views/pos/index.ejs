@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" href="/assets/coffee.png" type="image/png">
-
   <title>Brother's Hai Coffee</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -20,10 +19,10 @@
           <option value="<%= l %>"><%= l %></option>
         <% }) %>
       </select>
-          <div class="flex items-center gap-2 bg-white text-gray-800 px-3 py-1 rounded-full shadow-md">
-      <p id="tenNhanVien" class="font-semibold text-sm"></p>
-      <button id="logoutBtn" class="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm">Đăng xuất</button>
-    </div>
+      <div class="flex items-center gap-2 bg-white text-gray-800 px-3 py-1 rounded-full shadow-md">
+        <p id="tenNhanVien" class="font-semibold text-sm"></p>
+        <button id="logoutBtn" class="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm">Đăng xuất</button>
+      </div>
     </div>
   </header>
 
@@ -48,171 +47,134 @@
       <% }) %>
     </main>
 
-    <!-- Hóa đơn -->
+    <!-- Hóa đơn + Nút -->
     <aside class="w-full mt-2 sm:w-96 bg-white shadow-xl border-l rounded-tl-2xl flex flex-col">
-      <div class=" p-4 bg-blue-600 text-white font-semibold text-lg rounded-tl-2xl">
+      <div class="p-4 bg-blue-600 text-white font-semibold text-lg rounded-tl-2xl">
         🧾 Hóa đơn
       </div>
       <div id="bill" class="flex-1 p-4 overflow-y-auto">
         <p id="empty" class="text-gray-400 text-center mt-10">Chưa có sản phẩm nào</p>
       </div>
-
-      <div class="border-t p-4 bg-gray-50">
+      <div class="border-t p-4 bg-gray-50 flex flex-col gap-2">
         <div class="flex justify-between mb-2 text-lg">
           <span>Tổng tiền:</span>
           <span id="total" class="font-bold text-blue-600">0 đ</span>
         </div>
-        <button id="checkoutBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition">
-          ✅ Thanh toán
+        <button id="chooseTableBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold transition">
+          🍽 Chọn bàn
+        </button>
+        <button id="completeBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-semibold transition hidden">
+          ✅ Hoàn tất
+        </button>
+        <button id="viewTablesBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-xl font-semibold transition hidden">
+          📋 Xem danh sách bàn
         </button>
       </div>
+
+      <!-- Danh sách bàn -->
+      <div id="banContainer" class="p-4 grid grid-cols-3 gap-4 hidden"></div>
+
+      <!-- Hóa đơn theo bàn -->
+      <div id="billContainer" class="p-4"></div>
     </aside>
   </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
   const bill = [];
   const billContainer = document.getElementById('bill');
   const totalEl = document.getElementById('total');
   const emptyEl = document.getElementById('empty');
 
-  // ✅ Lấy danh sách kích cỡ
   let kichCoList = [];
-  fetch('/kichco/laytatca')
-    .then(res => res.json())
-    .then(data => (kichCoList = data))
-    .catch(err => console.error('Lỗi tải kích cỡ:', err));
-
-  // ✅ Lấy danh sách topping
+  fetch('/kichco/laytatca').then(r=>r.json()).then(data=>kichCoList=data).catch(err=>console.error(err));
   let toppingList = [];
-  fetch('/topping/laytatca')
-    .then(res => res.json())
-    .then(data => (toppingList = data))
-    .catch(err => console.error('Lỗi tải topping:', err));
+  fetch('/topping/laytatca').then(r=>r.json()).then(data=>toppingList=data).catch(err=>console.error(err));
 
-  // ✅ Khi click sản phẩm → thêm vào hóa đơn
-  document.querySelectorAll('.product').forEach(el => {
-    el.addEventListener('click', () => {
+  document.querySelectorAll('.product').forEach(el=>{
+    el.addEventListener('click', ()=>{
       const sp = {
         san_pham_id: +el.dataset.id,
         ten_san_pham: el.dataset.ten,
         gia_co_ban: +el.dataset.gia,
         ten_loai: el.dataset.loai,
-        kich_co: null,
-        gia_them: 0,
-        toppings: [], // 🧂 danh sách topping đã chọn
-        tong_topping: 0
+        kich_co:null,
+        gia_them:0,
+        toppings:[],
+        tong_topping:0
       };
       addToBill(sp);
     });
   });
 
-  function addToBill(sp) {
-    const existing = bill.find(
-      item => item.san_pham_id === sp.san_pham_id && !item.kich_co
-    );
-    if (existing) {
-      existing.so_luong++;
-    } else {
-      bill.push({ ...sp, so_luong: 1 });
-    }
+  function addToBill(sp){
+    const existing = bill.find(i=>i.san_pham_id===sp.san_pham_id && !i.kich_co);
+    if(existing) existing.so_luong++;
+    else bill.push({...sp,so_luong:1});
     renderBill();
   }
 
-  function renderBill() {
-    billContainer.innerHTML = '';
-    if (bill.length === 0) {
-      emptyEl.style.display = 'block';
-    } else {
-      emptyEl.style.display = 'none';
-      bill.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className =
-          'flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition';
-        div.innerHTML = `
+  function renderBill(){
+    billContainer.innerHTML='';
+    if(bill.length===0) emptyEl.style.display='block';
+    else{
+      emptyEl.style.display='none';
+      bill.forEach((item,i)=>{
+        const div=document.createElement('div');
+        div.className='flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition';
+        div.innerHTML=`
           <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
             <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
             <p class="text-sm text-gray-500">
-              ${item.kich_co ? item.kich_co : '(Chưa chọn size)'} 
-              ${item.toppings.length ? ' + ' + item.toppings.map(t => t.ten_topping).join(', ') : ''}
-              — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
+              ${item.kich_co?item.kich_co:'(Chưa chọn size)'} 
+              ${item.toppings.length? ' + '+item.toppings.map(t=>t.ten_topping).join(', '):''}
+              — ${(Number(item.gia_co_ban)+Number(item.gia_them||0)+Number(item.tong_topping||0)).toLocaleString()} đ
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, -1)">-</button>
+            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
             <span class="w-6 text-center">${item.so_luong}</span>
-            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i}, 1)">+</button>
+            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
             <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
           </div>
         `;
         billContainer.appendChild(div);
       });
     }
-
-    const total = bill.reduce(
-      (sum, item) =>
-        sum +
-        (Number(item.gia_co_ban) +
-          Number(item.gia_them || 0) +
-          Number(item.tong_topping || 0)) *
-          item.so_luong,
-      0
-    );
-    totalEl.textContent = total.toLocaleString() + ' đ';
+    const total=bill.reduce((sum,item)=>sum+(Number(item.gia_co_ban)+Number(item.gia_them||0)+Number(item.tong_topping||0))*item.so_luong,0);
+    totalEl.textContent=total.toLocaleString()+' đ';
   }
 
-  // ✅ Khi click vào món trong hóa đơn → chọn kích cỡ + topping
-  window.chonKichCoVaTopping = index => {
-    if (kichCoList.length === 0) {
-      alert('Không có dữ liệu kích cỡ!');
-      return;
-    }
-    const item = bill[index];
-
-    const modal = document.createElement('div');
-    modal.className =
-      'fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50';
-    modal.innerHTML = `
+  window.chonKichCoVaTopping = index=>{
+    if(kichCoList.length===0){ alert('Không có dữ liệu kích cỡ!'); return;}
+    const item=bill[index];
+    const modal=document.createElement('div');
+    modal.className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50';
+    modal.innerHTML=`
       <div class="bg-white rounded-2xl p-6 w-96 shadow-lg max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-semibold mb-4 text-center text-gray-800">Chọn tùy chọn cho <br><span class="text-blue-600">${item.ten_san_pham}</span></h2>
-        
-        <!-- Kích cỡ -->
         <div class="mb-4">
           <h3 class="font-semibold text-gray-700 mb-2">Kích cỡ:</h3>
           <div class="flex flex-col gap-2">
-            ${kichCoList
-              .map(
-                kc => `
-                <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
-                  <input type="radio" name="kichco" value='${JSON.stringify(
-                    kc
-                  )}' ${item.kich_co === kc.ten_kich_co ? 'checked' : ''}>
-                  <span>${kc.ten_kich_co}</span>
-                  <span class="text-gray-600">+${kc.gia_them.toLocaleString()} đ</span>
-                </label>`
-              )
-              .join('')}
+            ${kichCoList.map(kc=>`
+              <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
+                <input type="radio" name="kichco" value='${JSON.stringify(kc)}' ${item.kich_co===kc.ten_kich_co?'checked':''}>
+                <span>${kc.ten_kich_co}</span>
+                <span class="text-gray-600">+${kc.gia_them.toLocaleString()} đ</span>
+              </label>`).join('')}
           </div>
         </div>
-
-        <!-- Topping -->
         <div class="mb-4">
           <h3 class="font-semibold text-gray-700 mb-2">Topping:</h3>
           <div class="flex flex-col gap-2">
-            ${toppingList
-              .map(
-                t => `
-                <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
-                  <input type="checkbox" value='${JSON.stringify(
-                    t
-                  )}' ${item.toppings.some(tp => tp.topping_id === t.topping_id) ? 'checked' : ''}>
-                  <span>${t.ten_topping}</span>
-                  <span class="text-gray-600">+${t.gia_them.toLocaleString()} đ</span>
-                </label>`
-              )
-              .join('')}
+            ${toppingList.map(t=>`
+              <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
+                <input type="checkbox" value='${JSON.stringify(t)}' ${item.toppings.some(tp=>tp.topping_id===t.topping_id)?'checked':''}>
+                <span>${t.ten_topping}</span>
+                <span class="text-gray-600">+${t.gia_them.toLocaleString()} đ</span>
+              </label>`).join('')}
           </div>
         </div>
-
         <div class="flex gap-2 mt-4">
           <button onclick="luuKichCoVaTopping(${index})" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Lưu</button>
           <button onclick="dongModal()" class="flex-1 bg-gray-200 py-2 rounded-lg hover:bg-gray-300">Hủy</button>
@@ -222,95 +184,169 @@
     document.body.appendChild(modal);
   };
 
-  // ✅ Lưu lựa chọn kích cỡ + topping
-  window.luuKichCoVaTopping = index => {
-    const modal = document.querySelector('.fixed.inset-0');
-    const item = bill[index];
+  window.luuKichCoVaTopping = index=>{
+    const modal=document.querySelector('.fixed.inset-0');
+    const item=bill[index];
+    const kcInput=modal.querySelector('input[name="kichco"]:checked');
+    if(!kcInput) return alert('Vui lòng chọn kích cỡ!');
+    const kc=JSON.parse(kcInput.value);
+    item.kich_co=kc.ten_kich_co;
+    item.gia_them=kc.gia_them;
 
-    // Lấy kích cỡ
-    const kichCoInput = modal.querySelector('input[name="kichco"]:checked');
-    if (!kichCoInput) return alert('Vui lòng chọn kích cỡ!');
-    const kc = JSON.parse(kichCoInput.value);
-    item.kich_co = kc.ten_kich_co;
-    item.gia_them = kc.gia_them;
-
-    // Lấy topping
-    const toppingInputs = modal.querySelectorAll('input[type="checkbox"]:checked');
-    const toppings = Array.from(toppingInputs).map(input => JSON.parse(input.value));
-    item.toppings = toppings;
-    item.tong_topping = toppings.reduce((sum, t) => sum + Number(t.gia_them), 0);
+    const toppingInputs=modal.querySelectorAll('input[type="checkbox"]:checked');
+    const toppings=Array.from(toppingInputs).map(i=>JSON.parse(i.value));
+    item.toppings=toppings;
+    item.tong_topping=toppings.reduce((sum,t)=>sum+Number(t.gia_them),0);
 
     dongModal();
     renderBill();
   };
 
-  // ✅ Đóng modal
-  window.dongModal = () => {
-    document.querySelectorAll('.fixed.inset-0').forEach(m => m.remove());
-  };
+  window.dongModal=()=>{document.querySelectorAll('.fixed.inset-0').forEach(m=>m.remove());};
+  window.changeQty=(i,d)=>{bill[i].so_luong+=d;if(bill[i].so_luong<=0) bill.splice(i,1);renderBill();}
+  window.removeItem=i=>{bill.splice(i,1);renderBill();}
 
-  // ✅ Tăng / giảm số lượng
-  function changeQty(index, delta) {
-    bill[index].so_luong += delta;
-    if (bill[index].so_luong <= 0) bill.splice(index, 1);
-    renderBill();
-  }
-
-  // ✅ Xóa sản phẩm
-  function removeItem(index) {
-    bill.splice(index, 1);
-    renderBill();
-  }
-
-  // ✅ Tìm kiếm + Lọc
-  const searchInput = document.getElementById('search');
-  const filterSelect = document.getElementById('filter');
-  searchInput.addEventListener('input', filterProducts);
-  filterSelect.addEventListener('change', filterProducts);
-
-  function filterProducts() {
-    const keyword = searchInput.value.toLowerCase();
-    const type = filterSelect.value;
-    document.querySelectorAll('.product').forEach(div => {
-      const name = div.dataset.ten.toLowerCase();
-      const category = div.dataset.loai;
-      const match =
-        (!keyword || name.includes(keyword)) && (!type || category === type);
-      div.style.display = match ? '' : 'none';
+  const searchInput=document.getElementById('search');
+  const filterSelect=document.getElementById('filter');
+  searchInput.addEventListener('input',()=>{filterProducts()});
+  filterSelect.addEventListener('change',()=>{filterProducts()});
+  function filterProducts(){
+    const keyword=searchInput.value.toLowerCase();
+    const type=filterSelect.value;
+    document.querySelectorAll('.product').forEach(div=>{
+      const name=div.dataset.ten.toLowerCase();
+      const category=div.dataset.loai;
+      div.style.display=((!keyword||name.includes(keyword))&&(!type||category===type))?'':'none';
     });
   }
 
-  // ✅ Thanh toán
-  document.getElementById('checkoutBtn').addEventListener('click', () => {
-    if (bill.length === 0) return alert('Chưa có sản phẩm nào!');
-    const chuaChonSize = bill.some(i => !i.kich_co);
-    if (chuaChonSize)
-      return alert('Vui lòng chọn kích cỡ cho tất cả sản phẩm trước khi thanh toán!');
-    alert('Thanh toán thành công!');
-    bill.length = 0;
-    renderBill();
+  const user=JSON.parse(localStorage.getItem('user'));
+  if(!user) window.location.href='/taikhoan/dangnhap';
+  else document.getElementById('tenNhanVien').textContent=`👋 Xin chào, ${user.ho_ten||user.ten_dang_nhap||'Nhân viên'}`;
+
+  document.getElementById('logoutBtn').addEventListener('click',()=>{
+    localStorage.removeItem('user');
+    window.location.href='/taikhoan/dangnhap';
   });
 
-    const user = JSON.parse(localStorage.getItem('user'));
+  const chooseTableBtn=document.getElementById('chooseTableBtn');
+  const completeBtn=document.getElementById('completeBtn');
+  const viewTablesBtn=document.getElementById('viewTablesBtn');
+  const banContainerEl=document.getElementById('banContainer');
 
-  if (!user) {
-    // ❌ Nếu chưa đăng nhập thì chuyển về trang đăng nhập
-    window.location.href = '/taikhoan/dangnhap';
+  let banList=[];
+  let hoaDonTheoBan={};
+  let currentBan=null;
+  let selectedBill=[...bill];
+  let selectedBanId=null;
+
+  fetch('http://localhost:3000/ban/laytatca')
+    .then(res=>res.json())
+    .then(data=>{banList=data; renderBan();});
+
+  chooseTableBtn.addEventListener('click',()=>{
+  banContainerEl.classList.toggle('hidden');
+  completeBtn.classList.remove('hidden');  // hiển thị nút Hoàn tất
+  chooseTableBtn.classList.add('hidden'); // ẩn nút Chọn bàn
+});
+
+  viewTablesBtn.addEventListener('click',()=>{banContainerEl.classList.toggle('hidden');});
+
+  function selectBan(ban_id){
+  selectedBanId = ban_id;
+  banContainerEl.classList.add('hidden');
+  alert(`Bạn đã chọn ${banList.find(b=>b.ban_id===ban_id).ten_ban}, nhấn Hoàn tất để lưu sản phẩm`);
+}
+
+
+  completeBtn.addEventListener('click',()=>{
+    if(!selectedBanId) return alert('Vui lòng chọn bàn!');
+    if(!hoaDonTheoBan[selectedBanId]) hoaDonTheoBan[selectedBanId]=[];
+    hoaDonTheoBan[selectedBanId].push(...selectedBill);
+    selectedBill=[]; bill.length=0; renderBill();
+    completeBtn.classList.add('hidden');
+    chooseTableBtn.classList.remove('hidden');
+    viewTablesBtn.classList.remove('hidden');
+    renderBan();
+    alert(`Đã lưu sản phẩm vào bàn ${banList.find(b=>b.ban_id===selectedBanId).ten_ban}`);
+  });
+
+  function renderBan(){
+    banContainerEl.innerHTML='';
+    banList.forEach(ban=>{
+      const div=document.createElement('div');
+      div.className=`p-4 rounded-lg text-center font-semibold cursor-pointer transition
+        ${ban.trang_thai==='Trống'?'bg-green-200 hover:bg-green-300':''}
+        ${ban.trang_thai==='Đang sử dụng'?'bg-yellow-200 hover:bg-yellow-300':''}
+        ${ban.trang_thai==='Đã thanh toán'?'bg-gray-300 cursor-not-allowed':''}`;
+      div.textContent=`${ban.ten_ban} — ${ban.trang_thai}`;
+      div.onclick = () => {
+  if(completeBtn.classList.contains('hidden')) {
+    // Nếu đang xem hóa đơn
+    renderHoaDon(ban.ban_id);
   } else {
-    // ✅ Nếu có thông tin thì hiển thị tên nhân viên
-    console.log("Thông tin nhân viên:", user);
-
-    const nameEl = document.querySelector('header p');
-    if (nameEl) {
-      nameEl.textContent = `👋 Xin chào, ${user.ho_ten || user.ten_dang_nhap || 'Nhân viên'}`;
-    }
+    // Nếu đang chọn bàn để lưu món
+    selectBan(ban.ban_id);
   }
-  const logoutBtn = document.getElementById('logoutBtn');
-  logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('user'); // xóa dữ liệu user
-    window.location.href = '/taikhoan/dangnhap'; // chuyển về trang đăng nhập
-  });
-</script>
+};
+      banContainerEl.appendChild(div);
+    });
+  }
 
+function renderHoaDon(ban_id){
+  const container = document.getElementById('billContainer');
+  const bill = hoaDonTheoBan[ban_id] || [];
+  container.innerHTML = `<h3 class="font-bold mb-2 text-lg">Hóa đơn ${banList.find(b=>b.ban_id===ban_id).ten_ban}</h3>`;
+
+  if(bill.length === 0) {
+    container.innerHTML += `<p>Chưa có sản phẩm nào</p>`;
+    return;
+  }
+
+  let total = 0;
+  bill.forEach(sp => {
+    const itemTotal = (Number(sp.gia_co_ban) + Number(sp.gia_them || 0) + Number(sp.tong_topping || 0)) * sp.so_luong;
+    total += itemTotal;
+
+    container.innerHTML += `
+      <div class="flex justify-between border-b py-1">
+        <div>
+          <p class="font-semibold">${sp.ten_san_pham}</p>
+          <p class="text-sm text-gray-500">
+            ${sp.kich_co ? sp.kich_co : '(Chưa chọn size)'} 
+            ${sp.toppings.length ? ' + ' + sp.toppings.map(t => t.ten_topping).join(', ') : ''}
+          </p>
+        </div>
+        <div class="font-semibold text-blue-600">${itemTotal.toLocaleString()} đ</div>
+      </div>
+    `;
+  });
+
+  container.innerHTML += `
+    <div class="mt-2 text-right font-bold text-lg">
+      Tổng: ${total.toLocaleString()} đ
+    </div>
+  `;
+
+  const btn = document.createElement('button');
+  btn.textContent = '✅ Thanh toán bàn';
+  btn.className = 'mt-2 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded';
+  btn.onclick = () => thanhToanBan(ban_id);
+  container.appendChild(btn);
+}
+
+
+  function thanhToanBan(ban_id){
+    alert(`Thanh toán thành công bàn ${banList.find(b=>b.ban_id===ban_id).ten_ban}`);
+    hoaDonTheoBan[ban_id]=[];
+    const ban=banList.find(b=>b.ban_id===ban_id);
+    ban.trang_thai='Trống';
+    currentBan=null;
+    renderBan();
+    document.getElementById('billContainer').innerHTML='';
+  }
+});
+
+</script>
 </body>
 </html>

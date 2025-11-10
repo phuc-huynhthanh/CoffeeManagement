@@ -29,6 +29,7 @@
         <ul class="space-y-2 px-4">
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500  tab-link active" data-tab="tai-khoan" >Quản lý tài khoản nhân viên</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="san-pham">Quản lý sản phẩm</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="ban">Quản lý bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý đơn hàng</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lịch làm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý bàn</a></li>
@@ -93,6 +94,28 @@
       </table>
     </div>
   </div>
+
+<!-- Tab Bàn -->
+<div id="tab-ban" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-700">Quản lý bàn</h2>
+    <button id="btnAddTable" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm bàn</button>
+  </div>
+  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+    <table class="min-w-full text-left border border-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 border-b">STT</th>
+          <th class="px-4 py-3 border-b">Tên bàn</th>
+          <th class="px-4 py-3 border-b">Trạng thái</th>
+          <th class="px-4 py-3 border-b text-center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="tableTable" class="divide-y"></tbody>
+    </table>
+  </div>
+</div>
+
 </main>
 
 
@@ -211,6 +234,33 @@
                 class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
         <button type="submit" 
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Thêm bàn -->
+<div id="tableModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white rounded-lg shadow-lg w-80 p-6">
+    <h3 id="tableModalTitle" class="text-lg font-semibold mb-4">Thêm bàn</h3>
+    <form id="tableForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tên bàn</label>
+        <input type="text" id="tableName" name="ten_ban"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-yellow-500 focus:border-yellow-500"
+               placeholder="VD: Bàn 1" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Trạng thái</label>
+        <select id="tableStatus" name="trang_thai"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-yellow-500 focus:border-yellow-500">
+          <option value="Trống">Trống</option>
+          <option value="Đang phục vụ">Đang phục vụ</option>
+        </select>
+      </div>
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancelTable" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">Lưu</button>
       </div>
     </form>
   </div>
@@ -623,6 +673,103 @@ async function editProductFromRow(button, productId) {
   document.getElementById("productDesc").value = ""; // Nếu muốn, có thể thêm cột mô tả vào bảng
   document.getElementById("productModal").classList.remove("hidden");
 }
+
+// Hiển thị modal thêm bàn
+document.getElementById("btnAddTable").addEventListener("click", () => {
+  document.getElementById("tableModalTitle").textContent = "Thêm bàn";
+  document.getElementById("tableForm").reset();
+  document.getElementById("tableModal").classList.remove("hidden");
+});
+
+// Hủy form
+document.getElementById("btnCancelTable").addEventListener("click", () => {
+  document.getElementById("tableModal").classList.add("hidden");
+  document.getElementById("tableForm").reset();
+});
+
+// Load danh sách bàn
+async function loadTables() {
+  try {
+    const res = await fetch("http://localhost:3000/ban/laytatca");
+    const data = await res.json();
+    const tbody = document.getElementById("tableTable");
+    tbody.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Chưa có bàn nào.</td></tr>`;
+      return;
+    }
+
+    data.forEach((item, index) => {
+      const row = document.createElement("tr");
+      row.classList.add("hover:bg-gray-50");
+      row.innerHTML = `
+        <td class="px-4 py-3">${index + 1}</td>
+        <td class="px-4 py-3">${item.ten_ban}</td>
+        <td class="px-4 py-3">${item.trang_thai}</td>
+        <td class="px-4 py-3 text-center">
+          <button onclick="deleteTable(${item.ban_id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+            Xóa
+          </button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi tải danh sách bàn:", err);
+  }
+}
+
+// Thêm bàn
+document.getElementById("tableForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const ten_ban = document.getElementById("tableName").value.trim();
+  const trang_thai = document.getElementById("tableStatus").value;
+
+  if (!ten_ban) {
+    alert("Tên bàn không được để trống!");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:3000/ban/them", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ten_ban, trang_thai })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Không thể thêm bàn");
+
+    document.getElementById("tableModal").classList.add("hidden");
+    document.getElementById("tableForm").reset();
+    loadTables();
+  } catch (err) {
+    console.error("❌ Lỗi khi thêm bàn:", err);
+    alert("Lỗi: " + err.message);
+  }
+});
+
+// Xóa bàn
+async function deleteTable(id) {
+  if (!confirm("Bạn có chắc chắn muốn xóa bàn này không?")) return;
+  try {
+    const res = await fetch(`http://localhost:3000/ban/xoa/${id}`, { method: "DELETE" });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Không thể xóa bàn");
+
+    loadTables();
+  } catch (err) {
+    console.error("❌ Lỗi khi xóa bàn:", err);
+    alert("Lỗi: " + err.message);
+  }
+}
+
+// Gọi khi load trang
+window.addEventListener("DOMContentLoaded", () => {
+  loadTables();
+});
+
 
 </script>
 
