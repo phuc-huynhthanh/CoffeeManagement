@@ -78,37 +78,62 @@
 
   <!-- Modal danh sách bàn -->
   <div id="banContainer" class="hidden fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-    <div class="bg-white rounded-2xl shadow-xl p-6 w-96 max-h-[80vh] overflow-y-auto">
-      <h2 class="text-lg font-semibold mb-4 text-center">Chọn bàn</h2>
-      <div id="banList" class="grid grid-cols-3 gap-4"></div>
-      <button onclick="closeBanModal()" class="mt-4 w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300">Đóng</button>
-    </div>
+<div class="bg-white rounded-2xl shadow-xl p-6 w-11/12 max-w-5xl max-h-[80vh] overflow-y-auto">
+  <h2 class="text-lg font-semibold mb-4 text-center">Chọn bàn</h2>
+  <div id="banList" class="grid grid-cols-4 gap-4"></div>
+<button id="closeBanBtn" class="mt-4 w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300">Đóng</button>
+</div>
+
   </div>
 
   <!-- Modal xem danh sách bàn + món -->
+<!-- Modal xem danh sách bàn + món -->
 <div id="viewBanContainer" class="hidden fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-  <div class="bg-white rounded-2xl shadow-xl p-6 w-96 max-h-[80vh] overflow-y-auto">
-    <h2 class="text-lg font-semibold mb-4 text-center">Danh sách bàn</h2>
-    <div id="viewBanList" class="flex flex-col gap-4"></div>
-    <button onclick="closeViewBanModal()" class="mt-4 w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300">Đóng</button>
+  <div class="bg-white rounded-2xl shadow-xl w-11/12 max-w-5xl h-[80vh] flex flex-col">
+    <!-- Header -->
+    <div class="p-6 border-b">
+      <h2 class="text-lg font-semibold text-center">Danh sách bàn</h2>
+    </div>
+
+    <!-- Nội dung bàn scrollable -->
+<!-- Nội dung bàn scrollable -->
+<div id="viewBanList" class="p-6 flex-1 overflow-y-auto">
+  <div id="viewBanGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <!-- Các bàn sẽ được JS render vào đây -->
   </div>
 </div>
 
-  <script>
+
+    <!-- Footer: Nút Đóng cố định -->
+    <div class="p-4 border-t flex-shrink-0">
+      <button onclick="closeViewBanModal()" 
+              class="w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300 font-semibold">
+        Đóng
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<script>
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('closeBanBtn').addEventListener('click', () => {
+    banContainerEl.classList.add('hidden');
+});
+
   const bill = [];
   const billContainer = document.getElementById('bill');
   const totalEl = document.getElementById('total');
   const emptyEl = document.getElementById('empty');
 
   let kichCoList = [];
-  fetch('/kichco/laytatca').then(r=>r.json()).then(data=>kichCoList=data).catch(console.error);
+  fetch('/kichco/laytatca').then(r => r.json()).then(data => kichCoList = data).catch(console.error);
   let toppingList = [];
-  fetch('/topping/laytatca').then(r=>r.json()).then(data=>toppingList=data).catch(console.error);
+  fetch('/topping/laytatca').then(r => r.json()).then(data => toppingList = data).catch(console.error);
 
   // --- Thêm sản phẩm vào bill
-  document.querySelectorAll('.product').forEach(el=>{
-    el.addEventListener('click', ()=>{
+  document.querySelectorAll('.product').forEach(el => {
+    el.addEventListener('click', () => {
       const sp = {
         san_pham_id: +el.dataset.id,
         ten_san_pham: el.dataset.ten,
@@ -124,28 +149,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  function addToBill(sp){
-    const existing = bill.find(i=>i.san_pham_id===sp.san_pham_id && !i.kich_co);
-    if(existing) existing.so_luong++;
-    else bill.push({...sp, so_luong:1});
+  function addToBill(sp) {
+    const existing = bill.find(i => i.san_pham_id === sp.san_pham_id && !i.kich_co);
+    if (existing) existing.so_luong++;
+    else bill.push({ ...sp, so_luong: 1 });
     renderBill();
   }
 
-  function renderBill(){
-    billContainer.innerHTML='';
-    if(!bill.length) emptyEl.style.display='block';
+  function renderBill() {
+    billContainer.innerHTML = '';
+    if (!bill.length) emptyEl.style.display = 'block';
     else {
-      emptyEl.style.display='none';
-      bill.forEach((item,i)=>{
+      emptyEl.style.display = 'none';
+      bill.forEach((item, i) => {
         const div = document.createElement('div');
-        div.className='flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition';
-        div.innerHTML=`
+        div.className = 'flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition';
+        div.innerHTML = `
           <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
             <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
             <p class="text-sm text-gray-500">
               ${item.kich_co || '(Chưa chọn size)'} 
-              ${item.toppings.length ? ' + ' + item.toppings.map(t=>t.ten_topping).join(', ') : ''}
-              — ${(Number(item.gia_co_ban)+Number(item.gia_them||0)+Number(item.tong_topping||0)).toLocaleString()} đ
+              ${item.toppings.length ? ' + ' + item.toppings.map(t => t.ten_topping).join(', ') : ''}
+              — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -158,26 +183,25 @@ document.addEventListener('DOMContentLoaded', () => {
         billContainer.appendChild(div);
       });
     }
-    const total = bill.reduce((sum,item)=>sum+(Number(item.gia_co_ban)+Number(item.gia_them||0)+Number(item.tong_topping||0))*item.so_luong,0);
-    totalEl.textContent=total.toLocaleString()+' đ';
+
+    const total = bill.reduce((sum, item) => sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong, 0);
+    totalEl.textContent = total.toLocaleString() + ' đ';
   }
 
-  // --- Modal size/topping
-  window.chonKichCoVaTopping = index=>{
-    if(!kichCoList.length) return alert('Không có dữ liệu kích cỡ!');
+  window.chonKichCoVaTopping = index => {
+    if (!kichCoList.length) return alert('Không có dữ liệu kích cỡ!');
     const item = bill[index];
-
     const modal = document.createElement('div');
-    modal.className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 size-modal';
-    modal.innerHTML=`
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 size-modal';
+    modal.innerHTML = `
       <div class="bg-white rounded-2xl p-6 w-96 shadow-lg max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-semibold mb-4 text-center text-gray-800">Chọn tùy chọn cho <br><span class="text-blue-600">${item.ten_san_pham}</span></h2>
         <div class="mb-4">
           <h3 class="font-semibold text-gray-700 mb-2">Kích cỡ:</h3>
           <div class="flex flex-col gap-2">
-            ${kichCoList.map(kc=>`
+            ${kichCoList.map(kc => `
               <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
-                <input type="radio" name="kichco" value='${JSON.stringify(kc)}' ${item.kich_co===kc.ten_kich_co?'checked':''}>
+                <input type="radio" name="kichco" value='${JSON.stringify(kc)}' ${item.kich_co === kc.ten_kich_co ? 'checked' : ''}>
                 <span>${kc.ten_kich_co}</span>
                 <span class="text-gray-600">+${kc.gia_them.toLocaleString()} đ</span>
               </label>`).join('')}
@@ -186,9 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="mb-4">
           <h3 class="font-semibold text-gray-700 mb-2">Topping:</h3>
           <div class="flex flex-col gap-2">
-            ${toppingList.map(t=>`
+            ${toppingList.map(t => `
               <label class="border rounded-lg py-2 px-3 flex justify-between items-center hover:bg-blue-50">
-                <input type="checkbox" value='${JSON.stringify(t)}' ${item.toppings.some(tp=>tp.topping_id===t.topping_id)?'checked':''}>
+                <input type="checkbox" value='${JSON.stringify(t)}' ${item.toppings.some(tp => tp.topping_id === t.topping_id) ? 'checked' : ''}>
                 <span>${t.ten_topping}</span>
                 <span class="text-gray-600">+${t.gia_them.toLocaleString()} đ</span>
               </label>`).join('')}
@@ -203,93 +227,111 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(modal);
   };
 
-  window.luuKichCoVaTopping=index=>{
-    const modal=document.querySelector('.size-modal');
-    const item=bill[index];
-    const kcInput=modal.querySelector('input[name="kichco"]:checked');
-    if(!kcInput) return alert('Vui lòng chọn kích cỡ!');
-    const kc=JSON.parse(kcInput.value);
-    item.kich_co=kc.ten_kich_co;
-    item.kich_co_id=kc.kich_co_id;
-    item.gia_them=kc.gia_them;
+  window.luuKichCoVaTopping = index => {
+    const modal = document.querySelector('.size-modal');
+    const item = bill[index];
+    const kcInput = modal.querySelector('input[name="kichco"]:checked');
+    if (!kcInput) return alert('Vui lòng chọn kích cỡ!');
+    const kc = JSON.parse(kcInput.value);
+    item.kich_co = kc.ten_kich_co;
+    item.kich_co_id = kc.kich_co_id;
+    item.gia_them = kc.gia_them;
 
-    const toppingInputs=modal.querySelectorAll('input[type="checkbox"]:checked');
-    const toppings=Array.from(toppingInputs).map(i=>JSON.parse(i.value));
-    item.toppings=toppings;
-    item.tong_topping=toppings.reduce((sum,t)=>sum+Number(t.gia_them),0);
+    const toppingInputs = modal.querySelectorAll('input[type="checkbox"]:checked');
+    const toppings = Array.from(toppingInputs).map(i => JSON.parse(i.value));
+    item.toppings = toppings;
+    item.tong_topping = toppings.reduce((sum, t) => sum + Number(t.gia_them), 0);
 
     dongSizeModal();
     renderBill();
   };
 
-  window.dongSizeModal=()=>document.querySelectorAll('.size-modal').forEach(m=>m.remove());
-  window.changeQty=(i,d)=>{bill[i].so_luong+=d;if(bill[i].so_luong<=0) bill.splice(i,1); renderBill();};
-  window.removeItem=i=>{bill.splice(i,1); renderBill();};
+  window.dongSizeModal = () => document.querySelectorAll('.size-modal').forEach(m => m.remove());
+  window.changeQty = (i, d) => { bill[i].so_luong += d; if (bill[i].so_luong <= 0) bill.splice(i, 1); renderBill(); };
+  window.removeItem = i => { bill.splice(i, 1); renderBill(); };
 
   // --- User
-  const user=JSON.parse(localStorage.getItem('user'));
-  if(!user) window.location.href='/taikhoan/dangnhap';
-  else document.getElementById('tenNhanVien').textContent=`👋 Xin chào, ${user.ho_ten||user.ten_dang_nhap||'Nhân viên'}`;
-  document.getElementById('logoutBtn').addEventListener('click',()=>{localStorage.removeItem('user');window.location.href='/taikhoan/dangnhap';});
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) window.location.href = '/taikhoan/dangnhap';
+  else document.getElementById('tenNhanVien').textContent = `👋 Xin chào, ${user.ho_ten || user.ten_dang_nhap || 'Nhân viên'}`;
+  document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem('user'); window.location.href = '/taikhoan/dangnhap'; });
 
   // --- Bàn
-  const chooseTableBtn=document.getElementById('chooseTableBtn');
-  const completeBtn=document.getElementById('completeBtn');
-  const banContainerEl=document.getElementById('banContainer');
-  let banList=[], hoaDonTheoBan={}, selectedBanId=null;
+  const chooseTableBtn = document.getElementById('chooseTableBtn');
+  const completeBtn = document.getElementById('completeBtn');
+  const banContainerEl = document.getElementById('banContainer');
+  let banList = [], hoaDonTheoBan = {}, selectedBanId = null;
 
   fetch('http://localhost:3000/ban/laytatca')
-    .then(res=>res.json())
-    .then(data=>{banList=data; renderBan();});
+    .then(res => res.json())
+    .then(data => { banList = data; renderBan(); });
 
-  const storedHoaDon=localStorage.getItem('hoaDonTheoBan');
-  if(storedHoaDon) hoaDonTheoBan=JSON.parse(storedHoaDon);
+  const storedHoaDon = localStorage.getItem('hoaDonTheoBan');
+  if (storedHoaDon) hoaDonTheoBan = JSON.parse(storedHoaDon);
 
-  chooseTableBtn.addEventListener('click',()=>{
-    banContainerEl.classList.remove('hidden');
-    renderBan();
-  });
+  chooseTableBtn.addEventListener('click', () => {
+  if (bill.length === 0) {
+    return alert('Vui lòng chọn món trước khi chọn bàn!');
+  }
 
-  function renderBan(){
-    const banListEl=document.getElementById('banList');
-    banListEl.innerHTML='';
-    banList.forEach(ban=>{
-      const div=document.createElement('div');
-      div.className=`p-4 rounded-lg text-center font-semibold cursor-pointer transition
-        ${ban.trang_thai==='Trống'?'bg-green-200 hover:bg-green-300':''}
-        ${ban.trang_thai==='Đang sử dụng'?'bg-yellow-200 hover:bg-yellow-300':''}
-        ${ban.trang_thai==='Đã thanh toán'?'bg-gray-300 cursor-not-allowed':''}`;
-      div.textContent=`${ban.ten_ban} — ${ban.trang_thai}`;
-      if(ban.trang_thai!=='Đã thanh toán') div.addEventListener('click',()=>selectBan(ban.ban_id));
+  // Kiểm tra tất cả sản phẩm đã chọn kích cỡ chưa
+  const spChuaChonKichCo = bill.find(item => !item.kich_co);
+  if (spChuaChonKichCo) {
+
+    return     alert('Vui lòng chọn kích cỡ cho tất cả sản phẩm!'); // không cho chọn bàn
+  }
+
+  banContainerEl.classList.remove('hidden');
+  renderBan();
+});
+
+  function renderBan() {
+    const banListEl = document.getElementById('banList');
+    banListEl.innerHTML = '';
+    hoaDonTheoBan = JSON.parse(localStorage.getItem('hoaDonTheoBan')) || {};
+
+    banList.forEach(ban => {
+      let trangThai = ban.trang_thai;
+      if (hoaDonTheoBan[ban.ban_id] && hoaDonTheoBan[ban.ban_id].length > 0 && ban.trang_thai !== 'Đã thanh toán') {
+        trangThai = 'Đang sử dụng';
+      }
+
+      const div = document.createElement('div');
+      div.className = `p-3 rounded-lg text-center font-semibold cursor-pointer transition
+        ${trangThai === 'Trống' ? 'bg-green-200 hover:bg-green-300' : ''}
+        ${trangThai === 'Đang sử dụng' ? 'bg-yellow-200 hover:bg-yellow-300' : ''}
+        ${trangThai === 'Đã thanh toán' ? 'bg-gray-300 cursor-not-allowed' : ''}`;
+      div.textContent = `${ban.ten_ban} — ${trangThai}`;
+
+      if (trangThai !== 'Đã thanh toán') div.addEventListener('click', () => selectBan(ban.ban_id));
       banListEl.appendChild(div);
     });
   }
 
-  function closeBanModal(){ banContainerEl.classList.add('hidden'); }
+  function closeBanModal() { banContainerEl.classList.add('hidden'); }
 
-  function selectBan(ban_id){
-    selectedBanId=ban_id;
+  function selectBan(ban_id) {
+    selectedBanId = ban_id;
     banContainerEl.classList.add('hidden');
-    alert(`Bạn đã chọn ${banList.find(b=>b.ban_id===ban_id).ten_ban}, nhấn Hoàn tất để lưu sản phẩm`);
+    alert(`Bạn đã chọn ${banList.find(b => b.ban_id === ban_id).ten_ban}, nhấn Hoàn tất để lưu sản phẩm`);
     completeBtn.classList.remove('hidden');
     chooseTableBtn.classList.add('hidden');
   }
 
-  completeBtn.addEventListener('click',()=>{
-    if(!selectedBanId) return alert('Vui lòng chọn bàn!');
-    if(!hoaDonTheoBan[selectedBanId]) hoaDonTheoBan[selectedBanId]=[];
-    hoaDonTheoBan[selectedBanId].push(...bill.map(item=>({...item})));
+  completeBtn.addEventListener('click', () => {
+    if (!selectedBanId) return alert('Vui lòng chọn bàn!');
+    if (!hoaDonTheoBan[selectedBanId]) hoaDonTheoBan[selectedBanId] = [];
+    hoaDonTheoBan[selectedBanId].push(...bill.map(item => ({ ...item })));
     localStorage.setItem('hoaDonTheoBan', JSON.stringify(hoaDonTheoBan));
-    bill.length=0; renderBill();
+    bill.length = 0; renderBill();
     completeBtn.classList.add('hidden');
     chooseTableBtn.classList.remove('hidden');
-    selectedBanId=null;
+    selectedBanId = null;
     renderBan();
     alert('Đã lưu sản phẩm vào bàn');
   });
-});
-document.addEventListener('DOMContentLoaded', () => {
-  const hoaDonTheoBan = JSON.parse(localStorage.getItem('hoaDonTheoBan')) || {};
+
+  // --- Xem danh sách bàn + món + Thanh toán
   const viewBanContainerEl = document.getElementById('viewBanContainer');
   const viewBanListEl = document.getElementById('viewBanList');
   const viewTablesBtn = document.getElementById('viewTablesBtn');
@@ -299,38 +341,113 @@ document.addEventListener('DOMContentLoaded', () => {
     viewBanContainerEl.classList.remove('hidden');
   });
 
-  function renderViewBan() {
-    viewBanListEl.innerHTML = '';
-    const banIds = Object.keys(hoaDonTheoBan);
-    if (!banIds.length) {
-      viewBanListEl.innerHTML = '<p class="text-center text-gray-500">Chưa có bàn nào được chọn món</p>';
-      return;
-    }
-    banIds.forEach(banId => {
-      const banData = hoaDonTheoBan[banId];
-      const div = document.createElement('div');
-      div.className = 'border p-3 rounded-lg shadow-sm bg-gray-50';
-      div.innerHTML = `<p class="font-semibold mb-2">Bàn ${banId}</p>`;
-      if (!banData.length) {
-        div.innerHTML += '<p class="text-gray-500">Chưa có sản phẩm</p>';
-      } else {
-        const ul = document.createElement('ul');
-        banData.forEach(item => {
-          const li = document.createElement('li');
-          li.textContent = `${item.ten_san_pham} ${item.kich_co ? '('+item.kich_co+')' : ''} ${item.toppings.length ? '+ '+item.toppings.map(t=>t.ten_topping).join(', ') : ''} x${item.so_luong}`;
-          ul.appendChild(li);
-        });
-        div.appendChild(ul);
-      }
-      viewBanListEl.appendChild(div);
-    });
+function renderViewBan() {
+  const viewBanGrid = document.getElementById('viewBanGrid');
+  viewBanGrid.innerHTML = ''; // xóa hết
+  hoaDonTheoBan = JSON.parse(localStorage.getItem('hoaDonTheoBan')) || {};
+
+  if (!banList.length) {
+    viewBanGrid.innerHTML = '<p class="text-center text-gray-500 col-span-4">Chưa có bàn nào</p>';
+    return;
   }
 
-  window.closeViewBanModal = () => {
-    viewBanContainerEl.classList.add('hidden');
-  };
+  banList.forEach(ban => {
+    const banData = hoaDonTheoBan[ban.ban_id] || [];
+    const div = document.createElement('div');
+    div.className = 'relative border p-3 rounded-lg shadow-sm bg-gray-50';
+    div.innerHTML = `<p class="font-semibold mb-2">${ban.ten_ban}</p>`;
+
+    if (!banData.length) div.innerHTML += '<p class="text-gray-500">Chưa có sản phẩm</p>';
+    else {
+      const ul = document.createElement('ul');
+      banData.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.ten_san_pham} ${item.kich_co ? '(' + item.kich_co + ')' : ''} ${item.toppings.length ? '+ ' + item.toppings.map(t => t.ten_topping).join(', ') : ''} x${item.so_luong}`;
+        ul.appendChild(li);
+      });
+      div.appendChild(ul);
+
+      const payBtn = document.createElement('button');
+      payBtn.className = 'absolute top-2 right-2  w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center font-semibold';      
+      payBtn.textContent = '💰';
+payBtn.addEventListener('click', () => {
+  // Tạo modal chọn phương thức thanh toán
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl p-6 w-80 shadow-lg text-center">
+      <h2 class="text-lg font-semibold mb-4">Chọn phương thức thanh toán</h2>
+      <div class="flex flex-col gap-4">
+        <button id="cashBtn" class="bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold">💵 Tiền mặt</button>
+        <button id="bankingBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-semibold">🏦 Banking</button>
+        <button id="cancelBtn" class="bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-semibold">Hủy</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Xử lý chọn Tiền mặt
+modal.querySelector('#cashBtn').addEventListener('click', () => {
+  const monAn = hoaDonTheoBan[ban.ban_id] || [];
+
+  // Ngày giờ hiện tại
+  const now = new Date();
+  console.log('--- Thanh toán bàn ---');
+  console.log('Bàn:', ban.ten_ban, 'ID:', ban.ban_id);
+  console.log('Ngày giờ:', now.toLocaleString());
+
+  let tongTienBan = 0;
+  monAn.forEach(item => {
+    const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+    const thanhTien = donGia * item.so_luong;
+    tongTienBan += thanhTien;
+
+    console.log('Món:');
+    console.log('  Tên:', item.ten_san_pham);
+    console.log('  ID:', item.san_pham_id);
+    console.log('  Đơn giá:', donGia.toLocaleString() + ' đ');
+    console.log('  Số lượng:', item.so_luong);
+    console.log('  Kích cỡ:', item.kich_co || 'Chưa chọn');
+    console.log('  Toppings:', item.toppings.length ? item.toppings.map(t => t.ten_topping).join(', ') : 'Không có');
+    console.log('  Thành tiền:', thanhTien.toLocaleString() + ' đ');
+  });
+
+  console.log('Tổng tiền bàn:', tongTienBan.toLocaleString() + ' đ');
+  console.log('---------------------');
+
+  if (confirm(`Bạn có chắc chắn muốn thanh toán ${ban.ten_ban} bằng Tiền mặt?`)) {
+    delete hoaDonTheoBan[ban.ban_id];
+    localStorage.setItem('hoaDonTheoBan', JSON.stringify(hoaDonTheoBan));
+    renderViewBan();
+    renderBan();
+    alert(`${ban.ten_ban} đã thanh toán thành công!`);
+  }
+  modal.remove();
 });
-  </script>
+
+  // Xử lý Banking (chỉ đóng modal tạm thời)
+  modal.querySelector('#bankingBtn').addEventListener('click', () => {
+    alert('Chức năng Banking sẽ được phát triển sau.');
+    modal.remove();
+  });
+
+  // Hủy modal
+  modal.querySelector('#cancelBtn').addEventListener('click', () => modal.remove());
+});
+      div.appendChild(payBtn);
+    }
+
+    viewBanGrid.appendChild(div);
+  });
+}
+
+
+  window.closeViewBanModal = () => { viewBanContainerEl.classList.add('hidden'); };
+});
+</script>
+
+
+
 
 </body>
 </html>
