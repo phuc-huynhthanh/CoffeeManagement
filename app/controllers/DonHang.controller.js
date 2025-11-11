@@ -22,13 +22,13 @@ export const DonHangController = {
   },
 
   async them(req, res) {
-    try {
-      const id = await DonHangModel.them(req.body);
-      res.status(201).json({ message: "Thêm đơn hàng thành công", don_hang_id: id });
-    } catch (error) {
-      res.status(500).json({ message: "Lỗi khi thêm đơn hàng", error });
-    }
-  },
+  try {
+    const id = await DonHangModel.them(req.body); // req.body có tai_khoan_id
+    res.status(201).json({ message: "Thêm đơn hàng thành công", don_hang_id: id });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi thêm đơn hàng", error });
+  }
+},
 
   async capNhat(req, res) {
     try {
