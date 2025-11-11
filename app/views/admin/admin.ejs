@@ -30,7 +30,7 @@
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500  tab-link active" data-tab="tai-khoan" >Quản lý tài khoản nhân viên</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="san-pham">Quản lý sản phẩm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="ban">Quản lý bàn</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý đơn hàng</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="don-hang">Quản lý đơn hàng</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lịch làm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lương</a></li>
@@ -116,6 +116,61 @@
   </div>
 </div>
 
+
+<!-- Tab Quản lý đơn hàng -->
+<div id="tab-don-hang" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-700">Quản lý đơn hàng</h2>
+    <!-- Có thể thêm nút thêm đơn hàng nếu muốn -->
+  </div>
+
+  <!-- Form lọc đơn hàng -->
+  <div class="bg-white p-4 rounded-lg shadow-md mb-4 flex flex-wrap gap-4 items-end">
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Ngày từ</label>
+      <input type="date" id="filterStartDate" class="mt-1 p-2 border rounded-lg border-gray-300">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Ngày đến</label>
+      <input type="date" id="filterEndDate" class="mt-1 p-2 border rounded-lg border-gray-300">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Nhân viên tạo đơn</label>
+      <input type="text" id="filterStaff" placeholder="Tên nhân viên" class="mt-1 p-2 border rounded-lg border-gray-300">
+    </div>
+    <div>
+  <label class="block text-sm font-medium text-gray-700">Khách hàng</label>
+  <select id="filterCustomer" class="mt-1 p-2 border rounded-lg border-gray-300">
+    <option value="">-- Tất cả --</option>
+    <option value="khach_vang_lai">Khách vãng lai</option>
+    <option value="thanh_vien">Thành viên</option>
+  </select>
+</div>
+    <div>
+      <button id="btnFilterOrders" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Lọc</button>
+      <button id="btnResetFilter" class="bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400">Reset</button>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+    <table class="min-w-full text-left border border-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 border-b">STT</th>
+          <th class="px-4 py-3 border-b">Ngày đặt</th>
+          <th class="px-4 py-3 border-b">Tổng tiền</th>
+          <th class="px-4 py-3 border-b">Tiền sau giảm</th>
+          <th class="px-4 py-3 border-b">Trạng thái</th>
+          <th class="px-4 py-3 border-b">Tên bàn</th>
+          <th class="px-4 py-3 border-b">Khách hàng</th>
+          <th class="px-4 py-3 border-b">Nhân viên tạo đơn</th>
+          <th class="px-4 py-3 border-b">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="orderTable" class="divide-y"></tbody>
+    </table>
+  </div>
+</div>
 </main>
 
 
@@ -263,6 +318,29 @@
         <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">Lưu</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Thêm modal Chi Tiết đơn hàng ngay trước </body> -->
+<div id="orderDetailModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-2/3 max-h-[80vh] overflow-y-auto p-6">
+    <h3 class="text-lg font-semibold mb-4">Chi Tiết Đơn Hàng</h3>
+    <table class="min-w-full text-left border border-gray-200 mb-4">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 border-b">STT</th>
+          <th class="px-4 py-2 border-b">Sản phẩm</th>
+          <th class="px-4 py-2 border-b">Kích cỡ</th>
+          <th class="px-4 py-2 border-b">Topping</th>
+          <th class="px-4 py-2 border-b">Đơn giá</th>
+          <th class="px-4 py-2 border-b">Số lượng</th>
+        </tr>
+      </thead>
+      <tbody id="orderDetailTable" class="divide-y"></tbody>
+    </table>
+    <div class="flex justify-end">
+      <button onclick="closeOrderDetailModal()" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Đóng</button>
+    </div>
   </div>
 </div>
 
@@ -770,6 +848,159 @@ window.addEventListener("DOMContentLoaded", () => {
   loadTables();
 });
 
+// Load danh sách đơn hàng
+let allOrders = []; // Lưu tất cả đơn hàng để lọc
+
+async function loadOrders() {
+  try {
+    const res = await fetch("http://localhost:3000/donhang/laytatca");
+    const data = await res.json();
+    allOrders = data || []; // lưu toàn bộ dữ liệu
+    renderOrders(allOrders);
+  } catch (err) {
+    console.error("❌ Lỗi khi tải danh sách đơn hàng:", err);
+    document.getElementById("orderTable").innerHTML = `
+      <tr><td colspan="9" class="text-center py-4 text-red-500">Lỗi khi tải dữ liệu</td></tr>
+    `;
+  }
+}
+
+// Hàm render danh sách đơn hàng
+function renderOrders(orders) {
+  const tbody = document.getElementById("orderTable");
+  tbody.innerHTML = "";
+
+  if (!orders || orders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-500">Chưa có đơn hàng nào.</td></tr>`;
+    return;
+  }
+
+  orders.forEach((item, index) => {
+    const ngayDat = new Date(item.ngay_dat).toLocaleString("vi-VN");
+
+    const row = document.createElement("tr");
+    row.classList.add("hover:bg-gray-50");
+    row.innerHTML = `
+      <td class="px-4 py-3">${index + 1}</td>
+      <td class="px-4 py-3">${ngayDat}</td>
+      <td class="px-4 py-3">${item.tong_tien}</td>
+      <td class="px-4 py-3">${item.tien_sau_giam}</td>
+      <td class="px-4 py-3">${item.trang_thai}</td>
+      <td class="px-4 py-3">${item.ban?.ten_ban || "—"}</td>
+      <td class="px-4 py-3">${item.thanh_vien?.ho_ten || "Khách vãng lai"}</td>
+      <td class="px-4 py-3">${item.nhan_vien_tao_don?.ho_ten || "—"}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+// Xử lý lọc
+document.getElementById("btnFilterOrders").addEventListener("click", () => {
+  const startDate = document.getElementById("filterStartDate").value;
+  const endDate = document.getElementById("filterEndDate").value;
+  const staffName = document.getElementById("filterStaff").value.toLowerCase();
+  const customerType = document.getElementById("filterCustomer").value;
+
+  const filtered = allOrders.filter(order => {
+  let match = true;
+
+  if (startDate) match = match && new Date(order.ngay_dat) >= new Date(startDate);
+  if (endDate) match = match && new Date(order.ngay_dat) <= new Date(endDate);
+  if (staffName) match = match && order.nhan_vien_tao_don?.ho_ten?.toLowerCase().includes(staffName);
+
+  // Lọc khách hàng
+  if (customerType) {
+    if (customerType === "khach_vang_lai") {
+      match = match && !order.thanh_vien?.ho_ten; // không có tên thành viên => vãng lai
+    } else if (customerType === "thanh_vien") {
+      match = match && !!order.thanh_vien?.ho_ten; // có tên => thành viên
+    }
+  }
+
+  return match;
+});
+
+  renderOrders(filtered);
+});
+
+// Reset filter
+document.getElementById("btnResetFilter").addEventListener("click", () => {
+  document.getElementById("filterStartDate").value = "";
+  document.getElementById("filterEndDate").value = "";
+  document.getElementById("filterStaff").value = "";
+  document.getElementById("filterCustomer").value = "";
+  renderOrders(allOrders);
+});
+
+
+// Gọi khi load trang
+window.addEventListener("DOMContentLoaded", () => {
+  loadOrders();
+});
+
+// Mở modal và điền dữ liệu
+  function viewOrderDetail(order) {
+    const tbody = document.getElementById("orderDetailTable");
+    tbody.innerHTML = "";
+
+    if (!order.chi_tiet || order.chi_tiet.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Chưa có chi tiết nào.</td></tr>`;
+    } else {
+      order.chi_tiet.forEach((item, index) => {
+        const row = document.createElement("tr");
+        row.classList.add("hover:bg-gray-50");
+        row.innerHTML = `
+          <td class="px-4 py-2">${index + 1}</td>
+          <td class="px-4 py-2">${item.ten_san_pham || "—"}</td>
+          <td class="px-4 py-2">${item.ten_kich_co || "—"}</td>
+          <td class="px-4 py-2">${item.ten_topping || "—"}</td>
+          <td class="px-4 py-2">${item.don_gia}</td>
+          <td class="px-4 py-2">${item.so_luong}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    document.getElementById("orderDetailModal").classList.remove("hidden");
+  }
+
+  function closeOrderDetailModal() {
+    document.getElementById("orderDetailModal").classList.add("hidden");
+  }
+
+  // Sửa renderOrders để thêm nút xem chi tiết
+  function renderOrders(orders) {
+    const tbody = document.getElementById("orderTable");
+    tbody.innerHTML = "";
+
+    if (!orders || orders.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-500">Chưa có đơn hàng nào.</td></tr>`;
+      return;
+    }
+
+    orders.forEach((item, index) => {
+      const ngayDat = new Date(item.ngay_dat).toLocaleString("vi-VN");
+
+      const row = document.createElement("tr");
+      row.classList.add("hover:bg-gray-50");
+      row.innerHTML = `
+        <td class="px-4 py-3">${index + 1}</td>
+        <td class="px-4 py-3">${ngayDat}</td>
+        <td class="px-4 py-3">${item.tong_tien}</td>
+        <td class="px-4 py-3">${item.tien_sau_giam}</td>
+        <td class="px-4 py-3">${item.trang_thai}</td>
+        <td class="px-4 py-3">${item.ban?.ten_ban || "—"}</td>
+        <td class="px-4 py-3">${item.thanh_vien?.ho_ten || "Khách vãng lai"}</td>
+        <td class="px-4 py-3">${item.nhan_vien_tao_don?.ho_ten || "—"}</td>
+        <td class="px-4 py-3 text-center">
+          <button onclick='viewOrderDetail(${JSON.stringify(item).replaceAll("'", "&apos;")})' class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+            Xem Chi Tiết
+          </button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
 
 </script>
 
