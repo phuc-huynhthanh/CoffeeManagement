@@ -665,3 +665,241 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+ const discountModal = document.getElementById("discountModal");
+const btnAddDiscount = document.getElementById("btnAddDiscount");
+const btnCancelDiscount = document.getElementById("btnCancelDiscount");
+const discountForm = document.getElementById("discountForm");
+const discountTable = document.getElementById("discountTable");
+
+const discountModalTitle = document.getElementById("discountModalTitle");
+const discountIdInput = document.getElementById("discountId");
+const discountCodeInput = document.getElementById("discountCode");
+const discountPercentInput = document.getElementById("discountPercent");
+const discountDescInput = document.getElementById("discountDesc");
+const discountMemberSelect = document.getElementById("discountMember");
+const discountExpiryInput = document.getElementById("discountExpiry");
+
+// Load danh sách thành viên
+async function loadMembers() {
+  try {
+    const res = await fetch("http://localhost:3000/thanhvien/laytatca");
+    const data = await res.json();
+    discountMemberSelect.innerHTML = `<option value="">— Tất cả —</option>`;
+    data.forEach(tv => {
+      const option = document.createElement("option");
+      option.value = tv.thanh_vien_id;
+      option.textContent = tv.ho_ten;
+      discountMemberSelect.appendChild(option);
+    });
+  } catch (err) {
+    console.error("Lỗi loadMembers:", err);
+  }
+}
+
+// Load danh sách khuyến mãi
+async function loadDiscounts() {
+  try {
+    const res = await fetch("http://localhost:3000/mucgiamgia/laytatca");
+    const data = await res.json();
+    discountTable.innerHTML = data
+      .map((item, index) => `
+        <tr>
+          <td class="px-4 py-2 border-b">${index + 1}</td>
+          <td class="px-4 py-2 border-b">${item.ma_khuyen_mai || ""}</td>
+          <td class="px-4 py-2 border-b">${item.phan_tram_giam}%</td>
+          <td class="px-4 py-2 border-b">${item.mo_ta || ""}</td>
+          <td class="px-4 py-2 border-b">${item.ten_thanh_vien || "Tất cả"}</td>
+          <td class="px-4 py-2 border-b">${item.ngay_het_han || "—"}</td>
+          <td class="px-4 py-2 border-b text-center">
+            <button onclick="editDiscount(${item.muc_giam_gia_id})" class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">Sửa</button>
+            <button onclick="deleteDiscount(${item.muc_giam_gia_id})" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Xóa</button>
+          </td>
+        </tr>
+      `).join("");
+  } catch (err) {
+    console.error("Lỗi loadDiscounts:", err);
+  }
+}
+
+// Mở modal thêm
+btnAddDiscount.addEventListener("click", async () => {
+  discountModalTitle.textContent = "Thêm khuyến mãi";
+  discountForm.reset();
+  discountIdInput.value = "";
+  await loadMembers();
+  discountModal.classList.remove("hidden");
+});
+
+// Đóng modal
+btnCancelDiscount.addEventListener("click", () => discountModal.classList.add("hidden"));
+
+// Thêm hoặc sửa
+discountForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = discountIdInput.value;
+  const payload = {
+    ma_khuyen_mai: discountCodeInput.value.trim(),
+    phan_tram_giam: discountPercentInput.value,
+    mo_ta: discountDescInput.value.trim(),
+    thanh_vien_id: discountMemberSelect.value || null,
+    ngay_het_han: discountExpiryInput.value || null,
+  };
+
+  try {
+    const url = id ? `http://localhost:3000/mucgiamgia/sua/${id}` : "http://localhost:3000/mucgiamgia/them";
+    const method = id ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json();
+    discountModal.classList.add("hidden");
+    loadDiscounts();
+  } catch (err) {
+    console.error("Lỗi submit:", err);
+  }
+});
+
+// Sửa
+window.editDiscount = async function (id) {
+  try {
+    const res = await fetch(`http://localhost:3000/mucgiamgia/layid/${id}`);
+    const data = await res.json();
+
+    discountModalTitle.textContent = "Cập nhật khuyến mãi";
+    discountIdInput.value = id;
+    discountCodeInput.value = data.ma_khuyen_mai || "";
+    discountPercentInput.value = data.phan_tram_giam;
+    discountDescInput.value = data.mo_ta || "";
+    discountExpiryInput.value = data.ngay_het_han || "";
+    await loadMembers();
+    discountMemberSelect.value = data.thanh_vien_id || "";
+
+    discountModal.classList.remove("hidden");
+  } catch (err) {
+    console.error("Lỗi editDiscount:", err);
+    alert("Không thể tải dữ liệu khuyến mãi!");
+  }
+};
+
+// Xóa
+window.deleteDiscount = async function (id) {
+  if (!confirm("Bạn có chắc muốn xóa khuyến mãi này?")) return;
+  try {
+    const res = await fetch(`http://localhost:3000/mucgiamgia/xoa/${id}`, { method: "DELETE" });
+    await res.json();
+    loadDiscounts();
+  } catch (err) {
+    console.error("Lỗi deleteDiscount:", err);
+  }
+};
+
+// Load khi mở tab
+document.querySelector('[data-tab="khuyen-mai"]')?.addEventListener("click", loadDiscounts);
+
+
+// Elements
+const memberTable = document.getElementById("memberTable");
+const memberModal = document.getElementById("memberModal");
+const memberForm = document.getElementById("memberForm");
+const btnAddMember = document.getElementById("btnAddMember");
+const btnCancelMember = document.getElementById("btnCancelMember");
+
+// Load danh sách thành viên
+async function loadMembers() {
+  try {
+    const res = await fetch("/thanhvien/laytatca");
+    const data = await res.json();
+    memberTable.innerHTML = "";
+    data.forEach((m, index) => {
+      memberTable.innerHTML += `
+  <tr>
+    <td class="px-4 py-2 border-b">${index + 1}</td>
+    <td class="px-4 py-2 border-b">${m.ho_ten}</td>
+    <td class="px-4 py-2 border-b">${m.sdt}</td>
+    <td class="px-4 py-2 border-b">${m.email || ""}</td>
+    <td class="px-4 py-2 border-b">${m.tong_don_da_mua}</td> <!-- Read-only -->
+    <td class="px-4 py-2 border-b text-center space-x-2">
+      <button onclick="editMember(${m.thanh_vien_id})" class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">Sửa</button>
+      <button onclick="deleteMember(${m.thanh_vien_id})" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Xóa</button>
+    </td>
+  </tr>
+`;
+
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Mở modal thêm
+btnAddMember.addEventListener("click", () => {
+  memberForm.reset();
+  memberModal.classList.remove("hidden");
+  document.getElementById("memberModalTitle").innerText = "Thêm thành viên";
+  document.getElementById("memberId").value = "";
+});
+
+// Hủy modal
+btnCancelMember.addEventListener("click", () => {
+  memberModal.classList.add("hidden");
+});
+
+// Thêm/Sửa thành viên
+memberForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("memberId").value;
+
+  const data = {
+    ho_ten: document.getElementById("memberName").value,
+    sdt: document.getElementById("memberPhone").value,
+    email: document.getElementById("memberEmail").value
+  };
+
+  try {
+    const url = id ? `/thanhvien/sua/${id}` : "/thanhvien/them";
+    const method = id ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    console.log("✅ Kết quả API:", result);
+
+    memberModal.classList.add("hidden");
+    loadMembers();
+  } catch (err) {
+    console.error("❌ Lỗi khi thêm/sửa thành viên:", err);
+  }
+});
+
+
+
+// Edit member
+window.editMember = async (id) => {
+  const res = await fetch(`/thanhvien/layid/${id}`);
+  const data = await res.json();
+  document.getElementById("memberId").value = data.thanh_vien_id;
+  document.getElementById("memberName").value = data.ho_ten;
+  document.getElementById("memberPhone").value = data.sdt;
+  document.getElementById("memberEmail").value = data.email;
+  document.getElementById("memberTotal").value = data.tong_don_da_mua || 0;
+  memberModal.classList.remove("hidden");
+  document.getElementById("memberModalTitle").innerText = "Sửa thành viên";
+};
+
+// Delete member
+window.deleteMember = async (id) => {
+  if (confirm("Bạn có chắc muốn xóa thành viên này?")) {
+    await fetch(`/thanhvien/xoa/${id}`, { method: "DELETE" });
+    loadMembers();
+  }
+};
+
+// Load khi trang sẵn sàng
+loadMembers();
+

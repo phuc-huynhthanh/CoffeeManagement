@@ -3,60 +3,81 @@ import { db } from "../config/db.conf.js";
 export const MucGiamGiaModel = {
   // 📋 Lấy tất cả mức giảm giá
   async layTatCa() {
-    const [rows] = await db.query(`SELECT * FROM muc_giam_gia`);
+    const [rows] = await db.query(`
+      SELECT mg.*, tv.ho_ten AS ten_thanh_vien
+      FROM muc_giam_gia mg
+      LEFT JOIN thanh_vien tv ON mg.thanh_vien_id = tv.thanh_vien_id
+      ORDER BY mg.muc_giam_gia_id DESC
+    `);
     return rows;
   },
 
   // 🔎 Tìm theo ID
   async timTheoId(id) {
-    const [rows] = await db.query(
-      `SELECT * FROM muc_giam_gia WHERE muc_giam_gia_id = ?`,
-      [id]
-    );
+    const [rows] = await db.query(`
+      SELECT mg.*, tv.ho_ten AS ten_thanh_vien
+      FROM muc_giam_gia mg
+      LEFT JOIN thanh_vien tv ON mg.thanh_vien_id = tv.thanh_vien_id
+      WHERE mg.muc_giam_gia_id = ?
+    `, [id]);
     return rows[0];
   },
 
-  // 🔎 Tìm theo điều kiện (VD: phần trăm hoặc mô tả)
+  // 🔍 Tìm theo điều kiện linh hoạt (vd: { ma_khuyen_mai: 'KM01', da_su_dung: false })
   async timTheoDieuKien(dieu_kien) {
     const entries = Object.entries(dieu_kien);
     if (entries.length === 0)
       throw new Error("Hàm timTheoDieuKien() cần ít nhất 1 điều kiện.");
 
-    const whereClause = entries.map(([col]) => `\`${col}\` = ?`).join(" AND ");
+    const whereClause = entries.map(([col]) => `mg.\`${col}\` = ?`).join(" AND ");
     const values = entries.map(([_, val]) => val);
 
-    const [rows] = await db.query(
-      `SELECT * FROM \`muc_giam_gia\` WHERE ${whereClause}`,
-      values
-    );
+    const [rows] = await db.query(`
+      SELECT mg.*, tv.ho_ten AS ten_thanh_vien
+      FROM muc_giam_gia mg
+      LEFT JOIN thanh_vien tv ON mg.thanh_vien_id = tv.thanh_vien_id
+      WHERE ${whereClause}
+    `, values);
 
     return rows;
   },
 
-  // ➕ Thêm mức giảm giá
-  async them({ phan_tram_giam, mo_ta }) {
-    const [result] = await db.query(
-      `INSERT INTO muc_giam_gia (phan_tram_giam, mo_ta) VALUES (?, ?)`,
-      [phan_tram_giam, mo_ta]
-    );
+  // ➕ Thêm mức giảm giá mới
+  async them({ ma_khuyen_mai, phan_tram_giam, mo_ta, thanh_vien_id, ngay_het_han }) {
+    const [result] = await db.query(`
+      INSERT INTO muc_giam_gia 
+      (ma_khuyen_mai, phan_tram_giam, mo_ta, thanh_vien_id, ngay_het_han)
+      VALUES (?, ?, ?, ?, ?)
+    `, [ma_khuyen_mai, phan_tram_giam, mo_ta || null, thanh_vien_id || null, ngay_het_han || null]);
+
     return result.insertId;
   },
 
-  // ✏️ Cập nhật
-  async capNhat(id, { phan_tram_giam, mo_ta }) {
-    const [result] = await db.query(
-      `UPDATE muc_giam_gia SET phan_tram_giam = ?, mo_ta = ? WHERE muc_giam_gia_id = ?`,
-      [phan_tram_giam, mo_ta, id]
-    );
+  // ✏️ Cập nhật mức giảm giá
+  async capNhat(id, { ma_khuyen_mai, phan_tram_giam, mo_ta, thanh_vien_id, da_su_dung, ngay_het_han }) {
+    const [result] = await db.query(`
+      UPDATE muc_giam_gia
+      SET ma_khuyen_mai = ?, phan_tram_giam = ?, mo_ta = ?, 
+          thanh_vien_id = ?, da_su_dung = ?, ngay_het_han = ?
+      WHERE muc_giam_gia_id = ?
+    `, [ma_khuyen_mai, phan_tram_giam, mo_ta, thanh_vien_id, da_su_dung, ngay_het_han, id]);
+
     return result.affectedRows;
   },
 
-  // ❌ Xóa
+  // ✅ Đánh dấu đã sử dụng
+  async danhDauDaSuDung(id) {
+    const [result] = await db.query(`
+      UPDATE muc_giam_gia SET da_su_dung = TRUE WHERE muc_giam_gia_id = ?
+    `, [id]);
+    return result.affectedRows;
+  },
+
+  // ❌ Xóa mức giảm giá
   async xoa(id) {
-    const [result] = await db.query(
-      `DELETE FROM muc_giam_gia WHERE muc_giam_gia_id = ?`,
-      [id]
-    );
+    const [result] = await db.query(`
+      DELETE FROM muc_giam_gia WHERE muc_giam_gia_id = ?
+    `, [id]);
     return result.affectedRows;
   },
 };

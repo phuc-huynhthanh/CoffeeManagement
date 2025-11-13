@@ -1,4 +1,3 @@
-// app/controllers/ThanhVien.controller.js
 import ThanhVien from "../models/ThanhVien.model.js";
 
 export const ThanhVienController = {
@@ -15,6 +14,17 @@ export const ThanhVienController = {
     try {
       const { id } = req.params;
       const data = await ThanhVien.timTheoId(id);
+      if (!data) return res.status(404).json({ message: "Không tìm thấy thành viên" });
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async timTheoSDT(req, res) {
+    try {
+      const { sdt } = req.params;
+      const data = await ThanhVien.timTheoSDT(sdt);
       if (!data) return res.status(404).json({ message: "Không tìm thấy thành viên" });
       res.json(data);
     } catch (error) {

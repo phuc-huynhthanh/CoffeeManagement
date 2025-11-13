@@ -1,9 +1,15 @@
 import { db } from "../config/db.conf.js";
 
 class ThanhVien {
-  // Lấy tất cả
+  // Lấy tất cả thành viên kèm tổng đơn đã mua
   static async layTatCa() {
-    const [rows] = await db.query("SELECT * FROM thanh_vien");
+    const [rows] = await db.query(`
+      SELECT tv.*, 
+             IFNULL(SUM(dh.tong_tien), 0) AS tong_don_da_mua
+      FROM thanh_vien tv
+      LEFT JOIN don_hang dh ON dh.thanh_vien_id = tv.thanh_vien_id
+      GROUP BY tv.thanh_vien_id
+    `);
     return rows;
   }
 
@@ -48,11 +54,10 @@ class ThanhVien {
     return result.affectedRows;
   }
 
-  // Tìm theo điều kiện lọc
+  // Tìm theo điều kiện
   static async timTheoDieuKien(dieu_kien) {
     const entries = Object.entries(dieu_kien);
-    if (entries.length === 0)
-      throw new Error("Hàm timTheoDieuKien() cần ít nhất 1 điều kiện.");
+    if (entries.length === 0) throw new Error("Cần ít nhất 1 điều kiện.");
 
     const whereClause = entries.map(([col]) => `${col} = ?`).join(" AND ");
     const values = entries.map(([_, val]) => val);
@@ -62,6 +67,15 @@ class ThanhVien {
       values
     );
     return rows;
+  }
+
+  // Tìm theo số điện thoại
+  static async timTheoSDT(sdt) {
+    const [rows] = await db.query(
+      "SELECT * FROM thanh_vien WHERE sdt = ?",
+      [sdt]
+    );
+    return rows[0] || null;
   }
 }
 

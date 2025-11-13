@@ -12,7 +12,7 @@
 
   
   <!-- Header -->
-  <header class="bg-blue-600 text-white py-4 shadow-md">
+  <header class="bg-blue-600 text-white py-4 shadow-md fixed top-0 left-0 w-full z-50">
     <div class="px-4 mx-auto  flex justify-between items-center">
       <h1 class="text-2xl font-semibold">Trang quản trị</h1>
         
@@ -23,7 +23,7 @@
     </div>
   </header>
 
-   <div class="flex flex-1 mt-2">
+   <div class="flex flex-1 mt-12">
     <aside class="w-64 bg-blue-600 text-white flex flex-col pt-4">
       <nav class="flex-1 overflow-y-auto mt-4">
         <ul class="space-y-2 px-4">
@@ -31,11 +31,10 @@
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="san-pham">Quản lý sản phẩm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="ban">Quản lý bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="don-hang">Quản lý đơn hàng</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="thanh-vien">Quản lý thành viên</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lịch làm</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lương</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý khuyến mãi</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý thành viên</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="khuyen-mai">Quản lý khuyến mãi</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý doanh thu</a></li>
         </ul>
       </nav>
@@ -152,7 +151,7 @@
     </div>
   </div>
 
-  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+  <div class="overflow-x-auto overflow-y-scroll max-h-[500px] bg-white rounded-lg shadow-md">
     <table class="min-w-full text-left border border-gray-200">
       <thead class="bg-gray-50">
         <tr>
@@ -171,6 +170,59 @@
     </table>
   </div>
 </div>
+
+<!-- Tab Quản lý khuyến mãi -->
+<div id="tab-khuyen-mai" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-700">Quản lý khuyến mãi</h2>
+    <button id="btnAddDiscount" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-md">
+      + Thêm khuyến mãi
+    </button>
+  </div>
+  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+    <table class="min-w-full text-left border border-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 border-b">STT</th>
+          <th class="px-4 py-3 border-b">Mã KM</th>
+          <th class="px-4 py-3 border-b">Phần trăm giảm</th>
+          <th class="px-4 py-3 border-b">Mô tả</th>
+          <th class="px-4 py-3 border-b">Thành viên</th>
+          <th class="px-4 py-3 border-b">Ngày hết hạn</th>
+          <th class="px-4 py-3 border-b text-center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="discountTable" class="divide-y"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Quản lý thành viên -->
+<div id="tab-thanh-vien" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-700">Quản lý thành viên</h2>
+    <button id="btnAddMember" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-md">
+      + Thêm thành viên
+    </button>
+  </div>
+  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+    <table class="min-w-full text-left border border-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 border-b">STT</th>
+          <th class="px-4 py-3 border-b">Họ tên</th>
+          <th class="px-4 py-3 border-b">Số điện thoại</th>
+          <th class="px-4 py-3 border-b">Email</th>
+          <th class="px-4 py-3 border-b">Tổng đơn đã mua</th>
+          <th class="px-4 py-3 border-b text-center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="memberTable" class="divide-y"></tbody>
+    </table>
+  </div>
+</div>
+
+
 </main>
 
 
@@ -343,6 +395,89 @@
     </div>
   </div>
 </div>
+<!-- Modal Thêm/Sửa Khuyến mãi -->
+<div id="discountModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 id="discountModalTitle" class="text-lg font-semibold mb-4">Thêm khuyến mãi</h3>
+    <form id="discountForm" class="space-y-4">
+      <input type="hidden" id="discountId" name="id">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Mã khuyến mãi</label>
+        <input type="text" id="discountCode" name="ma_khuyen_mai"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500"
+               placeholder="VD: KM01" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Phần trăm giảm</label>
+        <input type="number" id="discountPercent" name="phan_tram_giam"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500"
+               placeholder="VD: 10" min="0" max="100" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Mô tả</label>
+        <textarea id="discountDesc" name="mo_ta"
+                  class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Mô tả khuyến mãi"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Áp dụng cho thành viên</label>
+        <select id="discountMember" name="thanh_vien_id"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500">
+          <option value="">— Tất cả —</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Ngày hết hạn</label>
+        <input type="date" id="discountExpiry" name="ngay_het_han"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500">
+      </div>
+
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancelDiscount"
+                class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit"
+                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="memberModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 id="memberModalTitle" class="text-lg font-semibold mb-4">Thêm thành viên</h3>
+    <form id="memberForm" class="space-y-4">
+      <input type="hidden" id="memberId" name="id">
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Họ tên</label>
+        <input type="text" id="memberName" name="ho_ten" class="mt-1 w-full border-gray-300 rounded-lg p-2 border" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+        <input type="text" id="memberPhone" name="sdt" class="mt-1 w-full border-gray-300 rounded-lg p-2 border" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="memberEmail" name="email" class="mt-1 w-full border-gray-300 rounded-lg p-2 border">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tổng đơn đã mua</label>
+        <input type="number" id="memberTotal" name="tong_don_da_mua" class="mt-1 w-full border-gray-300 rounded-lg p-2 border bg-gray-100" placeholder="Tự động" readonly>
+      </div>
+
+
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancelMember" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 
 <div id="toastContainer" class="fixed top-5 right-5 space-y-2 z-50"></div>
