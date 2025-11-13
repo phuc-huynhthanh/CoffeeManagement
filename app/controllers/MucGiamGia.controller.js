@@ -61,4 +61,47 @@ export const MucGiamGiaController = {
       res.status(500).json({ error: error.message });
     }
   },
+
+  // Tìm thông tin giảm giá theo mã khuyến mãi
+ // MucGiamGia.controller.js
+async timTheoMaKhuyenMai(req, res) {
+    try {
+        const { ma_khuyen_mai } = req.params;
+        if (!ma_khuyen_mai) {
+            return res.status(400).json({ error: 1, message: "Thiếu ma_khuyen_mai" });
+        }
+
+        const data = await MucGiamGiaModel.timTheoMaKhuyenMai(ma_khuyen_mai);
+
+        if (!data) {
+            return res.status(404).json({ error: 1, message: "Không tìm thấy mức giảm giá hoặc đã sử dụng" });
+        }
+
+        res.json({ error: 0, message: "Success", data });
+    } catch (error) {
+        res.status(500).json({ error: 1, message: error.message });
+    }
+},
+// MucGiamGia.controller.js
+async kiemTraMaChoThanhVien(req, res) {
+    try {
+        const { ma_khuyen_mai, thanh_vien_id } = req.body;
+
+        if (!ma_khuyen_mai || !thanh_vien_id) {
+            return res.status(400).json({ error: 1, message: "Thiếu ma_khuyen_mai hoặc thanh_vien_id" });
+        }
+
+        const data = await MucGiamGiaModel.kiemTraTheoThanhVien(ma_khuyen_mai, thanh_vien_id);
+
+        if (!data) {
+            return res.status(404).json({ error: 1, message: "Mã đã sử dụng hoặc không tồn tại cho thành viên này" });
+        }
+
+        res.json({ error: 0, message: "Success", data });
+    } catch (error) {
+        res.status(500).json({ error: 1, message: error.message });
+    }
+}
+
+
 };

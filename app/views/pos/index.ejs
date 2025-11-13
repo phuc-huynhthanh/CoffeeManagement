@@ -169,552 +169,623 @@
       </div>
     </div>
 
-    <script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const bill = [];
+  const billContainer = document.getElementById("bill");
+  const totalEl = document.getElementById("total");
+  const emptyEl = document.getElementById("empty");
 
-      
-      document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("closeBanBtn").addEventListener("click", () => {
-          banContainerEl.classList.add("hidden");
-        });
+  let kichCoList = [];
+  fetch("/kichco/laytatca")
+    .then((r) => r.json())
+    .then((data) => (kichCoList = data))
+    .catch(console.error);
 
+  let toppingList = [];
+  fetch("/topping/laytatca")
+    .then((r) => r.json())
+    .then((data) => (toppingList = data))
+    .catch(console.error);
 
-        
+  // --- Thêm sản phẩm vào bill ---
+  document.querySelectorAll(".product").forEach((el) => {
+    el.addEventListener("click", () => {
+      const sp = {
+        san_pham_id: +el.dataset.id,
+        ten_san_pham: el.dataset.ten,
+        gia_co_ban: +el.dataset.gia,
+        ten_loai: el.dataset.loai,
+        kich_co: null,
+        kich_co_id: null,
+        gia_them: 0,
+        toppings: [],
+        tong_topping: 0,
+      };
+      addToBill(sp);
+    });
+  });
 
-        const bill = [];
-        const billContainer = document.getElementById("bill");
-        const totalEl = document.getElementById("total");
-        const emptyEl = document.getElementById("empty");
+  function addToBill(sp) {
+    const existing = bill.find(
+      (i) => i.san_pham_id === sp.san_pham_id && !i.kich_co
+    );
+    if (existing) existing.so_luong++;
+    else bill.push({ ...sp, so_luong: 1 });
+    renderBill();
+  }
 
-        let kichCoList = [];
-        fetch("/kichco/laytatca")
-          .then((r) => r.json())
-          .then((data) => (kichCoList = data))
-          .catch(console.error);
-        let toppingList = [];
-        fetch("/topping/laytatca")
-          .then((r) => r.json())
-          .then((data) => (toppingList = data))
-          .catch(console.error);
+  function renderBill() {
+    billContainer.innerHTML = "";
+    if (!bill.length) emptyEl.style.display = "block";
+    else {
+      emptyEl.style.display = "none";
+      bill.forEach((item, i) => {
+        const div = document.createElement("div");
+        div.className =
+          "flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition";
+        div.innerHTML = `
+        <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
+          <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
+          <p class="text-sm text-gray-500">
+            ${item.kich_co || "(Chưa chọn size)"} 
+            ${item.toppings.length ? " + " + item.toppings.map((t) => t.ten_topping).join(", ") : ""} 
+            — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
+          <span class="w-6 text-center">${item.so_luong}</span>
+          <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
+          <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+        </div>
+      `;
+        billContainer.appendChild(div);
+      });
+    }
 
-        // --- Thêm sản phẩm vào bill
-        document.querySelectorAll(".product").forEach((el) => {
-          el.addEventListener("click", () => {
-            const sp = {
-              san_pham_id: +el.dataset.id,
-              ten_san_pham: el.dataset.ten,
-              gia_co_ban: +el.dataset.gia,
-              ten_loai: el.dataset.loai,
-              kich_co: null,
-              kich_co_id: null,
-              gia_them: 0,
-              toppings: [],
-              tong_topping: 0,
-            };
-            addToBill(sp);
-          });
-        });
+    const total = bill.reduce(
+      (sum, item) =>
+        sum +
+        (Number(item.gia_co_ban) +
+          Number(item.gia_them || 0) +
+          Number(item.tong_topping || 0)) *
+          item.so_luong,
+      0
+    );
+    totalEl.textContent = total.toLocaleString() + " đ";
+  }
 
-        function addToBill(sp) {
-          const existing = bill.find(
-            (i) => i.san_pham_id === sp.san_pham_id && !i.kich_co
-          );
-          if (existing) existing.so_luong++;
-          else bill.push({ ...sp, so_luong: 1 });
-          renderBill();
-        }
-
-        function renderBill() {
-          billContainer.innerHTML = "";
-          if (!bill.length) emptyEl.style.display = "block";
-          else {
-            emptyEl.style.display = "none";
-            bill.forEach((item, i) => {
-              const div = document.createElement("div");
-              div.className =
-                "flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition";
-              div.innerHTML = `
-          <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
-            <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
-            <p class="text-sm text-gray-500">
-              ${item.kich_co || "(Chưa chọn size)"} 
-              ${
-                item.toppings.length
-                  ? " + " + item.toppings.map((t) => t.ten_topping).join(", ")
-                  : ""
-              }
-              — ${(
-                Number(item.gia_co_ban) +
-                Number(item.gia_them || 0) +
-                Number(item.tong_topping || 0)
-              ).toLocaleString()} đ
-            </p>
+  window.chonKichCoVaTopping = (index) => {
+    if (!kichCoList.length) return alert("Không có dữ liệu kích cỡ!");
+    const item = bill[index];
+    const modal = document.createElement("div");
+    modal.className =
+      "fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 size-modal";
+    modal.innerHTML = `
+      <div class="bg-white rounded-3xl w-96 shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+        <div class="p-6 border-b">
+          <h2 class="text-lg font-semibold text-center text-gray-800">
+            Chọn tùy chọn cho <br>
+            <span class="text-blue-600">${item.ten_san_pham}</span>
+          </h2>
+        </div>
+        <div class="p-6 max-h-[75vh] overflow-y-auto pr-2 rounded-b-3xl">
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-700 mb-2">Kích cỡ:</h3>
+            <div class="flex flex-col gap-2">
+              ${kichCoList
+                .map(
+                  (kc) => `<label class="border border-gray-200 rounded-xl py-2 px-3 flex justify-between items-center hover:bg-blue-50 cursor-pointer transition">
+                    <span class="text-center"><input class="mr-1 mt-1" type="radio" name="kichco" value='${JSON.stringify(
+                      kc
+                    )}' ${item.kich_co === kc.ten_kich_co ? "checked" : ""}>${kc.ten_kich_co}</span>
+                    <span class="text-gray-600">+${kc.gia_them.toLocaleString()} đ</span>
+                  </label>`
+                )
+                .join("")}
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
-            <span class="w-6 text-center">${item.so_luong}</span>
-            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
-            <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-700 mb-2">Topping:</h3>
+            <div class="flex flex-col gap-2">
+              ${toppingList
+                .map(
+                  (t) => `<label class="border border-gray-200 rounded-xl py-2 px-3 flex justify-between items-center hover:bg-blue-50 cursor-pointer transition">
+                    <span><input class="mr-1 mt-1" type="checkbox" value='${JSON.stringify(
+                      t
+                    )}' ${item.toppings.some((tp) => tp.topping_id === t.topping_id) ? "checked" : ""}>${t.ten_topping}</span>
+                    <span class="text-gray-600">+${t.gia_them.toLocaleString()} đ</span>
+                  </label>`
+                )
+                .join("")}
+            </div>
           </div>
-        `;
-              billContainer.appendChild(div);
-            });
-          }
+        </div>
+        <div class="p-6 border-t flex gap-3">
+          <button onclick="luuKichCoVaTopping(${index})"
+            class="flex-1 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+            Lưu
+          </button>
+          <button onclick="dongSizeModal()"
+            class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl hover:bg-gray-300 transition">
+            Hủy
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
 
-          const total = bill.reduce(
-            (sum, item) =>
-              sum +
-              (Number(item.gia_co_ban) +
-                Number(item.gia_them || 0) +
-                Number(item.tong_topping || 0)) *
-                item.so_luong,
-            0
-          );
-          totalEl.textContent = total.toLocaleString() + " đ";
-        }
+  window.luuKichCoVaTopping = (index) => {
+    const modal = document.querySelector(".size-modal");
+    const item = bill[index];
+    const kcInput = modal.querySelector('input[name="kichco"]:checked');
+    if (!kcInput) return alert("Vui lòng chọn kích cỡ!");
+    const kc = JSON.parse(kcInput.value);
+    item.kich_co = kc.ten_kich_co;
+    item.kich_co_id = kc.kich_co_id;
+    item.gia_them = kc.gia_them;
 
-        window.chonKichCoVaTopping = (index) => {
-          if (!kichCoList.length) return alert("Không có dữ liệu kích cỡ!");
-          const item = bill[index];
+    const toppingInputs = modal.querySelectorAll('input[type="checkbox"]:checked');
+    const toppings = Array.from(toppingInputs).map((i) => JSON.parse(i.value));
+    item.toppings = toppings;
+    item.tong_topping = toppings.reduce((sum, t) => sum + Number(t.gia_them), 0);
+
+    dongSizeModal();
+    renderBill();
+  };
+
+  window.dongSizeModal = () =>
+    document.querySelectorAll(".size-modal").forEach((m) => m.remove());
+  window.changeQty = (i, d) => {
+    bill[i].so_luong += d;
+    if (bill[i].so_luong <= 0) bill.splice(i, 1);
+    renderBill();
+  };
+  window.removeItem = (i) => {
+    bill.splice(i, 1);
+    renderBill();
+  };
+
+  // --- User ---
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) window.location.href = "/taikhoan/dangnhap";
+  else
+    document.getElementById("tenNhanVien").textContent = `👋 Xin chào, ${
+      user.ho_ten || user.ten_dang_nhap || "Nhân viên"
+    }`;
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("user");
+    window.location.href = "/taikhoan/dangnhap";
+  });
+
+  // --- Bàn ---
+  const chooseTableBtn = document.getElementById("chooseTableBtn");
+  const completeBtn = document.getElementById("completeBtn");
+  const banContainerEl = document.getElementById("banContainer");
+  let banList = [],
+    hoaDonTheoBan = {},
+    selectedBanId = null;
+
+  fetch("http://localhost:3000/ban/laytatca")
+    .then((res) => res.json())
+    .then((data) => {
+      banList = data;
+      renderBan();
+    });
+
+  const storedHoaDon = localStorage.getItem("hoaDonTheoBan");
+  if (storedHoaDon) hoaDonTheoBan = JSON.parse(storedHoaDon);
+
+  chooseTableBtn.addEventListener("click", () => {
+    if (bill.length === 0) return alert("Vui lòng chọn món trước khi chọn bàn!");
+    const spChuaChonKichCo = bill.find((item) => !item.kich_co);
+    if (spChuaChonKichCo) return alert("Vui lòng chọn kích cỡ cho tất cả sản phẩm!");
+    banContainerEl.classList.remove("hidden");
+    renderBan();
+  });
+
+  function renderBan() {
+    const banListEl = document.getElementById("banList");
+    banListEl.innerHTML = "";
+    hoaDonTheoBan = JSON.parse(localStorage.getItem("hoaDonTheoBan")) || {};
+
+    banList.forEach((ban) => {
+      let trangThai = ban.trang_thai;
+      if (
+        hoaDonTheoBan[ban.ban_id] &&
+        hoaDonTheoBan[ban.ban_id].length > 0 &&
+        ban.trang_thai !== "Đã thanh toán"
+      ) {
+        trangThai = "Đang sử dụng";
+      }
+
+      const div = document.createElement("div");
+      div.className = `p-3 rounded-lg text-center font-semibold cursor-pointer transition
+        ${trangThai === "Trống" ? "bg-green-200 hover:bg-green-300" : ""}
+        ${trangThai === "Đang sử dụng" ? "bg-yellow-200 hover:bg-yellow-300" : ""}
+        ${trangThai === "Đã thanh toán" ? "bg-gray-300 cursor-not-allowed" : ""}`;
+      div.textContent = `${ban.ten_ban} — ${trangThai}`;
+
+      if (trangThai !== "Đã thanh toán")
+        div.addEventListener("click", () => selectBan(ban.ban_id));
+
+      banListEl.appendChild(div);
+    });
+  }
+
+  function selectBan(ban_id) {
+    selectedBanId = ban_id;
+    banContainerEl.classList.add("hidden");
+    alert(
+      `Bạn đã chọn ${banList.find((b) => b.ban_id === ban_id).ten_ban}, nhấn Hoàn tất để lưu sản phẩm`
+    );
+    completeBtn.classList.remove("hidden");
+    chooseTableBtn.classList.add("hidden");
+  }
+
+  completeBtn.addEventListener("click", () => {
+    if (!selectedBanId) return alert("Vui lòng chọn bàn!");
+    if (!hoaDonTheoBan[selectedBanId]) hoaDonTheoBan[selectedBanId] = [];
+    hoaDonTheoBan[selectedBanId].push(...bill.map((item) => ({ ...item })));
+    localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
+    bill.length = 0;
+    renderBill();
+    completeBtn.classList.add("hidden");
+    chooseTableBtn.classList.remove("hidden");
+    selectedBanId = null;
+    renderBan();
+    alert("Đã lưu sản phẩm vào bàn");
+  });
+
+  // --- Xem danh sách bàn + món + Thanh toán ---
+  const viewBanContainerEl = document.getElementById("viewBanContainer");
+  const viewTablesBtn = document.getElementById("viewTablesBtn");
+
+  viewTablesBtn.addEventListener("click", () => {
+    renderViewBan();
+    viewBanContainerEl.classList.remove("hidden");
+  });
+
+  function renderViewBan() {
+    const viewBanGrid = document.getElementById("viewBanGrid");
+    viewBanGrid.innerHTML = "";
+    hoaDonTheoBan = JSON.parse(localStorage.getItem("hoaDonTheoBan")) || {};
+
+    if (!banList.length) {
+      viewBanGrid.innerHTML =
+        '<p class="text-center text-gray-500 col-span-4">Chưa có bàn nào</p>';
+      return;
+    }
+
+    banList.forEach((ban) => {
+      const banData = hoaDonTheoBan[ban.ban_id] || [];
+      const div = document.createElement("div");
+      div.className = "relative border p-3 rounded-lg shadow-sm bg-gray-50";
+      div.innerHTML = `<p class="font-semibold mb-2">${ban.ten_ban}</p>`;
+
+      if (!banData.length)
+        div.innerHTML += '<p class="text-gray-500">Chưa có sản phẩm</p>';
+      else {
+        const ul = document.createElement("ul");
+        banData.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = `${item.ten_san_pham} ${item.kich_co ? "(" + item.kich_co + ")" : ""} ${item.toppings.length ? "+ " + item.toppings.map((t) => t.ten_topping).join(", ") : ""} x${item.so_luong}`;
+          ul.appendChild(li);
+        });
+        div.appendChild(ul);
+
+        const payBtn = document.createElement("button");
+        payBtn.className =
+          "absolute top-2 right-2 w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center font-semibold";
+        payBtn.textContent = "💰";
+
+        payBtn.addEventListener("click", () => {
           const modal = document.createElement("div");
           modal.className =
-            "fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 size-modal";
+            "fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40";
           modal.innerHTML = `
-      <div class="bg-white rounded-3xl w-96 shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
-  <!-- Header -->
-  <div class="p-6 border-b">
-    <h2 class="text-lg font-semibold text-center text-gray-800">
-      Chọn tùy chọn cho <br>
-      <span class="text-blue-600">${item.ten_san_pham}</span>
-    </h2>
-  </div>
-
-  <!-- Nội dung cuộn -->
-  <div class="p-6 max-h-[75vh] overflow-y-auto pr-2 rounded-b-3xl">
-    <!-- Kích cỡ -->
-    <div class="mb-6">
-      <h3 class="font-semibold text-gray-700 mb-2">Kích cỡ:</h3>
-      <div class="flex flex-col gap-2">
-        ${kichCoList
-          .map(
-            (kc) => `
-          <label class="border border-gray-200 rounded-xl py-2 px-3 flex justify-between items-center hover:bg-blue-50 cursor-pointer transition">
-            
-            <span class="text-center"><input class="mr-1 mt-1" type="radio" name="kichco" value='${JSON.stringify(kc)}' ${
-              item.kich_co === kc.ten_kich_co ? "checked" : ""
-            }>${kc.ten_kich_co}</span>
-            <span class="text-gray-600">+${kc.gia_them.toLocaleString()} đ</span>
-          </label>`
-          )
-          .join("")}
-      </div>
-    </div>
-
-    <!-- Topping -->
-    <div class="mb-6">
-      <h3 class="font-semibold text-gray-700 mb-2">Topping:</h3>
-      <div class="flex flex-col gap-2">
-        ${toppingList
-          .map(
-            (t) => `
-          <label class="border border-gray-200 rounded-xl py-2 px-3 flex justify-between items-center hover:bg-blue-50 cursor-pointer transition">
-            
-            <span><input class="mr-1 mt-1" type="checkbox" value='${JSON.stringify(t)}' ${
-              item.toppings.some((tp) => tp.topping_id === t.topping_id)
-                ? "checked"
-                : ""
-            }>${t.ten_topping}</span>
-            <span class="text-gray-600">+${t.gia_them.toLocaleString()} đ</span>
-          </label>`
-          )
-          .join("")}
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <div class="p-6 border-t flex gap-3">
-    <button onclick="luuKichCoVaTopping(${index})"
-      class="flex-1 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
-      Lưu
-    </button>
-    <button onclick="dongSizeModal()"
-      class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl hover:bg-gray-300 transition">
-      Hủy
-    </button>
-  </div>
-</div>
-
-
-    `;
+            <div class="bg-white rounded-2xl p-6 shadow-lg w-full max-w-2xl mx-auto">
+              <div class="flex flex-col md:flex-row gap-6">
+                <div class="flex-1 flex flex-col gap-4">
+                  <div class="flex gap-2">
+                    <input id="memberPhoneInput" type="text" placeholder="Nhập số điện thoại thành viên..." class="flex-1 px-2 py-1.5 text-sm rounded-lg border text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"/>
+                    <button id="searchMemberBtn" class="bg-blue-500 hover:bg-blue-600 text-white py-1.5 px-3 text-sm rounded-lg font-semibold transition">🔍 Tìm kiếm</button>
+                  </div>
+                  <p id="memberName" class="text-green-600 font-semibold text-sm truncate"></p>
+                  <div class="flex gap-2">
+                    <input id="promoCodeInput" type="text" placeholder="Nhập mã khuyến mãi..." class="flex-1 px-2 py-1.5 text-sm rounded-lg border text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"/>
+                    <button id="applyBtn" class="bg-yellow-400 hover:bg-yellow-500 text-white py-1.5 px-3 text-sm rounded-lg font-semibold transition">Áp dụng</button>
+                  </div>
+                </div>
+                <div class="flex-1 flex flex-col gap-3">
+                  <h2 class="text-lg font-semibold mb-2 text-left">Chọn phương thức thanh toán</h2>
+                  <button id="cashBtn" class="bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold w-full">💵 Tiền mặt</button>
+                  <button id="bankingBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-semibold w-full">🏦 Banking</button>
+                  <button id="cancelBtn" class="bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-semibold w-full">Hủy</button>
+                </div>
+              </div>
+            </div>
+          `;
           document.body.appendChild(modal);
-        };
 
-        window.luuKichCoVaTopping = (index) => {
-          const modal = document.querySelector(".size-modal");
-          const item = bill[index];
-          const kcInput = modal.querySelector('input[name="kichco"]:checked');
-          if (!kcInput) return alert("Vui lòng chọn kích cỡ!");
-          const kc = JSON.parse(kcInput.value);
-          item.kich_co = kc.ten_kich_co;
-          item.kich_co_id = kc.kich_co_id;
-          item.gia_them = kc.gia_them;
+          // --- Event listener gắn ngay sau khi modal được tạo ---
+          const applyBtn = modal.querySelector("#applyBtn");
+          const promoInput = modal.querySelector("#promoCodeInput");
 
-          const toppingInputs = modal.querySelectorAll(
-            'input[type="checkbox"]:checked'
-          );
-          const toppings = Array.from(toppingInputs).map((i) =>
-            JSON.parse(i.value)
-          );
-          item.toppings = toppings;
-          item.tong_topping = toppings.reduce(
-            (sum, t) => sum + Number(t.gia_them),
-            0
-          );
+          applyBtn.addEventListener("click", async () => {
+  const ma_khuyen_mai = promoInput.value.trim();
+  const thanh_vien_id = modal.dataset.memberId;
 
-          dongSizeModal();
-          renderBill();
-        };
+  if (!ma_khuyen_mai) return alert("Vui lòng nhập mã khuyến mãi!");
+  if (!thanh_vien_id) return alert("Vui lòng tìm thành viên trước khi áp dụng mã!");
 
-        window.dongSizeModal = () =>
-          document.querySelectorAll(".size-modal").forEach((m) => m.remove());
-        window.changeQty = (i, d) => {
-          bill[i].so_luong += d;
-          if (bill[i].so_luong <= 0) bill.splice(i, 1);
-          renderBill();
-        };
-        window.removeItem = (i) => {
-          bill.splice(i, 1);
-          renderBill();
-        };
+  try {
+    const res = await fetch("http://localhost:3000/mucgiamgia/kiemTraMaChoThanhVien", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ma_khuyen_mai, thanh_vien_id })
+    });
+    const data = await res.json();
 
-        // --- User
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) window.location.href = "/taikhoan/dangnhap";
-        else
-          document.getElementById("tenNhanVien").textContent = `👋 Xin chào, ${
-            user.ho_ten || user.ten_dang_nhap || "Nhân viên"
-          }`;
-        document.getElementById("logoutBtn").addEventListener("click", () => {
-          localStorage.removeItem("user");
-          window.location.href = "/taikhoan/dangnhap";
-        });
+    if (res.ok && data.error === 0) {
+      alert("🎉 Áp dụng mã khuyến mãi thành công!");
 
-        // --- Bàn
-        const chooseTableBtn = document.getElementById("chooseTableBtn");
-        const completeBtn = document.getElementById("completeBtn");
-        const banContainerEl = document.getElementById("banContainer");
-        let banList = [],
-          hoaDonTheoBan = {},
-          selectedBanId = null;
+      // Lưu thông tin giảm giá vào modal để dùng khi thanh toán
+      modal.dataset.mucGiamGiaId = data.data.muc_giam_gia_id; // lấy id của mã giảm giá
+      modal.dataset.phanTramGiam = data.data.phan_tram_giam; // phần trăm giảm
 
-        fetch("http://localhost:3000/ban/laytatca")
-          .then((res) => res.json())
-          .then((data) => {
-            banList = data;
-            renderBan();
-          });
+      // Tính lại tổng tiền dựa trên phần trăm giảm
+      const tongTien = bill.reduce(
+        (sum, item) => sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong,
+        0
+      );
+      const tienSauGiam = tongTien * (1 - Number(data.data.phan_tram_giam) / 100);
+      totalEl.textContent = tienSauGiam.toLocaleString() + " đ";
 
-        const storedHoaDon = localStorage.getItem("hoaDonTheoBan");
-        if (storedHoaDon) hoaDonTheoBan = JSON.parse(storedHoaDon);
+      // Lưu tạm vào modal để khi thanh toán tiền sẽ áp dụng
+      modal.dataset.tienSauGiam = tienSauGiam;
+    } else {
+      alert("❌ Mã khuyến mãi không hợp lệ hoặc đã được sử dụng!");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("❌ Không thể kết nối đến server!");
+  }
+});
 
-        chooseTableBtn.addEventListener("click", () => {
-          if (bill.length === 0) {
-            return alert("Vui lòng chọn món trước khi chọn bàn!");
-          }
+            const ma_khuyen_mai = promoInput.value.trim();
+            const thanh_vien_id = modal.dataset.memberId;
 
-          // Kiểm tra tất cả sản phẩm đã chọn kích cỡ chưa
-          const spChuaChonKichCo = bill.find((item) => !item.kich_co);
-          if (spChuaChonKichCo) {
-            return alert("Vui lòng chọn kích cỡ cho tất cả sản phẩm!"); // không cho chọn bàn
-          }
+            if (!ma_khuyen_mai) return alert("Vui lòng nhập mã khuyến mãi!");
+            if (!thanh_vien_id) return alert("Vui lòng tìm thành viên trước khi áp dụng mã!");
 
-          banContainerEl.classList.remove("hidden");
-          renderBan();
-        });
-
-        function renderBan() {
-          const banListEl = document.getElementById("banList");
-          banListEl.innerHTML = "";
-          hoaDonTheoBan =
-            JSON.parse(localStorage.getItem("hoaDonTheoBan")) || {};
-
-          banList.forEach((ban) => {
-            let trangThai = ban.trang_thai;
-            if (
-              hoaDonTheoBan[ban.ban_id] &&
-              hoaDonTheoBan[ban.ban_id].length > 0 &&
-              ban.trang_thai !== "Đã thanh toán"
-            ) {
-              trangThai = "Đang sử dụng";
-            }
-
-            const div = document.createElement("div");
-            div.className = `p-3 rounded-lg text-center font-semibold cursor-pointer transition
-        ${trangThai === "Trống" ? "bg-green-200 hover:bg-green-300" : ""}
-        ${
-          trangThai === "Đang sử dụng"
-            ? "bg-yellow-200 hover:bg-yellow-300"
-            : ""
-        }
-        ${
-          trangThai === "Đã thanh toán" ? "bg-gray-300 cursor-not-allowed" : ""
-        }`;
-            div.textContent = `${ban.ten_ban} — ${trangThai}`;
-
-            if (trangThai !== "Đã thanh toán")
-              div.addEventListener("click", () => selectBan(ban.ban_id));
-            banListEl.appendChild(div);
-          });
-        }
-
-        function closeBanModal() {
-          banContainerEl.classList.add("hidden");
-        }
-
-        function selectBan(ban_id) {
-          selectedBanId = ban_id;
-          banContainerEl.classList.add("hidden");
-          alert(
-            `Bạn đã chọn ${
-              banList.find((b) => b.ban_id === ban_id).ten_ban
-            }, nhấn Hoàn tất để lưu sản phẩm`
-          );
-          completeBtn.classList.remove("hidden");
-          chooseTableBtn.classList.add("hidden");
-        }
-
-        completeBtn.addEventListener("click", () => {
-          if (!selectedBanId) return alert("Vui lòng chọn bàn!");
-          if (!hoaDonTheoBan[selectedBanId]) hoaDonTheoBan[selectedBanId] = [];
-          hoaDonTheoBan[selectedBanId].push(
-            ...bill.map((item) => ({ ...item }))
-          );
-          localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
-          bill.length = 0;
-          renderBill();
-          completeBtn.classList.add("hidden");
-          chooseTableBtn.classList.remove("hidden");
-          selectedBanId = null;
-          renderBan();
-          alert("Đã lưu sản phẩm vào bàn");
-        });
-
-        // --- Xem danh sách bàn + món + Thanh toán
-        const viewBanContainerEl = document.getElementById("viewBanContainer");
-        const viewBanListEl = document.getElementById("viewBanList");
-        const viewTablesBtn = document.getElementById("viewTablesBtn");
-
-        viewTablesBtn.addEventListener("click", () => {
-          renderViewBan();
-          viewBanContainerEl.classList.remove("hidden");
-        });
-
-        function renderViewBan() {
-          const viewBanGrid = document.getElementById("viewBanGrid");
-          viewBanGrid.innerHTML = ""; // xóa hết
-          hoaDonTheoBan =
-            JSON.parse(localStorage.getItem("hoaDonTheoBan")) || {};
-
-          if (!banList.length) {
-            viewBanGrid.innerHTML =
-              '<p class="text-center text-gray-500 col-span-4">Chưa có bàn nào</p>';
-            return;
-          }
-
-          banList.forEach((ban) => {
-            const banData = hoaDonTheoBan[ban.ban_id] || [];
-            const div = document.createElement("div");
-            div.className =
-              "relative border p-3 rounded-lg shadow-sm bg-gray-50";
-            div.innerHTML = `<p class="font-semibold mb-2">${ban.ten_ban}</p>`;
-
-            if (!banData.length)
-              div.innerHTML += '<p class="text-gray-500">Chưa có sản phẩm</p>';
-            else {
-              const ul = document.createElement("ul");
-              banData.forEach((item) => {
-                const li = document.createElement("li");
-                li.textContent = `${item.ten_san_pham} ${
-                  item.kich_co ? "(" + item.kich_co + ")" : ""
-                } ${
-                  item.toppings.length
-                    ? "+ " + item.toppings.map((t) => t.ten_topping).join(", ")
-                    : ""
-                } x${item.so_luong}`;
-                ul.appendChild(li);
+            try {
+              const res = await fetch("http://localhost:3000/mucgiamgia/kiemTraMaChoThanhVien", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ma_khuyen_mai, thanh_vien_id })
               });
-              div.appendChild(ul);
-
-              const payBtn = document.createElement("button");
-              payBtn.className =
-                "absolute top-2 right-2  w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center font-semibold";
-              payBtn.textContent = "💰";
-              payBtn.addEventListener("click", () => {
-                // Tạo modal chọn phương thức thanh toán
-                const modal = document.createElement("div");
-                modal.className =
-                  "fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40";
-                modal.innerHTML = `
-    <div class="bg-white rounded-2xl p-6 w-80 shadow-lg text-center">
-      <h2 class="text-lg font-semibold mb-4">Chọn phương thức thanh toán</h2>
-      <div class="flex flex-col gap-4">
-        <button id="cashBtn" class="bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold">💵 Tiền mặt</button>
-        <button id="bankingBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-semibold">🏦 Banking</button>
-        <button id="cancelBtn" class="bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-semibold">Hủy</button>
-      </div>
-    </div>
-  `;
-                document.body.appendChild(modal);
-
-                // Xử lý chọn Tiền mặt
-                modal
-                  .querySelector("#cashBtn")
-                  .addEventListener("click", async () => {
-                    const monAn = hoaDonTheoBan[ban.ban_id] || [];
-
-                    if (!monAn.length) return alert("Bàn này chưa có món!");
-
-                    // Tính tổng tiền
-                    let tongTienBan = 0;
-                    const chiTiet = [];
-
-                    monAn.forEach((item) => {
-                      const donGia =
-                        Number(item.gia_co_ban) +
-                        Number(item.gia_them || 0) +
-                        Number(item.tong_topping || 0);
-                      const thanhTien = donGia * item.so_luong;
-                      tongTienBan += thanhTien;
-
-                      // Mỗi topping tạo 1 dòng trong chi_tiet
-                      if (item.toppings.length) {
-                        item.toppings.forEach((t) => {
-                          chiTiet.push({
-                            san_pham_id: item.san_pham_id,
-                            kich_co_id: item.kich_co_id,
-                            topping_id: t.topping_id,
-                            so_luong: item.so_luong,
-                            don_gia: donGia,
-                          });
-                        });
-                      } else {
-                        chiTiet.push({
-                          san_pham_id: item.san_pham_id,
-                          kich_co_id: item.kich_co_id,
-                          topping_id: null,
-                          so_luong: item.so_luong,
-                          don_gia: donGia,
-                        });
-                      }
-                    });
-
-                    const payload = {
-                      thanh_vien_id: null, // nếu có khách hàng thì điền vào
-                      ban_id: ban.ban_id,
-                      tai_khoan_id: user.tai_khoan_id || 1, // hoặc user.id
-                      tong_tien: tongTienBan,
-                      tien_sau_giam: tongTienBan, // nếu có giảm giá thì tính lại
-                      muc_giam_gia_id: null,
-                      trang_thai: "Đã thanh toán",
-                      chi_tiet: chiTiet,
-                    };
-
-                    console.log("Payload gửi lên API:", payload);
-
-                    try {
-                      const res = await fetch(
-                        "http://localhost:3000/donhang/them",
-                        {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(payload),
-                        }
-                      );
-                      const data = await res.json();
-
-                      if (res.ok) {
-                        alert("Đã lưu đơn hàng thành công!");
-                        delete hoaDonTheoBan[ban.ban_id];
-                        localStorage.setItem(
-                          "hoaDonTheoBan",
-                          JSON.stringify(hoaDonTheoBan)
-                        );
-                        renderViewBan();
-                        renderBan();
-                      } else {
-                        alert("Lỗi khi lưu đơn hàng: " + data.message);
-                        console.error(data);
-                      }
-                    } catch (err) {
-                      console.error(err);
-                      alert("Không thể kết nối đến server!");
-                    }
-
-                    modal.remove();
-                  });
-
-                // Xử lý Banking (chỉ đóng modal tạm thời)
-                modal
-                  .querySelector("#bankingBtn")
-                  .addEventListener("click", () => {
-                    alert("Chức năng Banking sẽ được phát triển sau.");
-                    modal.remove();
-                  });
-
-                // Hủy modal
-                modal
-                  .querySelector("#cancelBtn")
-                  .addEventListener("click", () => modal.remove());
-              });
-              div.appendChild(payBtn);
+              const data = await res.json();
+              if (res.ok && data.error === 0) alert("🎉 Áp dụng mã khuyến mãi thành công!");
+              else alert("❌ Mã khuyến mãi không hợp lệ hoặc đã được sử dụng!");
+            } catch (err) {
+              console.error(err);
+              alert("❌ Không thể kết nối đến server!");
             }
-
-            viewBanGrid.appendChild(div);
           });
-        }
 
-        window.closeViewBanModal = () => {
-          viewBanContainerEl.classList.add("hidden");
-        };
+          modal.querySelector("#searchMemberBtn").addEventListener("click", async () => {
+            const sdt = modal.querySelector("#memberPhoneInput").value.trim();
+            if (!sdt) return alert("Vui lòng nhập số điện thoại!");
+            try {
+              const res = await fetch(`http://localhost:3000/thanhvien/timtheosdt/${sdt}`);
+              if (!res.ok) throw new Error("Không tìm thấy thành viên");
+              const member = await res.json();
+              modal.querySelector("#memberName").textContent = `👤 ${member.ho_ten}`;
+              modal.dataset.memberId = member.thanh_vien_id;
+            } catch (err) {
+              alert("Không tìm thấy thành viên!");
+              modal.querySelector("#memberName").textContent = "";
+              modal.dataset.memberId = null;
+              console.error(err);
+            }
+          });
+
+          modal.querySelector("#cashBtn").addEventListener("click", async () => {
+  const monAn = hoaDonTheoBan[ban.ban_id] || [];
+  if (!monAn.length) return alert("Bàn này chưa có món!");
+
+  const tongTienBan = bill.reduce(
+    (sum, item) => sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong,
+    0
+  );
+
+  // Nếu có mã giảm giá
+  const mucGiamGiaId = modal.dataset.mucGiamGiaId || null;
+  const tienSauGiam = modal.dataset.tienSauGiam || tongTienBan;
+
+  const chiTiet = [];
+  monAn.forEach((item) => {
+    const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+    if (item.toppings.length) {
+      item.toppings.forEach((t) => {
+        chiTiet.push({
+          san_pham_id: item.san_pham_id,
+          kich_co_id: item.kich_co_id,
+          topping_id: t.topping_id,
+          so_luong: item.so_luong,
+          don_gia: donGia,
+        });
       });
+    } else {
+      chiTiet.push({
+        san_pham_id: item.san_pham_id,
+        kich_co_id: item.kich_co_id,
+        topping_id: null,
+        so_luong: item.so_luong,
+        don_gia: donGia,
+      });
+    }
+  });
 
-      // --- Tìm kiếm và lọc loại sản phẩm ---
-      const searchInput = document.getElementById("search");
-      const filterSelect = document.getElementById("filter");
-      const allProducts = Array.from(document.querySelectorAll(".product"));
+  const payload = {
+    thanh_vien_id: modal.dataset.memberId || null,
+    ban_id: ban.ban_id,
+    nhan_vien_id: user.tai_khoan_id || 1,
+    tong_tien: tongTienBan,
+    tien_sau_giam: tienSauGiam,
+    muc_giam_gia_id: mucGiamGiaId,
+    trang_thai: "Đã thanh toán",
+    chi_tiet: chiTiet,
+  };
 
-      function filterProducts() {
-        const keyword = searchInput.value.toLowerCase().trim();
-        const selectedLoai = filterSelect.value;
+  try {
+    const res = await fetch("http://localhost:3000/donhang/them", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert("Đã lưu đơn hàng thành công!");
 
-        allProducts.forEach((p) => {
-          const ten = p.dataset.ten.toLowerCase();
-          const loai = p.dataset.loai;
-          const matchTen = ten.includes(keyword);
-          const matchLoai = selectedLoai === "" || loai === selectedLoai;
-
-          if (matchTen && matchLoai) {
-            p.style.display = "";
-          } else {
-            p.style.display = "none";
-          }
+      // Cập nhật mã giảm giá đã sử dụng nếu có
+      if (mucGiamGiaId) {
+        await fetch(`http://localhost:3000/mucgiamgia/sua/${mucGiamGiaId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            thanh_vien_id: modal.dataset.memberId,
+            da_su_dung: 1
+          })
         });
       }
 
-      // Gắn sự kiện cho tìm kiếm & lọc
-      searchInput.addEventListener("input", filterProducts);
-      filterSelect.addEventListener("change", filterProducts);
+      delete hoaDonTheoBan[ban.ban_id];
+      localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
+      renderViewBan();
+      renderBan();
+    } else {
+      alert("Lỗi khi lưu đơn hàng: " + data.message);
+      console.error(data);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Không thể kết nối đến server!");
+  }
+
+  modal.remove();
+});
+
+            const monAn = hoaDonTheoBan[ban.ban_id] || [];
+            if (!monAn.length) return alert("Bàn này chưa có món!");
+            let tongTienBan = 0;
+            const chiTiet = [];
+            monAn.forEach((item) => {
+              const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+              const thanhTien = donGia * item.so_luong;
+              tongTienBan += thanhTien;
+              if (item.toppings.length) {
+                item.toppings.forEach((t) => {
+                  chiTiet.push({
+                    san_pham_id: item.san_pham_id,
+                    kich_co_id: item.kich_co_id,
+                    topping_id: t.topping_id,
+                    so_luong: item.so_luong,
+                    don_gia: donGia,
+                  });
+                });
+              } else {
+                chiTiet.push({
+                  san_pham_id: item.san_pham_id,
+                  kich_co_id: item.kich_co_id,
+                  topping_id: null,
+                  so_luong: item.so_luong,
+                  don_gia: donGia,
+                });
+              }
+            });
+
+            const payload = {
+              thanh_vien_id: modal.dataset.memberId || null,
+              ban_id: ban.ban_id,
+              tai_khoan_id: user.tai_khoan_id || 1,
+              tong_tien: tongTienBan,
+              tien_sau_giam: tongTienBan,
+              muc_giam_gia_id: null,
+              trang_thai: "Đã thanh toán",
+              chi_tiet: chiTiet,
+            };
+
+            try {
+              const res = await fetch("http://localhost:3000/donhang/them", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+              const data = await res.json();
+              if (res.ok) {
+                alert("Đã lưu đơn hàng thành công!");
+                delete hoaDonTheoBan[ban.ban_id];
+                localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
+                renderViewBan();
+                renderBan();
+              } else {
+                alert("Lỗi khi lưu đơn hàng: " + data.message);
+                console.error(data);
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Không thể kết nối đến server!");
+            }
+
+            modal.remove();
+          });
+
+          modal.querySelector("#bankingBtn").addEventListener("click", () => {
+            alert("Chức năng Banking sẽ được phát triển sau.");
+            modal.remove();
+          });
+
+          modal.querySelector("#cancelBtn").addEventListener("click", () => modal.remove());
+        });
+
+        div.appendChild(payBtn);
+      }
+
+      viewBanGrid.appendChild(div);
+    });
+  }
+
+  window.closeViewBanModal = () => {
+    viewBanContainerEl.classList.add("hidden");
+  };
+
+  // --- Tìm kiếm & lọc ---
+  const searchInput = document.getElementById("search");
+  const filterSelect = document.getElementById("filter");
+  const allProducts = Array.from(document.querySelectorAll(".product"));
+
+  function filterProducts() {
+    const keyword = searchInput.value.toLowerCase().trim();
+    const selectedLoai = filterSelect.value;
+    allProducts.forEach((p) => {
+      const ten = p.dataset.ten.toLowerCase();
+      const loai = p.dataset.loai;
+      const matchTen = ten.includes(keyword);
+      const matchLoai = selectedLoai === "" || loai === selectedLoai;
+      p.style.display = matchTen && matchLoai ? "" : "none";
+    });
+  }
+
+  searchInput.addEventListener("input", filterProducts);
+  filterSelect.addEventListener("change", filterProducts);
+});
+</script>
 
 
-      const user = JSON.parse(localStorage.getItem("user"));
-console.log("User đang đăng nhập:", user);
-
-if (!user) window.location.href = "/taikhoan/dangnhap";
-else
-  document.getElementById("tenNhanVien").textContent = `👋 Xin chào, ${
-    user.ho_ten || user.ten_dang_nhap || "Nhân viên"
-  }`;
-
-    </script>
   </body>
 </html>

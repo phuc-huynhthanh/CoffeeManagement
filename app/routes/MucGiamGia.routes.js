@@ -9,5 +9,8 @@ router.post("/timkiem", MucGiamGiaController.timTheoDieuKien);
 router.post("/them", MucGiamGiaController.them);
 router.put("/sua/:id", MucGiamGiaController.capNhat);
 router.delete("/xoa/:id", MucGiamGiaController.xoa);
+router.get("/laytheoma/:ma_khuyen_mai", MucGiamGiaController.timTheoMaKhuyenMai);
+router.post("/kiemTraMaChoThanhVien/", MucGiamGiaController.kiemTraMaChoThanhVien);
+
 
 export default router;

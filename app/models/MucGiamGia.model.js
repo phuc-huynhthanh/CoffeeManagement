@@ -80,4 +80,31 @@ export const MucGiamGiaModel = {
     `, [id]);
     return result.affectedRows;
   },
+
+  // MucGiamGia.model.js
+async timTheoMaKhuyenMai(ma_khuyen_mai) {
+    const [rows] = await db.query(`
+        SELECT mg.*, tv.ho_ten AS ten_thanh_vien
+        FROM muc_giam_gia mg
+        LEFT JOIN thanh_vien tv ON mg.thanh_vien_id = tv.thanh_vien_id
+        WHERE mg.ma_khuyen_mai = ? AND mg.da_su_dung = FALSE
+    `, [ma_khuyen_mai]);
+
+    return rows[0]; // trả về 1 object hoặc undefined nếu không tìm thấy
+},
+// MucGiamGia.model.js
+async kiemTraTheoThanhVien(ma_khuyen_mai, thanh_vien_id) {
+    const [rows] = await db.query(`
+        SELECT mg.*, tv.ho_ten AS ten_thanh_vien
+        FROM muc_giam_gia mg
+        LEFT JOIN thanh_vien tv ON mg.thanh_vien_id = tv.thanh_vien_id
+        WHERE mg.ma_khuyen_mai = ? 
+          AND (mg.thanh_vien_id IS NULL OR mg.thanh_vien_id = ?)
+          AND mg.da_su_dung = FALSE
+    `, [ma_khuyen_mai, thanh_vien_id]);
+
+    return rows[0]; // trả về object hoặc undefined nếu không có
+}
+
+
 };
