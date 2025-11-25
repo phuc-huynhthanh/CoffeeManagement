@@ -11,6 +11,7 @@ router.put("/sua/:id", MucGiamGiaController.capNhat);
 router.delete("/xoa/:id", MucGiamGiaController.xoa);
 router.get("/laytheoma/:ma_khuyen_mai", MucGiamGiaController.timTheoMaKhuyenMai);
 router.post("/kiemTraMaChoThanhVien/", MucGiamGiaController.kiemTraMaChoThanhVien);
+router.put("/capnhatthongtin/:id", MucGiamGiaController.capNhatThongTin);
 
 
 export default router;

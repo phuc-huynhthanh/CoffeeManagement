@@ -701,6 +701,7 @@ async function loadDiscounts() {
   try {
     const res = await fetch("http://localhost:3000/mucgiamgia/laytatca");
     const data = await res.json();
+    
     discountTable.innerHTML = data
       .map((item, index) => `
         <tr>
@@ -718,6 +719,7 @@ async function loadDiscounts() {
       `).join("");
   } catch (err) {
     console.error("Lỗi loadDiscounts:", err);
+    discountTable.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-500">Lỗi khi tải dữ liệu</td></tr>`;
   }
 }
 
@@ -746,18 +748,28 @@ discountForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    const url = id ? `http://localhost:3000/mucgiamgia/sua/${id}` : "http://localhost:3000/mucgiamgia/them";
+    const url = id 
+      ? `http://localhost:3000/mucgiamgia/sua/${id}` 
+      : "http://localhost:3000/mucgiamgia/them";
+    
     const method = id ? "PUT" : "POST";
+    
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    
     const result = await res.json();
+    
+    if (!res.ok) throw new Error(result.message || "Lỗi khi lưu khuyến mãi");
+    
+    showToast(id ? "✅ Cập nhật khuyến mãi thành công!" : "✅ Thêm khuyến mãi thành công!", "success");
     discountModal.classList.add("hidden");
     loadDiscounts();
   } catch (err) {
     console.error("Lỗi submit:", err);
+    showToast("❌ Lỗi: " + err.message, "error");
   }
 });
 
@@ -765,6 +777,9 @@ discountForm.addEventListener("submit", async (e) => {
 window.editDiscount = async function (id) {
   try {
     const res = await fetch(`http://localhost:3000/mucgiamgia/layid/${id}`);
+    
+    if (!res.ok) throw new Error("Không thể tải dữ liệu khuyến mãi");
+    
     const data = await res.json();
 
     discountModalTitle.textContent = "Cập nhật khuyến mãi";
@@ -773,25 +788,35 @@ window.editDiscount = async function (id) {
     discountPercentInput.value = data.phan_tram_giam;
     discountDescInput.value = data.mo_ta || "";
     discountExpiryInput.value = data.ngay_het_han || "";
+    
     await loadMembers();
     discountMemberSelect.value = data.thanh_vien_id || "";
 
     discountModal.classList.remove("hidden");
   } catch (err) {
     console.error("Lỗi editDiscount:", err);
-    alert("Không thể tải dữ liệu khuyến mãi!");
+    showToast("❌ Không thể tải dữ liệu khuyến mãi!", "error");
   }
 };
 
 // Xóa
 window.deleteDiscount = async function (id) {
   if (!confirm("Bạn có chắc muốn xóa khuyến mãi này?")) return;
+  
   try {
-    const res = await fetch(`http://localhost:3000/mucgiamgia/xoa/${id}`, { method: "DELETE" });
-    await res.json();
+    const res = await fetch(`http://localhost:3000/mucgiamgia/xoa/${id}`, { 
+      method: "DELETE" 
+    });
+    
+    const result = await res.json();
+    
+    if (!res.ok) throw new Error(result.message || "Không thể xóa khuyến mãi");
+    
+    showToast("✅ Xóa khuyến mãi thành công!", "success");
     loadDiscounts();
   } catch (err) {
     console.error("Lỗi deleteDiscount:", err);
+    showToast("❌ Lỗi: " + err.message, "error");
   }
 };
 

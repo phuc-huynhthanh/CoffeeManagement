@@ -165,18 +165,20 @@ CREATE TABLE IF NOT EXISTS thanh_vien (
 -- =========================
 -- BẢNG MỨC GIẢM GIÁ
 -- =========================
-CREATE TABLE IF NOT EXISTS muc_giam_gia (
-    muc_giam_gia_id INT PRIMARY KEY AUTO_INCREMENT,
-    ma_khuyen_mai VARCHAR(50) NOT NULL UNIQUE,           -- Mã code giảm giá (VD: KMTHANHVIEN01)
-    phan_tram_giam DECIMAL(5,2) NOT NULL CHECK (phan_tram_giam BETWEEN 0 AND 100),
-    mo_ta VARCHAR(255),
-    thanh_vien_id INT,                                   -- Gắn mã này cho thành viên cụ thể
-    da_su_dung BOOLEAN DEFAULT FALSE,                    -- Đánh dấu mã đã dùng hay chưa
-    ngay_tao DATE DEFAULT (CURRENT_DATE),
-    ngay_het_han DATE DEFAULT (DATE_ADD(CURRENT_DATE, INTERVAL 7 DAY)),
+CREATE TABLE IF NOT EXISTS muc_giam_gia_thanh_vien (
+    muc_giam_gia_id INT NOT NULL,
+    thanh_vien_id INT NOT NULL,
+    da_su_dung BOOLEAN DEFAULT FALSE,  -- đánh dấu thành viên đã dùng chưa
+    ngay_su_dung DATE,
+    PRIMARY KEY (muc_giam_gia_id, thanh_vien_id),
+    FOREIGN KEY (muc_giam_gia_id) REFERENCES muc_giam_gia(muc_giam_gia_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
     FOREIGN KEY (thanh_vien_id) REFERENCES thanh_vien(thanh_vien_id)
         ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
+
 
 -- =========================
 -- BẢNG ĐƠN HÀNG (SỬA: dùng tai_khoan_id thay cho nhan_vien_id)

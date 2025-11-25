@@ -95,16 +95,33 @@ async timTheoMaKhuyenMai(ma_khuyen_mai) {
 // MucGiamGia.model.js
 async kiemTraTheoThanhVien(ma_khuyen_mai, thanh_vien_id) {
     const [rows] = await db.query(`
-        SELECT mg.*, tv.ho_ten AS ten_thanh_vien
+        SELECT mg.*, tv.ho_ten AS ten_thanh_vien,
+               mgtv.da_su_dung AS da_su_dung_thanh_vien
         FROM muc_giam_gia mg
-        LEFT JOIN thanh_vien tv ON mg.thanh_vien_id = tv.thanh_vien_id
-        WHERE mg.ma_khuyen_mai = ? 
-          AND (mg.thanh_vien_id IS NULL OR mg.thanh_vien_id = ?)
-          AND mg.da_su_dung = FALSE
+        JOIN muc_giam_gia_thanh_vien mgtv 
+          ON mg.muc_giam_gia_id = mgtv.muc_giam_gia_id
+        JOIN thanh_vien tv 
+          ON tv.thanh_vien_id = mgtv.thanh_vien_id
+        WHERE mg.ma_khuyen_mai = ?
+          AND mgtv.thanh_vien_id = ?
+          AND mgtv.da_su_dung = FALSE
     `, [ma_khuyen_mai, thanh_vien_id]);
 
     return rows[0]; // trả về object hoặc undefined nếu không có
+},
+
+// MucGiamGia.model.js
+async capNhatThongTin(id, { thanh_vien_id, da_su_dung }) {
+  const [result] = await db.query(`
+    UPDATE muc_giam_gia_thanh_vien
+    SET da_su_dung = ?, ngay_su_dung = CURRENT_DATE
+    WHERE muc_giam_gia_id = ? AND thanh_vien_id = ?
+  `, [da_su_dung, id, thanh_vien_id]);
+
+  return result.affectedRows;
 }
+
+
 
 
 };
