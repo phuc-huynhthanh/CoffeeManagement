@@ -5,8 +5,125 @@
     <link rel="icon" href="/assets/coffee.png" type="image/png" />
     <title>Brother's Hai Coffee</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Toast Container */
+      #toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      /* Toast Base */
+      .toast {
+        min-width: 300px;
+        max-width: 400px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideIn 0.3s ease-out;
+        transition: all 0.3s ease;
+      }
+
+      .toast:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Toast Types */
+      .toast-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+      }
+
+      .toast-error {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+      }
+
+      .toast-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+      }
+
+      .toast-info {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+      }
+
+      /* Toast Icon */
+      .toast-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+
+      /* Toast Content */
+      .toast-content {
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.5;
+        font-weight: 500;
+      }
+
+      /* Toast Close Button */
+      .toast-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+
+      .toast-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Animation */
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideOut {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+      }
+
+      .toast-exit {
+        animation: slideOut 0.3s ease-in forwards;
+      }
+    </style>
   </head>
   <body class="bg-gray-100 flex flex-col min-h-screen">
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
     <!-- Header -->
     <header
       class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 flex justify-between items-center shadow-md"
@@ -168,6 +285,69 @@
     </div>
 
 <script>
+  // ============================================
+  // TOAST NOTIFICATION SYSTEM
+  // ============================================
+  const Toast = {
+    container: null,
+
+    init() {
+      if (!this.container) {
+        this.container = document.getElementById('toast-container');
+      }
+    },
+
+    show(message, type = 'info', duration = 3000) {
+      this.init();
+
+      const icons = {
+        success: '✓',
+        error: '✕',
+        warning: '⚠',
+        info: 'ℹ'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <div class="toast-icon">${icons[type]}</div>
+        <div class="toast-content">${message}</div>
+        <button class="toast-close">×</button>
+      `;
+
+      this.container.appendChild(toast);
+
+      const closeBtn = toast.querySelector('.toast-close');
+      closeBtn.addEventListener('click', () => this.remove(toast));
+
+      setTimeout(() => this.remove(toast), duration);
+    },
+
+    remove(toast) {
+      toast.classList.add('toast-exit');
+      setTimeout(() => toast.remove(), 300);
+    },
+
+    success(message, duration) {
+      this.show(message, 'success', duration);
+    },
+
+    error(message, duration) {
+      this.show(message, 'error', duration);
+    },
+
+    warning(message, duration) {
+      this.show(message, 'warning', duration);
+    },
+
+    info(message, duration) {
+      this.show(message, 'info', duration);
+    }
+  };
+
+  // ============================================
+  // MAIN APPLICATION CODE
+  // ============================================
   document.addEventListener("DOMContentLoaded", () => {
     const bill = [];
     const billContainer = document.getElementById("bill");
@@ -255,7 +435,10 @@
     }
 
     window.chonKichCoVaTopping = (index) => {
-      if (!kichCoList.length) return alert("Không có dữ liệu kích cỡ!");
+      if (!kichCoList.length) {
+        Toast.error("Không có dữ liệu kích cỡ!");
+        return;
+      }
       const item = bill[index];
       const modal = document.createElement("div");
       modal.className =
@@ -319,7 +502,10 @@
       const modal = document.querySelector(".size-modal");
       const item = bill[index];
       const kcInput = modal.querySelector('input[name="kichco"]:checked');
-      if (!kcInput) return alert("Vui lòng chọn kích cỡ!");
+      if (!kcInput) {
+        Toast.warning("Vui lòng chọn kích cỡ!");
+        return;
+      }
       const kc = JSON.parse(kcInput.value);
       item.kich_co = kc.ten_kich_co;
       item.kich_co_id = kc.kich_co_id;
@@ -332,6 +518,7 @@
 
       dongSizeModal();
       renderBill();
+      Toast.success("Đã lưu tùy chọn!");
     };
 
     window.dongSizeModal = () =>
@@ -344,6 +531,7 @@
     window.removeItem = (i) => {
       bill.splice(i, 1);
       renderBill();
+      Toast.info("Đã xóa sản phẩm");
     };
 
     // --- User ---
@@ -356,7 +544,10 @@
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("user");
-      window.location.href = "/taikhoan/dangnhap";
+      Toast.success("Đăng xuất thành công!");
+      setTimeout(() => {
+        window.location.href = "/taikhoan/dangnhap";
+      }, 1000);
     });
 
     // --- Bàn ---
@@ -378,9 +569,15 @@
     if (storedHoaDon) hoaDonTheoBan = JSON.parse(storedHoaDon);
 
     chooseTableBtn.addEventListener("click", () => {
-      if (bill.length === 0) return alert("Vui lòng chọn món trước khi chọn bàn!");
+      if (bill.length === 0) {
+        Toast.warning("Vui lòng chọn món trước khi chọn bàn!");
+        return;
+      }
       const spChuaChonKichCo = bill.find((item) => !item.kich_co);
-      if (spChuaChonKichCo) return alert("Vui lòng chọn kích cỡ cho tất cả sản phẩm!");
+      if (spChuaChonKichCo) {
+        Toast.warning("Vui lòng chọn kích cỡ cho tất cả sản phẩm!");
+        return;
+      }
       banContainerEl.classList.remove("hidden");
       renderBan();
     });
@@ -417,15 +614,17 @@
     function selectBan(ban_id) {
       selectedBanId = ban_id;
       banContainerEl.classList.add("hidden");
-      alert(
-        `Bạn đã chọn ${banList.find((b) => b.ban_id === ban_id).ten_ban}, nhấn Hoàn tất để lưu sản phẩm`
-      );
+      const tenBan = banList.find((b) => b.ban_id === ban_id).ten_ban;
+      Toast.success(`Đã chọn ${tenBan}, nhấn Hoàn tất để lưu sản phẩm`);
       completeBtn.classList.remove("hidden");
       chooseTableBtn.classList.add("hidden");
     }
 
     completeBtn.addEventListener("click", () => {
-      if (!selectedBanId) return alert("Vui lòng chọn bàn!");
+      if (!selectedBanId) {
+        Toast.warning("Vui lòng chọn bàn!");
+        return;
+      }
       if (!hoaDonTheoBan[selectedBanId]) hoaDonTheoBan[selectedBanId] = [];
       hoaDonTheoBan[selectedBanId].push(...bill.map((item) => ({ ...item })));
       localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
@@ -435,7 +634,7 @@
       chooseTableBtn.classList.remove("hidden");
       selectedBanId = null;
       renderBan();
-      alert("Đã lưu sản phẩm vào bàn");
+      Toast.success("Đã lưu sản phẩm vào bàn");
     });
 
     // --- Xem danh sách bàn + món + Thanh toán ---
@@ -517,8 +716,14 @@
               const ma_khuyen_mai = promoInput.value.trim();
               const thanh_vien_id = modal.dataset.memberId;
 
-              if (!ma_khuyen_mai) return alert("Vui lòng nhập mã khuyến mãi!");
-              if (!thanh_vien_id) return alert("Vui lòng tìm thành viên trước khi áp dụng mã!");
+              if (!ma_khuyen_mai) {
+                Toast.warning("Vui lòng nhập mã khuyến mãi!");
+                return;
+              }
+              if (!thanh_vien_id) {
+                Toast.warning("Vui lòng tìm thành viên trước khi áp dụng mã!");
+                return;
+              }
 
               try {
                 const res = await fetch("http://localhost:3000/mucgiamgia/kiemTraMaChoThanhVien", {
@@ -529,14 +734,12 @@
                 const data = await res.json();
 
                 if (res.ok && data.error === 0) {
-                  alert("🎉 Áp dụng mã khuyến mãi thành công!");
+                  Toast.success("🎉 Áp dụng mã khuyến mãi thành công!");
                   console.log("🎟️ Mã khuyến mãi hợp lệ:", data.data);
 
-                  // Lưu thông tin giảm giá vào modal để dùng khi thanh toán
                   modal.dataset.mucGiamGiaId = data.data.muc_giam_gia_id;
                   modal.dataset.phanTramGiam = data.data.phan_tram_giam;
 
-                  // Tính lại tổng tiền dựa trên phần trăm giảm
                   const monAn = hoaDonTheoBan[ban.ban_id] || [];
                   const tongTien = monAn.reduce(
                     (sum, item) => sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong,
@@ -545,20 +748,22 @@
                   const tienSauGiam = tongTien * (1 - Number(data.data.phan_tram_giam) / 100);
                   totalEl.textContent = tienSauGiam.toLocaleString() + " đ";
 
-                  // Lưu tạm vào modal để khi thanh toán tiền sẽ áp dụng
                   modal.dataset.tienSauGiam = String(tienSauGiam);
                 } else {
-                  alert("❌ Mã khuyến mãi không hợp lệ hoặc đã được sử dụng!");
+                  Toast.error("❌ Mã khuyến mãi không hợp lệ hoặc đã được sử dụng!");
                 }
               } catch (err) {
                 console.error(err);
-                alert("❌ Không thể kết nối đến server!");
+                Toast.error("❌ Không thể kết nối đến server!");
               }
             });
 
             modal.querySelector("#searchMemberBtn").addEventListener("click", async () => {
               const sdt = modal.querySelector("#memberPhoneInput").value.trim();
-              if (!sdt) return alert("Vui lòng nhập số điện thoại!");
+              if (!sdt) {
+                Toast.warning("Vui lòng nhập số điện thoại!");
+                return;
+              }
               try {
                 const res = await fetch(`http://localhost:3000/thanhvien/timtheosdt/${sdt}`);
                 if (!res.ok) throw new Error("Không tìm thấy thành viên");
@@ -566,8 +771,9 @@
                 console.log("🔍 Thông tin thành viên tìm thấy:", member);
                 modal.querySelector("#memberName").textContent = `👤 ${member.ho_ten}`;
                 modal.dataset.memberId = member.thanh_vien_id;
+                Toast.success("Tìm thấy thành viên!");
               } catch (err) {
-                alert("Không tìm thấy thành viên!");
+                Toast.error("Không tìm thấy thành viên!");
                 modal.querySelector("#memberName").textContent = "";
                 modal.dataset.memberId = null;
                 console.error(err);
@@ -577,7 +783,10 @@
             // --- THANH TOÁN TIỀN MẶT ---
             modal.querySelector("#cashBtn").addEventListener("click", async () => {
               const monAn = hoaDonTheoBan[ban.ban_id] || [];
-              if (!monAn.length) return alert("Bàn này chưa có món!");
+              if (!monAn.length) {
+                Toast.warning("Bàn này chưa có món!");
+                return;
+              }
 
               const tongTienBan = monAn.reduce(
                 (sum, item) =>
@@ -646,7 +855,7 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                  alert("Đã lưu đơn hàng thành công!");
+                  Toast.success("Đã lưu đơn hàng thành công!");
 
                   if (modal.dataset.mucGiamGiaId && modal.dataset.memberId) {
                     const thanhVien = {
@@ -669,141 +878,154 @@
                   renderViewBan();
                   renderBan();
                 } else {
-                  alert("Lỗi khi lưu đơn hàng: " + (data.message || JSON.stringify(data)));
+                  Toast.error("Lỗi khi lưu đơn hàng: " + (data.message || JSON.stringify(data)));
                   console.error(data);
                 }
               } catch (err) {
                 console.error(err);
-                alert("Không thể kết nối đến server!");
+                Toast.error("Không thể kết nối đến server!");
               }
 
               modal.remove();
             });
 
             // --- THANH TOÁN TRỰC TUYẾN (BANKING) ---
-// --- THANH TOÁN TRỰC TUYẾN (BANKING) ---
-modal.querySelector("#bankingBtn").addEventListener("click", async () => {
-  const monAn = hoaDonTheoBan[ban.ban_id] || [];
-  if (!monAn.length) return alert("Bàn này chưa có món!");
+            modal.querySelector("#bankingBtn").addEventListener("click", async () => {
+              const monAn = hoaDonTheoBan[ban.ban_id] || [];
+              if (!monAn.length) {
+                Toast.warning("Bàn này chưa có món!");
+                return;
+              }
 
-  const tongTienBan = monAn.reduce(
-    (sum, item) =>
-      sum +
-      (Number(item.gia_co_ban) +
-        Number(item.gia_them || 0) +
-        Number(item.tong_topping || 0)) *
-        item.so_luong,
-    0
-  );
+              const tongTienBan = monAn.reduce(
+                (sum, item) =>
+                  sum +
+                  (Number(item.gia_co_ban) +
+                    Number(item.gia_them || 0) +
+                    Number(item.tong_topping || 0)) *
+                    item.so_luong,
+                0
+              );
 
-  const phanTramGiam = modal.dataset.phanTramGiam
-    ? Number(modal.dataset.phanTramGiam)
-    : 0;
-  const tienSauGiam = tongTienBan * (1 - phanTramGiam / 100);
+              const phanTramGiam = modal.dataset.phanTramGiam
+                ? Number(modal.dataset.phanTramGiam)
+                : 0;
+              const tienSauGiam = tongTienBan * (1 - phanTramGiam / 100);
 
-  console.log("💰 Tổng tiền trước giảm:", tongTienBan.toLocaleString() + " đ");
-  if (phanTramGiam > 0) {
-    console.log(
-      `💸 Áp dụng mã giảm giá ${phanTramGiam}% -> Tổng tiền sau giảm:`,
-      tienSauGiam.toLocaleString() + " đ"
-    );
-  }
+              console.log("💰 Tổng tiền trước giảm:", tongTienBan.toLocaleString() + " đ");
+              if (phanTramGiam > 0) {
+                console.log(
+                  `💸 Áp dụng mã giảm giá ${phanTramGiam}% -> Tổng tiền sau giảm:`,
+                  tienSauGiam.toLocaleString() + " đ"
+                );
+              }
 
-  // Chuẩn bị items cho PayOS
-  const payosItems = [];
-  monAn.forEach((item) => {
-    let itemName = item.ten_san_pham;
-    if (item.kich_co) itemName += ` (${item.kich_co})`;
-    if (item.toppings.length) {
-      itemName += ` + ${item.toppings.map((t) => t.ten_topping).join(", ")}`;
-    }
+              // Chuẩn bị items cho PayOS
+              const payosItems = [];
+              monAn.forEach((item) => {
+                let itemName = item.ten_san_pham;
+                if (item.kich_co) itemName += ` (${item.kich_co})`;
+                if (item.toppings.length) {
+                  itemName += ` + ${item.toppings.map((t) => t.ten_topping).join(", ")}`;
+                }
 
-    const itemPrice = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+                const itemPrice = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
 
-    payosItems.push({
-      name: itemName,
-      quantity: item.so_luong,
-      price: itemPrice
-    });
-  });
+                payosItems.push({
+                  name: itemName,
+                  quantity: item.so_luong,
+                  price: itemPrice
+                });
+              });
 
-  // Rút ngắn tên bàn để description <= 25 ký tự
-  const tenBan = banList.find(b => b.ban_id === ban.ban_id).ten_ban;
-  const shortDescription = `${tenBan} - Coffee`.substring(0, 25); // Tối đa 25 ký tự
+              // Rút ngắn tên bàn để description <= 25 ký tự
+              const tenBan = banList.find(b => b.ban_id === ban.ban_id).ten_ban;
+              const shortDescription = `${tenBan} - Coffee`.substring(0, 25);
 
-  // Payload cho PayOS
-  const payosPayload = {
-    amount: Math.round(tienSauGiam),
-    description: shortDescription, // ✅ Đã rút ngắn
-    returnUrl: `${window.location.origin}/view/pos?payment=success&ban_id=${ban.ban_id}`,
-    cancelUrl: `${window.location.origin}/view/pos?payment=cancel`,
-    items: payosItems
-  };
+              // Payload cho PayOS
+              const payosPayload = {
+                amount: Math.round(tienSauGiam),
+                description: shortDescription,
+                returnUrl: `${window.location.origin}/view/pos?payment=success&ban_id=${ban.ban_id}`,
+                cancelUrl: `${window.location.origin}/view/pos?payment=cancel`,
+                items: payosItems
+              };
 
-  console.log("📦 Payload gửi đến PayOS:", JSON.stringify(payosPayload, null, 2));
+              console.log("📦 Payload gửi đến PayOS:", JSON.stringify(payosPayload, null, 2));
 
-  // Chuẩn bị chi tiết đơn hàng
-  const chiTiet = [];
-  monAn.forEach((item) => {
-    const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
-    if (item.toppings.length) {
-      item.toppings.forEach((t) => {
-        chiTiet.push({
-          san_pham_id: item.san_pham_id,
-          kich_co_id: item.kich_co_id,
-          topping_id: t.topping_id,
-          so_luong: item.so_luong,
-          don_gia: donGia,
-        });
-      });
-    } else {
-      chiTiet.push({
-        san_pham_id: item.san_pham_id,
-        kich_co_id: item.kich_co_id,
-        topping_id: null,
-        so_luong: item.so_luong,
-        don_gia: donGia,
-      });
-    }
-  });
+              // Chuẩn bị chi tiết đơn hàng
+              const chiTiet = [];
+              monAn.forEach((item) => {
+                const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+                if (item.toppings.length) {
+                  item.toppings.forEach((t) => {
+                    chiTiet.push({
+                      san_pham_id: item.san_pham_id,
+                      kich_co_id: item.kich_co_id,
+                      topping_id: t.topping_id,
+                      so_luong: item.so_luong,
+                      don_gia: donGia,
+                    });
+                  });
+                } else {
+                  chiTiet.push({
+                    san_pham_id: item.san_pham_id,
+                    kich_co_id: item.kich_co_id,
+                    topping_id: null,
+                    so_luong: item.so_luong,
+                    don_gia: donGia,
+                  });
+                }
+              });
 
-  const orderData = {
-    thanh_vien_id: modal.dataset.memberId || null,
-    ban_id: ban.ban_id,
-    tai_khoan_id: user.tai_khoan_id || 1,
-    tong_tien: tongTienBan,
-    tien_sau_giam: tienSauGiam,
-    muc_giam_gia_id: modal.dataset.mucGiamGiaId || null,
-    trang_thai: "Chờ thanh toán",
-    chi_tiet: chiTiet,
-  };
+              // Lấy tên thành viên nếu có
+              const tenThanhVien = modal.dataset.memberId 
+                ? modal.querySelector("#memberName").textContent.replace("👤 ", "").trim()
+                : null;
 
-  // Lưu vào sessionStorage
-  sessionStorage.setItem(`pending_order_${ban.ban_id}`, JSON.stringify(orderData));
+              const orderData = {
+                thanh_vien_id: modal.dataset.memberId || null,
+                ban_id: ban.ban_id,
+                tai_khoan_id: user.tai_khoan_id || 1,
+                tong_tien: tongTienBan,
+                tien_sau_giam: tienSauGiam,
+                muc_giam_gia_id: modal.dataset.mucGiamGiaId || null,
+                ten_thanh_vien: tenThanhVien,
+                trang_thai: "Chờ thanh toán",
+                chi_tiet: chiTiet,
+              };
 
-  try {
-  const res = await fetch("http://localhost:3000/order/create-payment-link", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payosPayload),
-  });
+              console.log("💾 Order data được lưu vào sessionStorage:", orderData);
 
-  const data = await res.json();
-  console.log("📡 Response data:", data);
+              // Lưu vào sessionStorage
+              sessionStorage.setItem(`pending_order_${ban.ban_id}`, JSON.stringify(orderData));
 
-  // ✅ Kiểm tra đúng structure
-  if (data.error === 0 && data.data?.checkoutUrl) {
-    console.log("✅ Tạo payment link thành công:", data.data.checkoutUrl);
-    modal.remove();
-    window.location.href = data.data.checkoutUrl;
-  } else {
-    throw new Error(data.message || "Không thể tạo liên kết thanh toán");
-  }
-} catch (err) {
-  console.error("❌ Lỗi:", err);
-  alert(`❌ Không thể tạo liên kết thanh toán!\n\nLỗi: ${err.message}`);
-}
-});
+              try {
+                const res = await fetch("http://localhost:3000/order/create-payment-link", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payosPayload),
+                });
+
+                const data = await res.json();
+                console.log("📡 Response data:", data);
+
+                if (data.error === 0 && data.data?.checkoutUrl) {
+                  console.log("✅ Tạo payment link thành công:", data.data.checkoutUrl);
+                  Toast.success("Đang chuyển đến trang thanh toán...");
+                  modal.remove();
+                  setTimeout(() => {
+                    window.location.href = data.data.checkoutUrl;
+                  }, 1000);
+                } else {
+                  throw new Error(data.message || "Không thể tạo liên kết thanh toán");
+                }
+              } catch (err) {
+                console.error("❌ Lỗi:", err);
+                Toast.error(`Không thể tạo liên kết thanh toán!\n\nLỗi: ${err.message}`);
+              }
+            });
+
             modal.querySelector("#cancelBtn").addEventListener("click", () => modal.remove());
           });
 
@@ -851,6 +1073,8 @@ modal.querySelector("#bankingBtn").addEventListener("click", async () => {
         if (orderData) {
           orderData.trang_thai = "Đã thanh toán";
           
+          console.log("💳 Đơn hàng chuẩn bị lưu:", orderData);
+          
           try {
             const res = await fetch("http://localhost:3000/donhang/them", {
               method: "POST",
@@ -861,39 +1085,60 @@ modal.querySelector("#bankingBtn").addEventListener("click", async () => {
             if (res.ok) {
               console.log("✅ Đơn hàng đã được lưu thành công!");
               
+              // Cập nhật mã giảm giá nếu có
               if (orderData.muc_giam_gia_id && orderData.thanh_vien_id) {
+                const updatePayload = {
+                  thanh_vien_id: orderData.thanh_vien_id,
+                  da_su_dung: 1,
+                  ten_thanh_vien: orderData.ten_thanh_vien || "Thành viên"
+                };
+
+                console.log("🎟️ Cập nhật mã giảm giá:", updatePayload);
+
                 await fetch(`http://localhost:3000/mucgiamgia/capnhatthongtin/${orderData.muc_giam_gia_id}`, {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    thanh_vien_id: orderData.thanh_vien_id,
-                    da_su_dung: 1
-                  })
+                  body: JSON.stringify(updatePayload)
                 });
+
+                console.log("✅ Đã cập nhật mã giảm giá thành công!");
               }
               
               delete hoaDonTheoBan[banIdFromUrl];
               localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
               sessionStorage.removeItem(`pending_order_${banIdFromUrl}`);
               
-              alert("🎉 Thanh toán thành công!");
-              window.location.href = "/view/pos";
+              Toast.success("🎉 Thanh toán thành công!", 2000);
+              setTimeout(() => {
+                window.location.href = "/view/pos";
+              }, 2000);
             } else {
-              alert("❌ Lỗi khi lưu đơn hàng!");
-              window.location.href = "/view/pos";
+              const errorData = await res.json();
+              console.error("❌ Lỗi từ server:", errorData);
+              Toast.error("Lỗi khi lưu đơn hàng!");
+              setTimeout(() => {
+                window.location.href = "/view/pos";
+              }, 2000);
             }
           } catch (err) {
             console.error("❌ Lỗi khi lưu đơn hàng:", err);
-            alert("❌ Không thể lưu đơn hàng!");
-            window.location.href = "/view/pos";
+            Toast.error("Không thể lưu đơn hàng!");
+            setTimeout(() => {
+              window.location.href = "/view/pos";
+            }, 2000);
           }
         } else {
-          window.location.href = "/view/pos";
+          console.warn("⚠️ Không tìm thấy pending order trong sessionStorage");
+          setTimeout(() => {
+            window.location.href = "/view/pos";
+          }, 1000);
         }
       })();
     } else if (paymentStatus === 'cancel') {
-      alert("❌ Thanh toán đã bị hủy. Đơn hàng vẫn được giữ nguyên.");
-      window.location.href = "/view/pos";
+      Toast.warning("Thanh toán đã bị hủy. Đơn hàng vẫn được giữ nguyên.");
+      setTimeout(() => {
+        window.location.href = "/view/pos";
+      }, 2000);
     }
   });
 

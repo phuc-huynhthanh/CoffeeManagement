@@ -3,17 +3,132 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" href="/assets/admin.png" type="image/png">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản lý tài khoản nhân viên</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Toast Container */
+    #toastContainer {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Toast Base */
+    .toast {
+      min-width: 300px;
+      max-width: 400px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease-out;
+      transition: all 0.3s ease;
+    }
+
+    .toast:hover {
+      transform: translateX(-5px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Toast Types */
+    .toast-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .toast-error {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+
+    .toast-warning {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+    }
+
+    .toast-info {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+    }
+
+    /* Toast Icon */
+    .toast-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    /* Toast Content */
+    .toast-content {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    /* Toast Close Button */
+    .toast-close {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .toast-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Animation */
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+
+    .toast-exit {
+      animation: slideOut 0.3s ease-in forwards;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
   
   <!-- Header -->
   <header class="bg-blue-600 text-white py-4 shadow-md fixed top-0 left-0 w-full z-50">
-    <div class="px-4 mx-auto  flex justify-between items-center">
+    <div class="px-4 mx-auto flex justify-between items-center">
       <h1 class="text-2xl font-semibold">Trang quản trị</h1>
         
       <div class="flex items-center space-x-3">
@@ -27,7 +142,7 @@
     <aside class="w-64 bg-blue-600 text-white flex flex-col pt-4">
       <nav class="flex-1 overflow-y-auto mt-4">
         <ul class="space-y-2 px-4">
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500  tab-link active" data-tab="tai-khoan" >Quản lý tài khoản nhân viên</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link active" data-tab="tai-khoan">Quản lý tài khoản nhân viên</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="san-pham">Quản lý sản phẩm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="ban">Quản lý bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="don-hang">Quản lý đơn hàng</a></li>
@@ -39,18 +154,17 @@
         </ul>
       </nav>
     </aside>
+
   <!-- Main -->
 <main class="flex-1 container mx-auto px-6 py-8">
   <!-- Quản lý tài khoản nhân viên -->
   <div id="tab-tai-khoan" class="tab-content">
-    <!-- Nội dung code hiện tại của quản lý nhân viên -->
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-gray-700">Quản lý tài khoản nhân viên</h2>
       <button id="btnAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md">
         + Thêm tài khoản
       </button>
     </div>
-    <!-- Table tài khoản nhân viên -->
     <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
       <table class="min-w-full text-left border border-gray-200">
         <thead class="bg-gray-50">
@@ -77,7 +191,7 @@
         + Thêm sản phẩm
       </button>
     </div>
-    <div class= "overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+    <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
       <table class="min-w-full text-left border border-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -115,12 +229,10 @@
   </div>
 </div>
 
-
 <!-- Tab Quản lý đơn hàng -->
 <div id="tab-don-hang" class="tab-content hidden">
   <div class="flex justify-between items-center mb-6">
     <h2 class="text-xl font-semibold text-gray-700">Quản lý đơn hàng</h2>
-    <!-- Có thể thêm nút thêm đơn hàng nếu muốn -->
   </div>
 
   <!-- Form lọc đơn hàng -->
@@ -138,13 +250,13 @@
       <input type="text" id="filterStaff" placeholder="Tên nhân viên" class="mt-1 p-2 border rounded-lg border-gray-300">
     </div>
     <div>
-  <label class="block text-sm font-medium text-gray-700">Khách hàng</label>
-  <select id="filterCustomer" class="mt-1 p-2 border rounded-lg border-gray-300">
-    <option value="">-- Tất cả --</option>
-    <option value="khach_vang_lai">Khách vãng lai</option>
-    <option value="thanh_vien">Thành viên</option>
-  </select>
-</div>
+      <label class="block text-sm font-medium text-gray-700">Khách hàng</label>
+      <select id="filterCustomer" class="mt-1 p-2 border rounded-lg border-gray-300">
+        <option value="">-- Tất cả --</option>
+        <option value="khach_vang_lai">Khách vãng lai</option>
+        <option value="thanh_vien">Thành viên</option>
+      </select>
+    </div>
     <div>
       <button id="btnFilterOrders" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Lọc</button>
       <button id="btnResetFilter" class="bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400">Reset</button>
@@ -222,70 +334,68 @@
   </div>
 </div>
 
-
 </main>
 
-
-  <!-- Modal -->
+  <!-- Modal Tài khoản nhân viên -->
   <div id="employeeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
     <div class="bg-white rounded-lg shadow-lg w-96 p-6">
       <h3 id="modalTitle" class="text-lg font-semibold mb-4">Thêm tài khoản</h3>
-<form id="employeeForm" class="space-y-4">
-  <input type="hidden" id="empId" name="id">
-  
-  <div>
-    <label class="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
-    <input type="text" id="usernameInput" name="ten_dang_nhap"
-           class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-           placeholder="Nhập tên đăng nhập" required>
-  </div>
+      <form id="employeeForm" class="space-y-4">
+        <input type="hidden" id="empId" name="id">
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
+          <input type="text" id="usernameInput" name="ten_dang_nhap"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
+                placeholder="Nhập tên đăng nhập" required>
+        </div>
 
-  <div>
-    <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
-    <input type="password" id="passwordInput" name="mat_khau"
-           class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-           placeholder="Nhập mật khẩu" required>
-  </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+          <input type="password" id="passwordInput" name="mat_khau"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
+                placeholder="Nhập mật khẩu" required>
+        </div>
 
-  <div>
-    <label class="block text-sm font-medium text-gray-700">Tên nhân viên</label>
-    <input type="text" id="name" name="ho_ten"
-           class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-           placeholder="VD: Nguyễn Văn A" required>
-  </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Tên nhân viên</label>
+          <input type="text" id="name" name="ho_ten"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
+                placeholder="VD: Nguyễn Văn A" required>
+        </div>
 
-  <div>
-    <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-    <input type="text" id="phone" name="sdt"
-           class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-           placeholder="VD: 0901234567" required>
-  </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+          <input type="text" id="phone" name="sdt"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
+                placeholder="VD: 0901234567" required>
+        </div>
 
-  <div>
-    <label class="block text-sm font-medium text-gray-700">Email</label>
-    <input type="email" id="email" name="email"
-           class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-           placeholder="VD: example@gmail.com">
-  </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="email" id="email" name="email"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
+                placeholder="VD: example@gmail.com">
+        </div>
 
-  <div>
-    <label class="block text-sm font-medium text-gray-700">Vai trò</label>
-    <select id="role" name="vai_tro_id"
-            class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" required>
-      <option value="">-- Chọn vai trò --</option>
-      <option value="2">Thu ngân</option>
-      <option value="3">Pha chế</option>
-      <option value="4">Phục vụ</option>
-    </select>
-  </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Vai trò</label>
+          <select id="role" name="vai_tro_id"
+                  class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" required>
+            <option value="">-- Chọn vai trò --</option>
+            <option value="2">Thu ngân</option>
+            <option value="3">Pha chế</option>
+            <option value="4">Phục vụ</option>
+          </select>
+        </div>
 
-  <div class="flex justify-end space-x-2">
-    <button type="button" id="btnCancel"
-            class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
-    <button type="submit"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Lưu</button>
-  </div>
-</form>
+        <div class="flex justify-end space-x-2">
+          <button type="button" id="btnCancel"
+                  class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+          <button type="submit"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Lưu</button>
+        </div>
+      </form>
     </div>
   </div>
    </div>
@@ -318,7 +428,6 @@
           <option value="">-- Chọn loại --</option>
           <option value="1">Đồ uống</option>
           <option value="2">Đồ ăn vặt</option>
-          <!-- Bạn có thể load động từ API loại sản phẩm -->
         </select>
       </div>
 
@@ -373,7 +482,7 @@
   </div>
 </div>
 
-<!-- Thêm modal Chi Tiết đơn hàng ngay trước </body> -->
+<!-- Modal Chi Tiết đơn hàng -->
 <div id="orderDetailModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
   <div class="bg-white rounded-lg shadow-lg w-2/3 max-h-[80vh] overflow-y-auto p-6">
     <h3 class="text-lg font-semibold mb-4">Chi Tiết Đơn Hàng</h3>
@@ -395,6 +504,7 @@
     </div>
   </div>
 </div>
+
 <!-- Modal Thêm/Sửa Khuyến mãi -->
 <div id="discountModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
@@ -446,6 +556,8 @@
     </form>
   </div>
 </div>
+
+<!-- Modal Thêm/Sửa Thành viên -->
 <div id="memberModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
   <div class="bg-white rounded-lg shadow-lg w-96 p-6">
     <h3 id="memberModalTitle" class="text-lg font-semibold mb-4">Thêm thành viên</h3>
@@ -469,7 +581,6 @@
         <input type="number" id="memberTotal" name="tong_don_da_mua" class="mt-1 w-full border-gray-300 rounded-lg p-2 border bg-gray-100" placeholder="Tự động" readonly>
       </div>
 
-
       <div class="flex justify-end space-x-2">
         <button type="button" id="btnCancelMember" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Lưu</button>
@@ -478,11 +589,69 @@
   </div>
 </div>
 
+<script>
+// ============================================
+// TOAST NOTIFICATION SYSTEM
+// ============================================
+window.Toast = {
+  container: null,
 
+  init() {
+    if (!this.container) {
+      this.container = document.getElementById('toastContainer');
+    }
+  },
 
-<div id="toastContainer" class="fixed top-5 right-5 space-y-2 z-50"></div>
+  show(message, type = 'info', duration = 3000) {
+    this.init();
+
+    const icons = {
+      success: '✓',
+      error: '✕',
+      warning: '⚠',
+      info: 'ℹ'
+    };
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+      <div class="toast-icon">${icons[type]}</div>
+      <div class="toast-content">${message}</div>
+      <button class="toast-close">×</button>
+    `;
+
+    this.container.appendChild(toast);
+
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => this.remove(toast));
+
+    setTimeout(() => this.remove(toast), duration);
+  },
+
+  remove(toast) {
+    toast.classList.add('toast-exit');
+    setTimeout(() => toast.remove(), 300);
+  },
+
+  success(message, duration) {
+    this.show(message, 'success', duration);
+  },
+
+  error(message, duration) {
+    this.show(message, 'error', duration);
+  },
+
+  warning(message, duration) {
+    this.show(message, 'warning', duration);
+  },
+
+  info(message, duration) {
+    this.show(message, 'info', duration);
+  }
+};
+</script>
+
 <script src="/js/admin.js"></script>
-
 
 </body>
 </html>
