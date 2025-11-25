@@ -167,7 +167,7 @@
       </div>
     </div>
 
-  <script>
+<script>
   document.addEventListener("DOMContentLoaded", () => {
     const bill = [];
     const billContainer = document.getElementById("bill");
@@ -533,8 +533,8 @@
                   console.log("🎟️ Mã khuyến mãi hợp lệ:", data.data);
 
                   // Lưu thông tin giảm giá vào modal để dùng khi thanh toán
-                  modal.dataset.mucGiamGiaId = data.data.muc_giam_gia_id; // lấy id của mã giảm giá
-                  modal.dataset.phanTramGiam = data.data.phan_tram_giam; // phần trăm giảm
+                  modal.dataset.mucGiamGiaId = data.data.muc_giam_gia_id;
+                  modal.dataset.phanTramGiam = data.data.phan_tram_giam;
 
                   // Tính lại tổng tiền dựa trên phần trăm giảm
                   const monAn = hoaDonTheoBan[ban.ban_id] || [];
@@ -574,11 +574,11 @@
               }
             });
 
+            // --- THANH TOÁN TIỀN MẶT ---
             modal.querySelector("#cashBtn").addEventListener("click", async () => {
               const monAn = hoaDonTheoBan[ban.ban_id] || [];
               if (!monAn.length) return alert("Bàn này chưa có món!");
 
-              // --- Tổng tiền ban đầu của bàn ---
               const tongTienBan = monAn.reduce(
                 (sum, item) =>
                   sum +
@@ -589,7 +589,6 @@
                 0
               );
 
-              // --- Kiểm tra mã giảm giá đã áp dụng ---
               const phanTramGiam = modal.dataset.phanTramGiam
                 ? Number(modal.dataset.phanTramGiam)
                 : 0;
@@ -603,12 +602,10 @@
                 );
               }
 
-              // --- Chuẩn bị chi tiết món ăn ---
               const chiTiet = [];
               monAn.forEach((item) => {
                 const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
                 if (item.toppings.length) {
-                  // nếu có topping, push từng topping là 1 bản ghi (theo cấu trúc cũ)
                   item.toppings.forEach((t) => {
                     chiTiet.push({
                       san_pham_id: item.san_pham_id,
@@ -629,12 +626,10 @@
                 }
               });
 
-              // --- Payload gửi lên server ---
-              // NOTE: changed nhan_vien_id -> tai_khoan_id to match server expected field
               const payload = {
                 thanh_vien_id: modal.dataset.memberId || null,
                 ban_id: ban.ban_id,
-                tai_khoan_id: user.tai_khoan_id || 1, // <= FIX: sử dụng tai_khoan_id từ user đăng nhập
+                tai_khoan_id: user.tai_khoan_id || 1,
                 tong_tien: tongTienBan,
                 tien_sau_giam: tienSauGiam,
                 muc_giam_gia_id: modal.dataset.mucGiamGiaId || null,
@@ -643,7 +638,6 @@
               };
 
               try {
-                // --- Thêm POST đơn hàng ---
                 const res = await fetch("http://localhost:3000/donhang/them", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -654,7 +648,6 @@
                 if (res.ok) {
                   alert("Đã lưu đơn hàng thành công!");
 
-                  // --- Nếu có mã giảm giá, gửi PUT cập nhật ---
                   if (modal.dataset.mucGiamGiaId && modal.dataset.memberId) {
                     const thanhVien = {
                       thanh_vien_id: modal.dataset.memberId,
@@ -687,11 +680,130 @@
               modal.remove();
             });
 
-            modal.querySelector("#bankingBtn").addEventListener("click", () => {
-              alert("Chức năng Banking sẽ được phát triển sau.");
-              modal.remove();
-            });
+            // --- THANH TOÁN TRỰC TUYẾN (BANKING) ---
+// --- THANH TOÁN TRỰC TUYẾN (BANKING) ---
+modal.querySelector("#bankingBtn").addEventListener("click", async () => {
+  const monAn = hoaDonTheoBan[ban.ban_id] || [];
+  if (!monAn.length) return alert("Bàn này chưa có món!");
 
+  const tongTienBan = monAn.reduce(
+    (sum, item) =>
+      sum +
+      (Number(item.gia_co_ban) +
+        Number(item.gia_them || 0) +
+        Number(item.tong_topping || 0)) *
+        item.so_luong,
+    0
+  );
+
+  const phanTramGiam = modal.dataset.phanTramGiam
+    ? Number(modal.dataset.phanTramGiam)
+    : 0;
+  const tienSauGiam = tongTienBan * (1 - phanTramGiam / 100);
+
+  console.log("💰 Tổng tiền trước giảm:", tongTienBan.toLocaleString() + " đ");
+  if (phanTramGiam > 0) {
+    console.log(
+      `💸 Áp dụng mã giảm giá ${phanTramGiam}% -> Tổng tiền sau giảm:`,
+      tienSauGiam.toLocaleString() + " đ"
+    );
+  }
+
+  // Chuẩn bị items cho PayOS
+  const payosItems = [];
+  monAn.forEach((item) => {
+    let itemName = item.ten_san_pham;
+    if (item.kich_co) itemName += ` (${item.kich_co})`;
+    if (item.toppings.length) {
+      itemName += ` + ${item.toppings.map((t) => t.ten_topping).join(", ")}`;
+    }
+
+    const itemPrice = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+
+    payosItems.push({
+      name: itemName,
+      quantity: item.so_luong,
+      price: itemPrice
+    });
+  });
+
+  // Rút ngắn tên bàn để description <= 25 ký tự
+  const tenBan = banList.find(b => b.ban_id === ban.ban_id).ten_ban;
+  const shortDescription = `${tenBan} - Coffee`.substring(0, 25); // Tối đa 25 ký tự
+
+  // Payload cho PayOS
+  const payosPayload = {
+    amount: Math.round(tienSauGiam),
+    description: shortDescription, // ✅ Đã rút ngắn
+    returnUrl: `${window.location.origin}/view/pos?payment=success&ban_id=${ban.ban_id}`,
+    cancelUrl: `${window.location.origin}/view/pos?payment=cancel`,
+    items: payosItems
+  };
+
+  console.log("📦 Payload gửi đến PayOS:", JSON.stringify(payosPayload, null, 2));
+
+  // Chuẩn bị chi tiết đơn hàng
+  const chiTiet = [];
+  monAn.forEach((item) => {
+    const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+    if (item.toppings.length) {
+      item.toppings.forEach((t) => {
+        chiTiet.push({
+          san_pham_id: item.san_pham_id,
+          kich_co_id: item.kich_co_id,
+          topping_id: t.topping_id,
+          so_luong: item.so_luong,
+          don_gia: donGia,
+        });
+      });
+    } else {
+      chiTiet.push({
+        san_pham_id: item.san_pham_id,
+        kich_co_id: item.kich_co_id,
+        topping_id: null,
+        so_luong: item.so_luong,
+        don_gia: donGia,
+      });
+    }
+  });
+
+  const orderData = {
+    thanh_vien_id: modal.dataset.memberId || null,
+    ban_id: ban.ban_id,
+    tai_khoan_id: user.tai_khoan_id || 1,
+    tong_tien: tongTienBan,
+    tien_sau_giam: tienSauGiam,
+    muc_giam_gia_id: modal.dataset.mucGiamGiaId || null,
+    trang_thai: "Chờ thanh toán",
+    chi_tiet: chiTiet,
+  };
+
+  // Lưu vào sessionStorage
+  sessionStorage.setItem(`pending_order_${ban.ban_id}`, JSON.stringify(orderData));
+
+  try {
+  const res = await fetch("http://localhost:3000/order/create-payment-link", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payosPayload),
+  });
+
+  const data = await res.json();
+  console.log("📡 Response data:", data);
+
+  // ✅ Kiểm tra đúng structure
+  if (data.error === 0 && data.data?.checkoutUrl) {
+    console.log("✅ Tạo payment link thành công:", data.data.checkoutUrl);
+    modal.remove();
+    window.location.href = data.data.checkoutUrl;
+  } else {
+    throw new Error(data.message || "Không thể tạo liên kết thanh toán");
+  }
+} catch (err) {
+  console.error("❌ Lỗi:", err);
+  alert(`❌ Không thể tạo liên kết thanh toán!\n\nLỗi: ${err.message}`);
+}
+});
             modal.querySelector("#cancelBtn").addEventListener("click", () => modal.remove());
           });
 
@@ -725,15 +837,74 @@
 
     searchInput.addEventListener("input", filterProducts);
     filterSelect.addEventListener("change", filterProducts);
+
+    // --- XỬ LÝ KẾT QUẢ THANH TOÁN TỪ PAYOS ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const banIdFromUrl = urlParams.get('ban_id');
+
+    if (paymentStatus === 'success' && banIdFromUrl) {
+      // Thanh toán thành công
+      (async () => {
+        const orderData = JSON.parse(sessionStorage.getItem(`pending_order_${banIdFromUrl}`));
+        
+        if (orderData) {
+          orderData.trang_thai = "Đã thanh toán";
+          
+          try {
+            const res = await fetch("http://localhost:3000/donhang/them", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(orderData),
+            });
+            
+            if (res.ok) {
+              console.log("✅ Đơn hàng đã được lưu thành công!");
+              
+              if (orderData.muc_giam_gia_id && orderData.thanh_vien_id) {
+                await fetch(`http://localhost:3000/mucgiamgia/capnhatthongtin/${orderData.muc_giam_gia_id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    thanh_vien_id: orderData.thanh_vien_id,
+                    da_su_dung: 1
+                  })
+                });
+              }
+              
+              delete hoaDonTheoBan[banIdFromUrl];
+              localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
+              sessionStorage.removeItem(`pending_order_${banIdFromUrl}`);
+              
+              alert("🎉 Thanh toán thành công!");
+              window.location.href = "/view/pos";
+            } else {
+              alert("❌ Lỗi khi lưu đơn hàng!");
+              window.location.href = "/view/pos";
+            }
+          } catch (err) {
+            console.error("❌ Lỗi khi lưu đơn hàng:", err);
+            alert("❌ Không thể lưu đơn hàng!");
+            window.location.href = "/view/pos";
+          }
+        } else {
+          window.location.href = "/view/pos";
+        }
+      })();
+    } else if (paymentStatus === 'cancel') {
+      alert("❌ Thanh toán đã bị hủy. Đơn hàng vẫn được giữ nguyên.");
+      window.location.href = "/view/pos";
+    }
   });
 
+  // Log thông tin user
   const user = JSON.parse(localStorage.getItem("user"));
   if (user) {
     console.log("📦 Thông tin tài khoản đăng nhập:", user);
   } else {
     console.log("❌ Chưa có tài khoản đăng nhập trong localStorage");
   }
-  </script>
+</script>
 
   </body>
 </html>

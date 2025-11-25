@@ -26,10 +26,6 @@ import LichLamViecRoutes from "./app/routes/LichLamViec.routes.js";
 // Import payment controllers
 import paymentController from "./app/controllers/payment-controller.js";
 import orderController from "./app/controllers/order-controller.js";
-import payOS from './app/utils/payos.js';
-
-
-
 
 dotenv.config();
 const app = express();
@@ -48,35 +44,9 @@ app.use(morgan("dev"));
 // Static files
 app.use('/', express.static('public'));
 
-// ✅ Payment routes (QUAN TRỌNG: Chỉ dùng MỘT trong hai cách dưới)
-
-// CÁCH 1: Dùng orderController (khuyến nghị)
-app.use('/order', orderController);
-
-// Hoặc CÁCH 2: Dùng route trực tiếp (comment cách 1 nếu dùng cách 2)
-// app.post('/create-payment-link', async (req, res) => {
-//     const { amount, description, returnUrl, cancelUrl } = req.body;
-
-//     const body = {
-//         orderCode: Number(String(Date.now()).slice(-6)),
-//         amount: amount || 1000,
-//         description: description || 'Thanh toan don hang',
-//         returnUrl: returnUrl || 'http://localhost:3000/success',
-//         cancelUrl: cancelUrl || 'http://localhost:3000/cancel'
-//     };
-
-//     try {
-//         const paymentLinkResponse = await payOS.createPaymentLink(body);
-//         res.json(paymentLinkResponse);
-//     } catch (error) {
-//         console.error("Lỗi PayOS:", error);
-//         res.status(500).json({
-//             error: true,
-//             message: "Something went wrong",
-//             details: error.message || error
-//         });
-//     }
-// });
+// ✅ Payment & Order routes
+app.use("/payment", paymentController);
+app.use("/order", orderController);
 
 // Other routes
 app.use("/sanpham", ProductRoutes);
@@ -96,10 +66,6 @@ app.use("/thanhvien", ThanhVienRoutes);
 app.use("/view", ViewsRoutes);
 app.use("/doanhthuca", DoanhThuCaRoutes);
 app.use("/lichlamviec", LichLamViecRoutes);
-app.use("/payment", paymentController);
-app.use("/order", orderController);
-
-
 
 // Test route
 app.get("/test-payos", async (req, res) => {

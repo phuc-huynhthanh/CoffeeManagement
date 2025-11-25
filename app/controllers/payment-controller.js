@@ -9,15 +9,14 @@ router.post("/payos", async (req, res) => {
 
     return res.json({
       error: 0,
-      message: "Ok",
-      data: webhookData
+      message: "OK",
+      data: webhookData,
     });
-  } catch (error) {
-    console.error("Webhook error:", error);
-    return res.status(500).json({
+  } catch (err) {
+    console.error(err);
+    res.json({
       error: -1,
-      message: "Webhook processing failed",
-      details: error.message
+      message: "Invalid webhook",
     });
   }
 });

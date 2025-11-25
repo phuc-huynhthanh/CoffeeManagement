@@ -3,68 +3,44 @@ import payOS from "../utils/payos.js";
 
 const router = express.Router();
 
-// Hàm tạo payment link (dùng HTTP trực tiếp nếu SDK không có)
-async function createPaymentLinkDirect(body) {
-  const PAYOS_API_URL = 'https://api-merchant.payos.vn/v2/payment-requests';
-  
-  const response = await fetch(PAYOS_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-client-id': process.env.PAYOS_CLIENT_ID,
-      'x-api-key': process.env.PAYOS_API_KEY
-    },
-    body: JSON.stringify(body)
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`PayOS API error: ${response.status} - ${errorText}`);
-  }
-  
-  return await response.json();
-}
-
-// Route tạo payment link
+// 👉 Tạo payment link với thông tin sản phẩm
 router.post("/create-payment-link", async (req, res) => {
   try {
-    const { amount, description, returnUrl, cancelUrl, orderCode } = req.body;
+    const { amount, description, returnUrl, cancelUrl, orderCode, items } = req.body;
     
-    const generatedOrderCode = orderCode || `ORD-${Date.now()}`;
+    const generatedOrderCode = orderCode || Number(String(Date.now()).slice(-6));
     
     const body = {
       orderCode: generatedOrderCode,
       amount: parseInt(amount) || 1000,
       description: description || 'Thanh toán đơn hàng',
       returnUrl: returnUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/success`,
-      cancelUrl: cancelUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/cancel`
+      cancelUrl: cancelUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/view/pos`
     };
 
-    let paymentLinkRes;
-
-    // Dùng SDK nếu có phương thức
-    if (payOS.createPaymentLink && typeof payOS.createPaymentLink === 'function') {
-      paymentLinkRes = await payOS.createPaymentLink(body);
-    } else {
-      paymentLinkRes = await createPaymentLinkDirect(body);
+    // ✅ Thêm items nếu có
+    if (items && Array.isArray(items) && items.length > 0) {
+      body.items = items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      }));
     }
 
-    // Debug log
-console.log("Payment link response:", paymentLinkRes);
+    console.log("📤 Sending to PayOS:", body);
 
- return res.json({
-    error: 0,
-    message: "Success",
-    data: {
-        checkoutUrl: paymentLinkRes?.checkoutUrl || null,
-        qrCode: paymentLinkRes?.qrCode || null,
-        orderCode: paymentLinkRes?.orderCode || body.orderCode,
-        amount: paymentLinkRes?.amount || body.amount,
-        description: paymentLinkRes?.description || body.description
-    }
-});
+    // ✅ Sử dụng paymentRequests.create() thay vì createPaymentLink()
+    const paymentLinkRes = await payOS.paymentRequests.create(body);
+
+    console.log("✅ Payment link created:", paymentLinkRes);
+
+    return res.json({
+      error: 0,
+      message: "Success",
+      data: paymentLinkRes
+    });
   } catch (error) {
-    console.error("PayOS Error:", error);
+    console.error("❌ PayOS Error:", error);
     return res.status(500).json({
       error: -1,
       message: "Failed to create payment link",
@@ -73,22 +49,11 @@ console.log("Payment link response:", paymentLinkRes);
   }
 });
 
-// Route lấy thông tin payment link
+// 👉 Lấy thông tin payment link
 router.get("/:orderId", async (req, res) => {
   try {
-    let order;
-
-    if (payOS.getPaymentLinkInformation && typeof payOS.getPaymentLinkInformation === 'function') {
-      order = await payOS.getPaymentLinkInformation(req.params.orderId);
-    } else {
-      const response = await fetch(`https://api-merchant.payos.vn/v2/payment-requests/${req.params.orderId}`, {
-        headers: {
-          'x-client-id': process.env.PAYOS_CLIENT_ID,
-          'x-api-key': process.env.PAYOS_API_KEY
-        }
-      });
-      order = await response.json();
-    }
+    // ✅ Sử dụng paymentRequests.retrieve()
+    const order = await payOS.paymentRequests.retrieve(req.params.orderId);
 
     return res.json({
       error: 0,
@@ -100,7 +65,33 @@ router.get("/:orderId", async (req, res) => {
     return res.status(500).json({
       error: -1,
       message: "Failed to get payment info",
-      data: null
+      data: error.message
+    });
+  }
+});
+
+// 👉 Hủy payment link
+router.delete("/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { cancellationReason } = req.body;
+
+    // ✅ Sử dụng paymentRequests.cancel()
+    const result = await payOS.paymentRequests.cancel(orderId, {
+      cancellationReason: cancellationReason || "Hủy đơn hàng"
+    });
+
+    return res.json({
+      error: 0,
+      message: "Success",
+      data: result,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.json({
+      error: -1,
+      message: "Failed",
+      data: err.message
     });
   }
 });
