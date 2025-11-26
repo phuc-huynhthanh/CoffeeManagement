@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import morgan from "morgan";
 import path from "path";
 import { fileURLToPath } from "url";
+import multer from "multer"; // ✅ Thêm import này
 
 // Import routes
 import NhanVienRoutes from "./app/routes/NhanVien.routes.js";
@@ -22,6 +23,7 @@ import ThanhVienRoutes from "./app/routes/ThanhVien.routes.js";
 import ViewsRoutes from "./app/routes/View.routes.js";
 import DoanhThuCaRoutes from "./app/routes/DoanhThuCa.routes.js";
 import LichLamViecRoutes from "./app/routes/LichLamViec.routes.js";
+import ComboRoutes from "./app/routes/Combo.routes.js";
 
 // Import payment controllers
 import paymentController from "./app/controllers/payment-controller.js";
@@ -37,8 +39,9 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "app/views"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Middleware
-app.use(express.json());
+// ✅ Middleware - QUAN TRỌNG: Thứ tự này rất quan trọng!
+app.use(express.json()); // Parse application/json
+app.use(express.urlencoded({ extended: true })); // ✅ THÊM dòng này - Parse application/x-www-form-urlencoded
 app.use(morgan("dev"));
 
 // Static files
@@ -66,6 +69,7 @@ app.use("/thanhvien", ThanhVienRoutes);
 app.use("/view", ViewsRoutes);
 app.use("/doanhthuca", DoanhThuCaRoutes);
 app.use("/lichlamviec", LichLamViecRoutes);
+app.use("/combo", ComboRoutes);
 
 // Test route
 app.get("/test-payos", async (req, res) => {
@@ -91,10 +95,41 @@ app.get("/admin", (req, res) => {
   res.render("admin/admin", { employees: [] });
 });
 
-// Error Handler
+// ✅ Error Handler - Xử lý lỗi Multer
 app.use((err, req, res, next) => {
+  // Xử lý lỗi Multer
+  if (err instanceof multer.MulterError) {
+    console.error("❌ Multer Error:", err);
+    
+    if (err.code === 'UNEXPECTED_FIELD') {
+      return res.status(400).json({
+        success: false,
+        message: `Tên field upload không đúng. Expected field: 'hinh_anh', Got: '${err.field}'`
+      });
+    }
+    
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: "File quá lớn.Giới hạn 5MB"
+      });
+    }
+    
+    return res.status(400).json({
+      success: false,
+      message: `Lỗi upload: ${err.message}`
+    });
+  }
+  
+  // Xử lý lỗi khác
   console.error("❌ Lỗi:", err.message);
-  res.status(500).json({ message: "Lỗi server", error: err.message });
+  console.error("Stack:", err.stack);
+  
+  res.status(500).json({ 
+    success: false,
+    message: "Lỗi server", 
+    error: err.message 
+  });
 });
 
 const PORT = process.env.PORT || 3000;

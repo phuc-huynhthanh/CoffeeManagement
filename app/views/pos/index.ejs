@@ -118,6 +118,42 @@
       .toast-exit {
         animation: slideOut 0.3s ease-in forwards;
       }
+
+      /* Tab Styles */
+      .tab-button {
+        padding: 12px 24px;
+        border: none;
+        background: #f3f4f6;
+        color: #6b7280;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 8px 8px 0 0;
+      }
+
+      .tab-button.active {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .tab-button:hover:not(.active) {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      /* Combo Badge */
+      .combo-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
     </style>
   </head>
   <body class="bg-gray-100 flex flex-col min-h-screen">
@@ -158,34 +194,62 @@
 
     <!-- Nội dung -->
     <div class="flex flex-1 overflow-hidden">
-      <!-- Danh sách sản phẩm -->
-      <main
-        id="product-list"
-        class="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6 overflow-y-scroll max-h-[calc(100vh-100px)] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
-      >
-        <% sanPham.forEach(p => { %>
-        <div
-          class="product bg-white rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-4"
-          data-id="<%= p.san_pham_id %>"
-          data-ten="<%= p.ten_san_pham %>"
-          data-gia="<%= p.gia_co_ban %>"
-          data-loai="<%= p.ten_loai %>"
-        >
-          <img
-            src="<%= p.hinh_anh %>"
-            alt="<%= p.ten_san_pham %>"
-            class="w-28 h-28 object-cover rounded-xl mb-3"
-          />
-          <h3 class="text-lg font-semibold text-gray-800">
-            <%= p.ten_san_pham %>
-          </h3>
-          <p class="text-gray-500 text-sm mb-1"><%= p.ten_loai %></p>
-          <p class="text-blue-600 font-bold">
-            <%= Number(p.gia_co_ban).toLocaleString() %> đ
-          </p>
+      <!-- Danh sách sản phẩm & combo -->
+      <div class="flex-1 flex flex-col">
+        <!-- Tab Navigation -->
+        <div class="flex border-b bg-white px-6 pt-4">
+          <button class="tab-button active" data-tab="products">
+            🍵 Sản Phẩm
+          </button>
+          <button class="tab-button" data-tab="combos">
+            🎁 Combo
+          </button>
         </div>
-        <% }) %>
-      </main>
+
+        <!-- Tab Content -->
+        <div class="flex-1 overflow-hidden">
+          <!-- Sản phẩm -->
+          <div id="products-tab" class="tab-content active h-full overflow-y-auto">
+            <div
+              id="product-list"
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6"
+            >
+              <% sanPham.forEach(p => { %>
+              <div
+                class="product bg-white rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-4 relative"
+                data-id="<%= p.san_pham_id %>"
+                data-ten="<%= p.ten_san_pham %>"
+                data-gia="<%= p.gia_co_ban %>"
+                data-loai="<%= p.ten_loai %>"
+              >
+                <img
+                  src="<%= p.hinh_anh %>"
+                  alt="<%= p.ten_san_pham %>"
+                  class="w-28 h-28 object-cover rounded-xl mb-3"
+                />
+                <h3 class="text-lg font-semibold text-gray-800">
+                  <%= p.ten_san_pham %>
+                </h3>
+                <p class="text-gray-500 text-sm mb-1"><%= p.ten_loai %></p>
+                <p class="text-blue-600 font-bold">
+                  <%= Number(p.gia_co_ban).toLocaleString() %> đ
+                </p>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+
+          <!-- Combo -->
+          <div id="combos-tab" class="tab-content hidden h-full overflow-y-auto">
+            <div
+              id="combo-list"
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6"
+            >
+              <!-- Combo sẽ được JS render vào đây -->
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Hóa đơn + Nút -->
       <aside
@@ -346,6 +410,143 @@
   };
 
   // ============================================
+  // TAB SYSTEM
+  // ============================================
+  function initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.dataset.tab;
+        
+        // Update buttons
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Update contents
+        tabContents.forEach(content => {
+          content.classList.remove('active');
+          content.classList.add('hidden');
+        });
+        
+        const activeContent = document.getElementById(`${tabId}-tab`);
+        activeContent.classList.remove('hidden');
+        activeContent.classList.add('active');
+      });
+    });
+  }
+
+  // ============================================
+  // COMBO SYSTEM
+  // ============================================
+  let comboList = [];
+
+  async function loadCombos() {
+    try {
+      const response = await fetch('http://localhost:3000/combo/laytatca');
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        comboList = data.data;
+        renderCombos();
+      } else {
+        console.error('Không thể tải danh sách combo');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải combo:', error);
+      Toast.error('Không thể tải danh sách combo');
+    }
+  }
+
+  function renderCombos() {
+    const comboListEl = document.getElementById('combo-list');
+    
+    if (!comboList.length) {
+      comboListEl.innerHTML = `
+        <div class="col-span-full text-center py-8">
+          <p class="text-gray-500">Không có combo nào</p>
+        </div>
+      `;
+      return;
+    }
+
+    comboListEl.innerHTML = comboList.map(combo => `
+      <div
+        class="combo bg-white rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-4 relative"
+        data-id="${combo.combo_id}"
+        data-ten="${combo.ten_combo}"
+        data-gia="${combo.gia_combo}"
+        data-mota="${combo.mo_ta}"
+        data-sanpham='${JSON.stringify(combo.san_pham)}'
+      >
+        <div class="combo-badge">COMBO</div>
+        <img
+          src="${combo.hinh_anh || '/assets/coffee.png'}"
+          alt="${combo.ten_combo}"
+          class="w-28 h-28 object-cover rounded-xl mb-3"
+        />
+        <h3 class="text-lg font-semibold text-gray-800">
+          ${combo.ten_combo}
+        </h3>
+        <p class="text-gray-500 text-sm mb-2 line-clamp-2" title="${combo.mo_ta}">
+          ${combo.mo_ta}
+        </p>
+        <div class="flex items-center justify-center gap-2 mb-2">
+          ${combo.gia_goc && combo.gia_goc !== '0' ? `
+            <p class="text-gray-400 text-sm line-through">
+              ${Number(combo.gia_goc).toLocaleString()} đ
+            </p>
+          ` : ''}
+          <p class="text-red-600 font-bold">
+            ${Number(combo.gia_combo).toLocaleString()} đ
+          </p>
+        </div>
+        <div class="text-xs text-gray-600 bg-gray-100 rounded-lg px-2 py-1">
+          ${combo.san_pham.length} sản phẩm
+        </div>
+      </div>
+    `).join('');
+
+    // Thêm event listener cho combo
+    document.querySelectorAll('.combo').forEach(el => {
+      el.addEventListener('click', () => {
+        const combo = {
+          combo_id: +el.dataset.id,
+          ten_combo: el.dataset.ten,
+          gia_combo: +el.dataset.gia,
+          mo_ta: el.dataset.mota,
+          san_pham: JSON.parse(el.dataset.sanpham),
+          is_combo: true
+        };
+        addComboToBill(combo);
+      });
+    });
+  }
+
+  function addComboToBill(combo) {
+    // Thêm combo vào bill
+    const existingCombo = bill.find(item => item.combo_id === combo.combo_id && item.is_combo);
+    
+    if (existingCombo) {
+      existingCombo.so_luong++;
+    } else {
+      bill.push({
+        ...combo,
+        so_luong: 1,
+        kich_co: "Combo",
+        kich_co_id: null,
+        gia_them: 0,
+        toppings: [],
+        tong_topping: 0
+      });
+    }
+    
+    renderBill();
+    Toast.success(`Đã thêm ${combo.ten_combo} vào hóa đơn`);
+  }
+
+  // ============================================
   // MAIN APPLICATION CODE
   // ============================================
   document.addEventListener("DOMContentLoaded", () => {
@@ -353,6 +554,10 @@
     const billContainer = document.getElementById("bill");
     const totalEl = document.getElementById("total");
     const emptyEl = document.getElementById("empty");
+
+    // Khởi tạo tabs và combo
+    initTabs();
+    loadCombos();
 
     let kichCoList = [];
     fetch("/kichco/laytatca")
@@ -386,7 +591,7 @@
 
     function addToBill(sp) {
       const existing = bill.find(
-        (i) => i.san_pham_id === sp.san_pham_id && !i.kich_co
+        (i) => i.san_pham_id === sp.san_pham_id && !i.kich_co && !i.is_combo
       );
       if (existing) existing.so_luong++;
       else bill.push({ ...sp, so_luong: 1 });
@@ -395,51 +600,82 @@
 
     function renderBill() {
       billContainer.innerHTML = "";
-      if (!bill.length) emptyEl.style.display = "block";
-      else {
+      if (!bill.length) {
+        emptyEl.style.display = "block";
+      } else {
         emptyEl.style.display = "none";
         bill.forEach((item, i) => {
           const div = document.createElement("div");
           div.className =
             "flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition";
-          div.innerHTML = `
-          <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
-            <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
-            <p class="text-sm text-gray-500">
-              ${item.kich_co || "(Chưa chọn size)"} 
-              ${item.toppings.length ? " + " + item.toppings.map((t) => t.ten_topping).join(", ") : ""}
-              — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
-            <span class="w-6 text-center">${item.so_luong}</span>
-            <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
-            <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
-          </div>
-        `;
+          
+          if (item.is_combo) {
+            // Hiển thị combo
+            div.innerHTML = `
+              <div class="flex-1">
+                <p class="font-semibold text-gray-800">${item.ten_combo} 🎁</p>
+                <p class="text-sm text-gray-500">
+                  Combo - ${item.gia_combo.toLocaleString()} đ
+                </p>
+                <p class="text-xs text-gray-400 mt-1">
+                  ${item.san_pham.map(sp => `${sp.ten_san_pham} (x${sp.so_luong})`).join(', ')}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
+                <span class="w-6 text-center">${item.so_luong}</span>
+                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
+                <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+              </div>
+            `;
+          } else {
+            // Hiển thị sản phẩm thường
+            div.innerHTML = `
+              <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
+                <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
+                <p class="text-sm text-gray-500">
+                  ${item.kich_co || "(Chưa chọn size)"} 
+                  ${item.toppings.length ? " + " + item.toppings.map((t) => t.ten_topping).join(", ") : ""}
+                  — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
+                <span class="w-6 text-center">${item.so_luong}</span>
+                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
+                <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+              </div>
+            `;
+          }
           billContainer.appendChild(div);
         });
       }
 
-      const total = bill.reduce(
-        (sum, item) =>
-          sum +
-          (Number(item.gia_co_ban) +
-            Number(item.gia_them || 0) +
-            Number(item.tong_topping || 0)) *
-            item.so_luong,
-        0
-      );
+      const total = bill.reduce((sum, item) => {
+        if (item.is_combo) {
+          return sum + (Number(item.gia_combo) * item.so_luong);
+        } else {
+          return sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong;
+        }
+      }, 0);
+      
       totalEl.textContent = total.toLocaleString() + " đ";
     }
 
     window.chonKichCoVaTopping = (index) => {
+      const item = bill[index];
+      
+      // Combo không cần chọn kích cỡ và topping
+      if (item.is_combo) {
+        Toast.info("Combo đã được thiết lập sẵn, không thể thay đổi!");
+        return;
+      }
+
       if (!kichCoList.length) {
         Toast.error("Không có dữ liệu kích cỡ!");
         return;
       }
-      const item = bill[index];
+
       const modal = document.createElement("div");
       modal.className =
         "fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 size-modal";
@@ -523,11 +759,13 @@
 
     window.dongSizeModal = () =>
       document.querySelectorAll(".size-modal").forEach((m) => m.remove());
+      
     window.changeQty = (i, d) => {
       bill[i].so_luong += d;
       if (bill[i].so_luong <= 0) bill.splice(i, 1);
       renderBill();
     };
+    
     window.removeItem = (i) => {
       bill.splice(i, 1);
       renderBill();
@@ -573,11 +811,14 @@
         Toast.warning("Vui lòng chọn món trước khi chọn bàn!");
         return;
       }
-      const spChuaChonKichCo = bill.find((item) => !item.kich_co);
+      
+      // Kiểm tra sản phẩm thường có chọn kích cỡ chưa (combo thì bỏ qua)
+      const spChuaChonKichCo = bill.find((item) => !item.is_combo && !item.kich_co);
       if (spChuaChonKichCo) {
         Toast.warning("Vui lòng chọn kích cỡ cho tất cả sản phẩm!");
         return;
       }
+      
       banContainerEl.classList.remove("hidden");
       renderBan();
     });
@@ -669,7 +910,11 @@
           const ul = document.createElement("ul");
           banData.forEach((item) => {
             const li = document.createElement("li");
-            li.textContent = `${item.ten_san_pham} ${item.kich_co ? "(" + item.kich_co + ")" : ""} ${item.toppings.length ? "+ " + item.toppings.map((t) => t.ten_topping).join(", ") : ""} x${item.so_luong}`;
+            if (item.is_combo) {
+              li.textContent = `🎁 ${item.ten_combo} x${item.so_luong}`;
+            } else {
+              li.textContent = `${item.ten_san_pham} ${item.kich_co ? "(" + item.kich_co + ")" : ""} ${item.toppings.length ? "+ " + item.toppings.map((t) => t.ten_topping).join(", ") : ""} x${item.so_luong}`;
+            }
             ul.appendChild(li);
           });
           div.appendChild(ul);
@@ -741,10 +986,14 @@
                   modal.dataset.phanTramGiam = data.data.phan_tram_giam;
 
                   const monAn = hoaDonTheoBan[ban.ban_id] || [];
-                  const tongTien = monAn.reduce(
-                    (sum, item) => sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong,
-                    0
-                  );
+                  const tongTien = monAn.reduce((sum, item) => {
+                    if (item.is_combo) {
+                      return sum + (Number(item.gia_combo) * item.so_luong);
+                    } else {
+                      return sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong;
+                    }
+                  }, 0);
+                  
                   const tienSauGiam = tongTien * (1 - Number(data.data.phan_tram_giam) / 100);
                   totalEl.textContent = tienSauGiam.toLocaleString() + " đ";
 
@@ -788,15 +1037,13 @@
                 return;
               }
 
-              const tongTienBan = monAn.reduce(
-                (sum, item) =>
-                  sum +
-                  (Number(item.gia_co_ban) +
-                    Number(item.gia_them || 0) +
-                    Number(item.tong_topping || 0)) *
-                    item.so_luong,
-                0
-              );
+              const tongTienBan = monAn.reduce((sum, item) => {
+                if (item.is_combo) {
+                  return sum + (Number(item.gia_combo) * item.so_luong);
+                } else {
+                  return sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong;
+                }
+              }, 0);
 
               const phanTramGiam = modal.dataset.phanTramGiam
                 ? Number(modal.dataset.phanTramGiam)
@@ -813,25 +1060,41 @@
 
               const chiTiet = [];
               monAn.forEach((item) => {
-                const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
-                if (item.toppings.length) {
-                  item.toppings.forEach((t) => {
+                if (item.is_combo) {
+                  // Xử lý combo: thêm từng sản phẩm trong combo
+                  item.san_pham.forEach(sp => {
                     chiTiet.push({
-                      san_pham_id: item.san_pham_id,
-                      kich_co_id: item.kich_co_id,
-                      topping_id: t.topping_id,
-                      so_luong: item.so_luong,
-                      don_gia: donGia,
+                      san_pham_id: sp.san_pham_id,
+                      kich_co_id: null,
+                      topping_id: null,
+                      so_luong: sp.so_luong * item.so_luong,
+                      don_gia: 0, // Combo tính theo giá combo, không tính theo từng sản phẩm
+                      is_combo: true,
+                      combo_id: item.combo_id
                     });
                   });
                 } else {
-                  chiTiet.push({
-                    san_pham_id: item.san_pham_id,
-                    kich_co_id: item.kich_co_id,
-                    topping_id: null,
-                    so_luong: item.so_luong,
-                    don_gia: donGia,
-                  });
+                  // Xử lý sản phẩm thường
+                  const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+                  if (item.toppings.length) {
+                    item.toppings.forEach((t) => {
+                      chiTiet.push({
+                        san_pham_id: item.san_pham_id,
+                        kich_co_id: item.kich_co_id,
+                        topping_id: t.topping_id,
+                        so_luong: item.so_luong,
+                        don_gia: donGia,
+                      });
+                    });
+                  } else {
+                    chiTiet.push({
+                      san_pham_id: item.san_pham_id,
+                      kich_co_id: item.kich_co_id,
+                      topping_id: null,
+                      so_luong: item.so_luong,
+                      don_gia: donGia,
+                    });
+                  }
                 }
               });
 
@@ -897,15 +1160,13 @@
                 return;
               }
 
-              const tongTienBan = monAn.reduce(
-                (sum, item) =>
-                  sum +
-                  (Number(item.gia_co_ban) +
-                    Number(item.gia_them || 0) +
-                    Number(item.tong_topping || 0)) *
-                    item.so_luong,
-                0
-              );
+              const tongTienBan = monAn.reduce((sum, item) => {
+                if (item.is_combo) {
+                  return sum + (Number(item.gia_combo) * item.so_luong);
+                } else {
+                  return sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong;
+                }
+              }, 0);
 
               const phanTramGiam = modal.dataset.phanTramGiam
                 ? Number(modal.dataset.phanTramGiam)
@@ -923,19 +1184,27 @@
               // Chuẩn bị items cho PayOS
               const payosItems = [];
               monAn.forEach((item) => {
-                let itemName = item.ten_san_pham;
-                if (item.kich_co) itemName += ` (${item.kich_co})`;
-                if (item.toppings.length) {
-                  itemName += ` + ${item.toppings.map((t) => t.ten_topping).join(", ")}`;
+                if (item.is_combo) {
+                  payosItems.push({
+                    name: `🎁 ${item.ten_combo}`,
+                    quantity: item.so_luong,
+                    price: Math.round(Number(item.gia_combo))
+                  });
+                } else {
+                  let itemName = item.ten_san_pham;
+                  if (item.kich_co) itemName += ` (${item.kich_co})`;
+                  if (item.toppings.length) {
+                    itemName += ` + ${item.toppings.map((t) => t.ten_topping).join(", ")}`;
+                  }
+
+                  const itemPrice = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+
+                  payosItems.push({
+                    name: itemName,
+                    quantity: item.so_luong,
+                    price: Math.round(itemPrice)
+                  });
                 }
-
-                const itemPrice = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
-
-                payosItems.push({
-                  name: itemName,
-                  quantity: item.so_luong,
-                  price: itemPrice
-                });
               });
 
               // Rút ngắn tên bàn để description <= 25 ký tự
@@ -956,25 +1225,41 @@
               // Chuẩn bị chi tiết đơn hàng
               const chiTiet = [];
               monAn.forEach((item) => {
-                const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
-                if (item.toppings.length) {
-                  item.toppings.forEach((t) => {
+                if (item.is_combo) {
+                  // Xử lý combo
+                  item.san_pham.forEach(sp => {
                     chiTiet.push({
-                      san_pham_id: item.san_pham_id,
-                      kich_co_id: item.kich_co_id,
-                      topping_id: t.topping_id,
-                      so_luong: item.so_luong,
-                      don_gia: donGia,
+                      san_pham_id: sp.san_pham_id,
+                      kich_co_id: null,
+                      topping_id: null,
+                      so_luong: sp.so_luong * item.so_luong,
+                      don_gia: 0,
+                      is_combo: true,
+                      combo_id: item.combo_id
                     });
                   });
                 } else {
-                  chiTiet.push({
-                    san_pham_id: item.san_pham_id,
-                    kich_co_id: item.kich_co_id,
-                    topping_id: null,
-                    so_luong: item.so_luong,
-                    don_gia: donGia,
-                  });
+                  // Xử lý sản phẩm thường
+                  const donGia = Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0);
+                  if (item.toppings.length) {
+                    item.toppings.forEach((t) => {
+                      chiTiet.push({
+                        san_pham_id: item.san_pham_id,
+                        kich_co_id: item.kich_co_id,
+                        topping_id: t.topping_id,
+                        so_luong: item.so_luong,
+                        don_gia: donGia,
+                      });
+                    });
+                  } else {
+                    chiTiet.push({
+                      san_pham_id: item.san_pham_id,
+                      kich_co_id: item.kich_co_id,
+                      topping_id: null,
+                      so_luong: item.so_luong,
+                      don_gia: donGia,
+                    });
+                  }
                 }
               });
 

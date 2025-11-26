@@ -269,6 +269,7 @@ async function xoaTaiKhoan(id) {
 window.addEventListener("DOMContentLoaded", () => {
   loadAccounts();
   loadProducts();
+  loadCombos();
 });
 
 // Load danh sách loại sản phẩm và điền vào select
@@ -679,20 +680,19 @@ const discountDescInput = document.getElementById("discountDesc");
 const discountMemberSelect = document.getElementById("discountMember");
 const discountExpiryInput = document.getElementById("discountExpiry");
 
-// Load danh sách thành viên
-async function loadMembers() {
+async function loadMembersForDiscount() {
   try {
     const res = await fetch("http://localhost:3000/thanhvien/laytatca");
     const data = await res.json();
     discountMemberSelect.innerHTML = `<option value="">— Tất cả —</option>`;
     data.forEach(tv => {
       const option = document.createElement("option");
-      option.value = tv.thanh_vien_id;
-      option.textContent = tv.ho_ten;
+      option.value = tv. thanh_vien_id;
+      option.textContent = tv. ho_ten;
       discountMemberSelect.appendChild(option);
     });
   } catch (err) {
-    console.error("Lỗi loadMembers:", err);
+    console.error("❌ Lỗi loadMembersForDiscount:", err);
   }
 }
 
@@ -728,7 +728,7 @@ btnAddDiscount.addEventListener("click", async () => {
   discountModalTitle.textContent = "Thêm khuyến mãi";
   discountForm.reset();
   discountIdInput.value = "";
-  await loadMembers();
+  await loadMembersForDiscount();
   discountModal.classList.remove("hidden");
 });
 
@@ -789,7 +789,7 @@ window.editDiscount = async function (id) {
     discountDescInput.value = data.mo_ta || "";
     discountExpiryInput.value = data.ngay_het_han || "";
     
-    await loadMembers();
+    await loadMembersForDiscount();
     discountMemberSelect.value = data.thanh_vien_id || "";
 
     discountModal.classList.remove("hidden");
@@ -928,3 +928,321 @@ window.deleteMember = async (id) => {
 // Load khi trang sẵn sàng
 loadMembers();
 
+
+// ============================================
+// QUẢN LÝ COMBO (ĐÃ SỬA LỖI)
+// ============================================
+let allProducts = []; // Lưu danh sách sản phẩm
+
+// Load combo khi mở tab
+document.querySelector('[data-tab="combo"]')?.addEventListener('click', () => {
+  loadCombos();
+  loadProductsForCombo();
+});
+
+async function loadCombos() {
+  try {
+    const res = await fetch('http://localhost:3000/combo/laytatca');
+    if (!res.ok) throw new Error('Không thể tải danh sách combo');
+    
+    const result = await res.json();
+    
+    // ✅ Sửa lại để lấy data từ response
+    const combos = result.success ?  result.data : result;
+    
+    console.log('📦 Danh sách combo:', combos);
+    renderComboTable(combos);
+  } catch (error) {
+    console. error('❌ Lỗi load combo:', error);
+    showToast('Không thể tải danh sách combo', 'error');
+  }
+}
+
+async function loadProductsForCombo() {
+  try {
+    const res = await fetch('http://localhost:3000/sanpham/laytatca');
+    if (! res.ok) throw new Error('Không thể tải sản phẩm');
+    allProducts = await res.json();
+  } catch (error) {
+    console.error('❌ Lỗi load sản phẩm:', error);
+    showToast('Không thể tải danh sách sản phẩm', 'error');
+  }
+}
+
+function renderComboTable(combos) {
+  const tbody = document.getElementById('comboTable');
+  tbody.innerHTML = '';
+
+  if (! combos || combos.length === 0) {
+    tbody. innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">Chưa có combo nào</td></tr>';
+    return;
+  }
+
+  combos.forEach((combo, index) => {
+    const row = document.createElement('tr');
+    row.classList.add('hover:bg-gray-50');
+    
+    // Format danh sách sản phẩm
+    const sanPhamText = combo.san_pham && combo.san_pham.length > 0
+      ? combo. san_pham.map(sp => `${sp.ten_san_pham} (x${sp.so_luong})`).join(', ')
+      : 'Không có sản phẩm';
+    
+    // Format giá tiền
+    const giaCombo = Number(combo.gia_combo). toLocaleString('vi-VN');
+    
+    // Xử lý hình ảnh
+    const imageUrl = combo.hinh_anh || '/assets/coffee.png';
+    
+    row.innerHTML = `
+      <td class="px-4 py-3 border-b">${index + 1}</td>
+      <td class="px-4 py-3 border-b font-medium">${combo.ten_combo}</td>
+      <td class="px-4 py-3 border-b text-orange-600 font-semibold">${giaCombo}đ</td>
+      <td class="px-4 py-3 border-b text-sm text-gray-600">${sanPhamText}</td>
+      <td class="px-4 py-3 border-b">
+        <span class="px-2 py-1 rounded-full text-xs font-medium ${
+          combo.trang_thai === 'active' 
+            ? 'bg-green-100 text-green-700' 
+            : 'bg-gray-100 text-gray-700'
+        }">
+          ${combo.trang_thai === 'active' ? 'Đang bán' : 'Ngừng bán'}
+        </span>
+      </td>
+      <td class="px-4 py-3 border-b">
+        <img src="${imageUrl}" 
+             alt="${combo.ten_combo}" 
+             class="w-16 h-16 object-cover rounded-lg shadow-sm"
+             onerror="this. src='/assets/coffee.png'">
+      </td>
+      <td class="px-4 py-3 border-b text-center space-x-2">
+        <button onclick="editCombo(${combo.combo_id})" 
+                class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+          Sửa
+        </button>
+        <button onclick="deleteCombo(${combo.combo_id})" 
+                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+          Xóa
+        </button>
+      </td>
+    `;
+    tbody. appendChild(row);
+  });
+}
+
+// Mở modal thêm combo
+document.getElementById('btnAddCombo')?.addEventListener('click', async () => {
+  document.getElementById('comboModalTitle').textContent = 'Thêm combo';
+  document.getElementById('comboForm').reset();
+  document.getElementById('comboId').value = '';
+  
+  // Load sản phẩm trước khi hiển thị
+  if (allProducts.length === 0) {
+    await loadProductsForCombo();
+  }
+  
+  renderProductSelection([]);
+  document. getElementById('comboModal').classList. remove('hidden');
+});
+
+// Đóng modal
+document.getElementById('btnCancelCombo')?.addEventListener('click', () => {
+  document.getElementById('comboModal').classList.add('hidden');
+});
+
+// Render danh sách sản phẩm để chọn
+function renderProductSelection(selectedProducts = []) {
+  const container = document.getElementById('comboProductList');
+  container. innerHTML = '';
+
+  if (allProducts.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-4">Không có sản phẩm nào</p>';
+    return;
+  }
+
+  allProducts. forEach(product => {
+    const existing = selectedProducts.find(sp => sp.san_pham_id === product.san_pham_id);
+    const div = document.createElement('div');
+    div.className = 'flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50';
+    div.innerHTML = `
+      <div class="flex items-center gap-3 flex-1">
+        <input type="checkbox" 
+               id="product_${product.san_pham_id}" 
+               class="combo-product-checkbox w-4 h-4" 
+               data-id="${product.san_pham_id}" 
+               data-name="${product.ten_san_pham}"
+               ${existing ? 'checked' : ''}>
+        <img src="${product.hinh_anh || '/assets/no-image.png'}" 
+             class="w-12 h-12 object-cover rounded"
+             onerror="this. src='/assets/coffee.png'">
+        <label for="product_${product.san_pham_id}" class="cursor-pointer flex-1">
+          ${product.ten_san_pham} - ${Number(product.gia_co_ban).toLocaleString('vi-VN')}đ
+        </label>
+      </div>
+      <input type="number" 
+             id="qty_${product.san_pham_id}" 
+             class="w-20 px-2 py-1 border rounded" 
+             placeholder="SL" 
+             min="1" 
+             value="${existing ? existing.so_luong : 1}"
+             ${!existing ? 'disabled' : ''}>
+    `;
+
+    // Toggle số lượng khi check/uncheck
+    const checkbox = div.querySelector(`#product_${product.san_pham_id}`);
+    const qtyInput = div.querySelector(`#qty_${product.san_pham_id}`);
+    
+    checkbox.addEventListener('change', () => {
+      qtyInput.disabled = !checkbox. checked;
+      if (checkbox.checked && !qtyInput.value) qtyInput.value = 1;
+    });
+
+    container.appendChild(div);
+  });
+}
+
+// Submit form combo
+document.getElementById('comboForm')?.addEventListener('submit', async (e) => {
+  e. preventDefault();
+
+  const comboId = document.getElementById('comboId').value;
+  
+  // Thu thập sản phẩm đã chọn
+  const selectedProducts = [];
+  document.querySelectorAll('.combo-product-checkbox:checked').forEach(checkbox => {
+    const productId = checkbox.dataset.id;
+    const qtyInput = document.getElementById(`qty_${productId}`);
+    const qty = parseInt(qtyInput.value) || 1;
+    
+    selectedProducts.push({
+      san_pham_id: parseInt(productId),
+      so_luong: qty
+    });
+  });
+
+  // Validate
+  if (selectedProducts.length === 0) {
+    showToast('Vui lòng chọn ít nhất 1 sản phẩm!', 'error');
+    return;
+  }
+
+  const ten_combo = document.getElementById('comboName').value. trim();
+  const gia_combo = document.getElementById('comboPrice').value;
+  
+  if (!ten_combo || ! gia_combo) {
+    showToast('Vui lòng nhập đầy đủ thông tin! ', 'error');
+    return;
+  }
+
+  // Chuẩn bị FormData
+  const formData = new FormData();
+  formData. append('ten_combo', ten_combo);
+  formData.append('mo_ta', document.getElementById('comboDesc').value. trim());
+  formData.append('gia_combo', gia_combo);
+  formData. append('trang_thai', document.getElementById('comboStatus').value);
+  formData.append('san_pham', JSON.stringify(selectedProducts));
+
+  // Kiểm tra file ảnh
+  const imageFile = document.getElementById('comboImage').files[0];
+  if (imageFile) {
+    // Validate kích thước file (max 5MB)
+    if (imageFile.size > 5 * 1024 * 1024) {
+      showToast('Kích thước ảnh không được vượt quá 5MB! ', 'error');
+      return;
+    }
+    formData.append('hinh_anh', imageFile);
+  } else if (! comboId) {
+    // Nếu thêm mới mà không có ảnh thì dùng ảnh mặc định
+    showToast('Sẽ sử dụng hình ảnh mặc định', 'info');
+  }
+
+  try {
+    const url = comboId 
+      ? `http://localhost:3000/combo/sua/${comboId}` 
+      : 'http://localhost:3000/combo/them';
+    
+    const method = comboId ? 'PUT' : 'POST';
+
+    console.log('🚀 Gửi request:', { url, method });
+
+    const res = await fetch(url, {
+      method,
+      body: formData
+    });
+
+    const contentType = res.headers.get('content-type');
+    let data;
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      console.error('❌ Response không phải JSON:', text);
+      throw new Error('Server trả về định dạng không hợp lệ');
+    }
+
+    if (!res. ok) {
+      throw new Error(data.message || `Lỗi ${res.status}: ${res.statusText}`);
+    }
+
+    showToast(data. message || 'Lưu combo thành công!', 'success');
+    document.getElementById('comboModal').classList.add('hidden');
+    loadCombos();
+    
+  } catch (error) {
+    console.error('❌ Lỗi khi lưu combo:', error);
+    showToast('Không thể lưu combo: ' + error.message, 'error');
+  }
+});
+
+// Sửa combo
+window.editCombo = async (id) => {
+  try {
+    const res = await fetch(`http://localhost:3000/combo/layid/${id}`);
+    if (! res.ok) throw new Error('Không thể tải thông tin combo');
+    
+    const result = await res.json();
+    const combo = result.success ? result. data : result;
+
+    document.getElementById('comboModalTitle').textContent = 'Sửa combo';
+    document.getElementById('comboId').value = combo.combo_id;
+    document.getElementById('comboName').value = combo.ten_combo;
+    document.getElementById('comboDesc').value = combo.mo_ta || '';
+    document.getElementById('comboPrice').value = combo.gia_combo;
+    document.getElementById('comboStatus').value = combo. trang_thai;
+
+    // Load sản phẩm nếu chưa có
+    if (allProducts.length === 0) {
+      await loadProductsForCombo();
+    }
+
+    renderProductSelection(combo.san_pham || []);
+    document.getElementById('comboModal').classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('❌ Lỗi:', error);
+    showToast('Không thể tải thông tin combo', 'error');
+  }
+};
+
+// Xóa combo
+window.deleteCombo = async (id) => {
+  if (!confirm('Bạn có chắc muốn xóa combo này? ')) return;
+
+  try {
+    const res = await fetch(`http://localhost:3000/combo/xoa/${id}`, { 
+      method: 'DELETE' 
+    });
+    
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data. message || 'Không thể xóa combo');
+    }
+
+    showToast(data.message || 'Xóa combo thành công!', 'success');
+    loadCombos();
+    
+  } catch (error) {
+    console.error('❌ Lỗi:', error);
+    showToast('Không thể xóa combo: ' + error.message, 'error');
+  }
+};

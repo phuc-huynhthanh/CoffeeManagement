@@ -230,6 +230,38 @@ CREATE TABLE IF NOT EXISTS chi_tiet_topping (
 );
 
 -- =========================
+-- BẢNG COMBO
+-- =========================
+CREATE TABLE IF NOT EXISTS combo (
+    combo_id INT PRIMARY KEY AUTO_INCREMENT,
+    ten_combo VARCHAR(100) NOT NULL,
+    mo_ta TEXT,
+    gia_combo DECIMAL(12,0) NOT NULL,
+    hinh_anh VARCHAR(500),
+    trang_thai ENUM('active', 'inactive') DEFAULT 'active',
+    ngay_tao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    gia_goc DECIMAL(12,0) NOT NULL DEFAULT 0
+);
+
+-- =========================
+-- BẢNG CHI TIẾT COMBO (SẢN PHẨM TRONG COMBO)
+-- =========================
+CREATE TABLE IF NOT EXISTS chi_tiet_combo (
+    chi_tiet_combo_id INT PRIMARY KEY AUTO_INCREMENT,
+    combo_id INT NOT NULL,
+    san_pham_id INT NOT NULL,
+    so_luong INT DEFAULT 1 CHECK(so_luong > 0),
+    ghi_chu VARCHAR(255),
+    FOREIGN KEY (combo_id) REFERENCES combo(combo_id) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    FOREIGN KEY (san_pham_id) REFERENCES san_pham(san_pham_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- =========================
 -- DỮ LIỆU MẪU
 -- =========================
 INSERT INTO vai_tro (ten_vai_tro) VALUES
