@@ -158,11 +158,11 @@
   </head>
   <body class="bg-gray-100 flex flex-col min-h-screen">
     <!-- Toast Container -->
-    <div id="toast-container"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
 
     <!-- Header -->
     <header
-      class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 flex justify-between items-center shadow-md"
+      class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 flex justify-between items-center shadow-md fixed w-full z-[100]"
     >
       <h1 class="text-2xl font-bold tracking-wide">☕Brother's Hai Coffee</h1>
       <div class="flex gap-3 items-center">
@@ -193,104 +193,60 @@
     </header>
 
     <!-- Nội dung -->
-    <div class="flex flex-1 overflow-hidden">
-      <!-- Danh sách sản phẩm & combo -->
+    <div class="flex flex-1 overflow-hidden ">
       <div class="flex-1 flex flex-col">
         <!-- Tab Navigation -->
-        <div class="flex border-b bg-white px-6 pt-4">
-          <button class="tab-button active" data-tab="products">
-            🍵 Sản Phẩm
-          </button>
-          <button class="tab-button" data-tab="combos">
-            🎁 Combo
-          </button>
-        </div>
+        <!-- Tab Navigation -->
+<div class="sticky top-20 z-20 bg-white flex border-b px-6 py-3 gap-4 !w-full !fixed -mt-2">
+  <button class="tab-button active px-4 py-2 rounded-t-xl font-semibold text-gray-700 hover:bg-blue-100 transition" data-tab="products">
+    🍵 Sản Phẩm
+  </button>
+  <button class="tab-button  px-4 py-2 rounded-t-xl font-semibold text-gray-700 hover:bg-blue-100 transition" data-tab="combos">
+    🎁 Combo
+  </button>
+</div>
+
 
         <!-- Tab Content -->
         <div class="flex-1 overflow-hidden">
-          <!-- Sản phẩm -->
-          <div id="products-tab" class="tab-content active h-full overflow-y-auto">
-            <div
-              id="product-list"
-              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6"
-            >
+          <div id="products-tab" class="tab-content block h-full overflow-y-auto">
+            <div id="product-list" class="mt-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6 w-3/4">
               <% sanPham.forEach(p => { %>
-              <div
-                class="product bg-white rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-4 relative"
-                data-id="<%= p.san_pham_id %>"
-                data-ten="<%= p.ten_san_pham %>"
-                data-gia="<%= p.gia_co_ban %>"
-                data-loai="<%= p.ten_loai %>"
-              >
-                <img
-                  src="<%= p.hinh_anh %>"
-                  alt="<%= p.ten_san_pham %>"
-                  class="w-28 h-28 object-cover rounded-xl mb-3"
-                />
-                <h3 class="text-lg font-semibold text-gray-800">
-                  <%= p.ten_san_pham %>
-                </h3>
+              <div class="product bg-white rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-4 relative"
+                data-id="<%= p.san_pham_id %>" data-ten="<%= p.ten_san_pham %>" data-gia="<%= p.gia_co_ban %>" data-loai="<%= p.ten_loai %>">
+                <img src="<%= p.hinh_anh %>" alt="<%= p.ten_san_pham %>" class="w-28 h-28 object-cover rounded-xl mb-3"/>
+                <h3 class="text-lg font-semibold text-gray-800"><%= p.ten_san_pham %></h3>
                 <p class="text-gray-500 text-sm mb-1"><%= p.ten_loai %></p>
-                <p class="text-blue-600 font-bold">
-                  <%= Number(p.gia_co_ban).toLocaleString() %> đ
-                </p>
+                <p class="text-blue-600 font-bold"><%= Number(p.gia_co_ban).toLocaleString() %> đ</p>
               </div>
               <% }) %>
             </div>
           </div>
 
-          <!-- Combo -->
           <div id="combos-tab" class="tab-content hidden h-full overflow-y-auto">
-            <div
-              id="combo-list"
-              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6"
-            >
-              <!-- Combo sẽ được JS render vào đây -->
+            <div id="combo-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6 w-3/4 mt-32">
+              <!-- Combo được JS render vào đây -->
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Hóa đơn + Nút -->
-      <aside
-        class="w-full mt-2 sm:w-96 bg-white shadow-xl border-l rounded-tl-2xl flex flex-col"
-      >
-        <div
-          class="p-4 bg-blue-600 text-white font-semibold text-lg rounded-tl-2xl"
-        >
-          🧾 Hóa đơn
-        </div>
+      <!-- Hóa đơn -->
+      <aside id="billAside" class="w-full sm:w-96 bg-white shadow-xl border-l rounded-tl-2xl flex flex-col"
+        style="position: fixed; top: 80px; right: 0; height: 90vh; z-index: 50;">
+        <div class="p-4 bg-blue-600 text-white font-semibold text-lg flex-shrink-0 rounded-tl-2xl">Hóa đơn</div>
         <div id="bill" class="flex-1 p-4 overflow-y-auto">
-          <p id="empty" class="text-gray-400 text-center mt-10">
-            Chưa có sản phẩm nào
-          </p>
+          <p id="empty" class="text-gray-400 text-center mt-10">Chưa có sản phẩm nào</p>
         </div>
-        <div class="border-t p-4 bg-gray-50 flex flex-col gap-2">
+        <div class="border-t p-4 bg-gray-50 flex flex-col gap-2 flex-shrink-0">
           <div class="flex justify-between mb-2 text-lg">
             <span>Tổng tiền:</span>
             <span id="total" class="font-bold text-blue-600">0 đ</span>
           </div>
-          <button
-            id="chooseTableBtn"
-            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold transition"
-          >
-            🍽 Chọn bàn
-          </button>
-          <button
-            id="completeBtn"
-            class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-semibold transition hidden"
-          >
-            ✅ Hoàn tất
-          </button>
-          <button
-            id="viewTablesBtn"
-            class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition"
-          >
-            👀 Xem danh sách bàn
-          </button>
+          <button id="chooseTableBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text white py-3 rounded-xl font-semibold transition">Chọn bàn</button>
+          <button id="completeBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-semibold transition hidden">Hoàn tất</button>
+          <button id="viewTablesBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition">Xem danh sách bàn</button>
         </div>
-        <!-- Hóa đơn theo bàn -->
-        <div id="billContainer" class="p-4"></div>
       </aside>
     </div>
 
@@ -354,61 +310,23 @@
   // ============================================
   const Toast = {
     container: null,
-
-    init() {
-      if (!this.container) {
-        this.container = document.getElementById('toast-container');
-      }
-    },
-
+    init() { if (!this.container) this.container = document.getElementById('toast-container'); },
     show(message, type = 'info', duration = 3000) {
       this.init();
-
-      const icons = {
-        success: '✓',
-        error: '✕',
-        warning: '⚠',
-        info: 'ℹ'
-      };
-
+      const icons = { success: '✓', error: '✚', warning: 'Warning', info: 'Info' };
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
-      toast.innerHTML = `
-        <div class="toast-icon">${icons[type]}</div>
-        <div class="toast-content">${message}</div>
-        <button class="toast-close">×</button>
-      `;
-
+      toast.innerHTML = `<div class="toast-icon">${icons[type]}</div><div class="toast-content">${message}</div><button class="toast-close">×</button>`;
       this.container.appendChild(toast);
-
-      const closeBtn = toast.querySelector('.toast-close');
-      closeBtn.addEventListener('click', () => this.remove(toast));
-
+      toast.querySelector('.toast-close').addEventListener('click', () => this.remove(toast));
       setTimeout(() => this.remove(toast), duration);
     },
-
-    remove(toast) {
-      toast.classList.add('toast-exit');
-      setTimeout(() => toast.remove(), 300);
-    },
-
-    success(message, duration) {
-      this.show(message, 'success', duration);
-    },
-
-    error(message, duration) {
-      this.show(message, 'error', duration);
-    },
-
-    warning(message, duration) {
-      this.show(message, 'warning', duration);
-    },
-
-    info(message, duration) {
-      this.show(message, 'info', duration);
-    }
+    remove(toast) { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); },
+    success(m, d) { this.show(m, 'success', d); },
+    error(m, d) { this.show(m, 'error', d); },
+    warning(m, d) { this.show(m, 'warning', d); },
+    info(m, d) { this.show(m, 'info', d); }
   };
-
   // ============================================
   // TAB SYSTEM
   // ============================================
@@ -549,23 +467,93 @@
   // ============================================
   // MAIN APPLICATION CODE
   // ============================================
+  let bill = []; // Biến toàn cục
+  let billContainer, totalEl, emptyEl, kichCoList, toppingList;
+  
+  // Hàm renderBill - di chuyển ra ngoài để addComboToBill có thể gọi
+  function renderBill() {
+    if (!billContainer) return;
+    
+    billContainer.innerHTML = "";
+    if (!bill.length) {
+      emptyEl.style.display = "block";
+    } else {
+      emptyEl.style.display = "none";
+      bill.forEach((item, i) => {
+        const div = document.createElement("div");
+        div.className =
+          "flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition";
+        
+        if (item.is_combo) {
+          // Hiển thị combo
+          div.innerHTML = `
+            <div class="flex-1">
+              <p class="font-semibold text-gray-800">${item.ten_combo} 🎁</p>
+              <p class="text-sm text-gray-500">
+                Combo - ${item.gia_combo.toLocaleString()} đ
+              </p>
+              <p class="text-xs text-gray-400 mt-1">
+                ${item.san_pham.map(sp => `${sp.ten_san_pham} (x${sp.so_luong})`).join(', ')}
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
+              <span class="w-6 text-center">${item.so_luong}</span>
+              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
+              <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+            </div>
+          `;
+        } else {
+          // Hiển thị sản phẩm thường
+          div.innerHTML = `
+            <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
+              <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
+              <p class="text-sm text-gray-500">
+                ${item.kich_co || "(Chưa chọn size)"} 
+                ${item.toppings.length ? " + " + item.toppings.map((t) => t.ten_topping).join(", ") : ""}
+                — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
+              <span class="w-6 text-center">${item.so_luong}</span>
+              <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
+              <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
+            </div>
+          `;
+        }
+        billContainer.appendChild(div);
+      });
+    }
+
+    const total = bill.reduce((sum, item) => {
+      if (item.is_combo) {
+        return sum + (Number(item.gia_combo) * item.so_luong);
+      } else {
+        return sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong;
+      }
+    }, 0);
+    
+    totalEl.textContent = total.toLocaleString() + " đ";
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    const bill = [];
-    const billContainer = document.getElementById("bill");
-    const totalEl = document.getElementById("total");
-    const emptyEl = document.getElementById("empty");
+    // Khởi tạo các biến DOM
+    billContainer = document.getElementById("bill");
+    totalEl = document.getElementById("total");
+    emptyEl = document.getElementById("empty");
 
     // Khởi tạo tabs và combo
     initTabs();
     loadCombos();
 
-    let kichCoList = [];
+    kichCoList = [];
     fetch("/kichco/laytatca")
       .then((r) => r.json())
       .then((data) => (kichCoList = data))
       .catch(console.error);
 
-    let toppingList = [];
+    toppingList = [];
     fetch("/topping/laytatca")
       .then((r) => r.json())
       .then((data) => (toppingList = data))
@@ -596,70 +584,6 @@
       if (existing) existing.so_luong++;
       else bill.push({ ...sp, so_luong: 1 });
       renderBill();
-    }
-
-    function renderBill() {
-      billContainer.innerHTML = "";
-      if (!bill.length) {
-        emptyEl.style.display = "block";
-      } else {
-        emptyEl.style.display = "none";
-        bill.forEach((item, i) => {
-          const div = document.createElement("div");
-          div.className =
-            "flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-2 shadow-sm cursor-pointer hover:bg-blue-50 transition";
-          
-          if (item.is_combo) {
-            // Hiển thị combo
-            div.innerHTML = `
-              <div class="flex-1">
-                <p class="font-semibold text-gray-800">${item.ten_combo} 🎁</p>
-                <p class="text-sm text-gray-500">
-                  Combo - ${item.gia_combo.toLocaleString()} đ
-                </p>
-                <p class="text-xs text-gray-400 mt-1">
-                  ${item.san_pham.map(sp => `${sp.ten_san_pham} (x${sp.so_luong})`).join(', ')}
-                </p>
-              </div>
-              <div class="flex items-center gap-2">
-                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
-                <span class="w-6 text-center">${item.so_luong}</span>
-                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
-                <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
-              </div>
-            `;
-          } else {
-            // Hiển thị sản phẩm thường
-            div.innerHTML = `
-              <div class="flex-1" onclick="chonKichCoVaTopping(${i})">
-                <p class="font-semibold text-gray-800">${item.ten_san_pham}</p>
-                <p class="text-sm text-gray-500">
-                  ${item.kich_co || "(Chưa chọn size)"} 
-                  ${item.toppings.length ? " + " + item.toppings.map((t) => t.ten_topping).join(", ") : ""}
-                  — ${(Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)).toLocaleString()} đ
-                </p>
-              </div>
-              <div class="flex items-center gap-2">
-                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},-1)">-</button>
-                <span class="w-6 text-center">${item.so_luong}</span>
-                <button class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700" onclick="changeQty(${i},1)">+</button>
-                <button class="ml-2 text-red-500 hover:text-red-700" onclick="removeItem(${i})">🗑️</button>
-              </div>
-            `;
-          }
-          billContainer.appendChild(div);
-        });
-      }
-
-      const total = bill.reduce((sum, item) => {
-        if (item.is_combo) {
-          return sum + (Number(item.gia_combo) * item.so_luong);
-        } else {
-          return sum + (Number(item.gia_co_ban) + Number(item.gia_them || 0) + Number(item.tong_topping || 0)) * item.so_luong;
-        }
-      }, 0);
-      
-      totalEl.textContent = total.toLocaleString() + " đ";
     }
 
     window.chonKichCoVaTopping = (index) => {
@@ -1426,14 +1350,6 @@
       }, 2000);
     }
   });
-
-  // Log thông tin user
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (user) {
-    console.log("📦 Thông tin tài khoản đăng nhập:", user);
-  } else {
-    console.log("❌ Chưa có tài khoản đăng nhập trong localStorage");
-  }
 </script>
 
   </body>
