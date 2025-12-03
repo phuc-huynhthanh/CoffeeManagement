@@ -1594,4 +1594,245 @@ window.addEventListener("DOMContentLoaded", () => {
   loadToppings();
 });
 
+// Điều hướng Parent/Child tabs trong sidebar
+  document.addEventListener('DOMContentLoaded', () => {
+    const parentTabs = document.querySelectorAll('.parent-tab');
+    const parentSections = {
+      'san-pham': document.getElementById('parent-san-pham'),
+      'nhan-vien': document.getElementById('parent-nhan-vien'),
+      'thanh-vien': document.getElementById('parent-thanh-vien'),
+    };
 
+    function showChildList(parentKey) {
+      document.querySelectorAll('.child-list').forEach(list => {
+        const match = list.dataset.parentList === parentKey;
+        list.classList.toggle('hidden', !match);
+      });
+    }
+
+    function activateParent(parentKey) {
+      // Active trạng thái parent
+      parentTabs.forEach(t => t.classList.toggle('active', t.dataset.parent === parentKey));
+      // Hiển thị section tương ứng
+      Object.entries(parentSections).forEach(([key, section]) => {
+        if (!section) return;
+        section.classList.toggle('hidden', key !== parentKey);
+      });
+      // Hiển thị danh sách tab con trong sidebar cho parent này
+      showChildList(parentKey);
+
+      // Bật tab con đầu tiên của parent
+      const firstChildLink = document.querySelector(`.child-list[data-parent-list="${parentKey}"] .child-tab`);
+      if (firstChildLink) activateChild(parentKey, firstChildLink.dataset.tab);
+    }
+
+    function activateChild(parentKey, tabKey) {
+      // Active trạng thái tab con trong sidebar
+      document.querySelectorAll(`.child-list[data-parent-list="${parentKey}"] .child-tab`).forEach(a => {
+        a.classList.toggle('active', a.dataset.tab === tabKey);
+      });
+      // Hiển thị nội dung tab trong section tương ứng
+      const parentSectionEl = parentSections[parentKey];
+      if (!parentSectionEl) return;
+      parentSectionEl.querySelectorAll('.tab-content').forEach(content => {
+        const id = content.id.replace('tab-', '');
+        const active = id === tabKey;
+        content.classList.toggle('active', active);
+        content.classList.toggle('hidden', !active);
+      });
+
+      // Hook sự kiện để /js/admin.js biết tab hiện tại
+      window.dispatchEvent(new CustomEvent('childTabChanged', {
+        detail: { parent: parentKey, tab: tabKey }
+      }));
+    }
+
+    // Bind click cho parent
+    parentTabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        activateParent(tab.dataset.parent);
+      });
+    });
+
+    // Bind click cho child (trong sidebar)
+    document.querySelectorAll('.child-list .child-tab').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const parentKey = link.closest('.child-list').dataset.parentList;
+        activateChild(parentKey, link.dataset.tab);
+      });
+    });
+
+    // Khởi tạo mặc định
+    activateParent('san-pham');
+  });
+// Lắng nghe tab con để load dữ liệu
+window.addEventListener('childTabChanged', (e) => {
+  const { parent, tab } = e.detail;
+  console.log('Child tab changed:', parent, tab);
+
+  switch (tab) {
+    case 'san-pham':
+      // loadProducts();
+      break;
+    case 'combo':
+      // loadCombos();
+      break;
+    case 'ban':
+      // loadTables();
+      break;
+    case 'kich-co':
+      // loadSizes();
+      break;
+    case 'topping':
+      // loadToppings();
+      break;
+    case 'tai-khoan':
+      // loadEmployees();
+      break;
+    case 'lich-lam':
+      // loadSchedules();
+      break;
+    case 'luong':
+      // loadPayrolls();
+      break;
+    case 'doanh-thu':
+      // loadRevenues();
+      break;
+    case 'thanh-vien':
+      // loadMembers();
+      break;
+    case 'khuyen-mai':
+      // loadDiscounts();
+      break;
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const parentTabs = document.querySelectorAll('.parent-tab');
+    const childLists = document.querySelectorAll('.child-list');
+    const parentSections = {
+      'san-pham': document.getElementById('parent-san-pham'),
+      'nhan-vien': document.getElementById('parent-nhan-vien'),
+      'thanh-vien': document.getElementById('parent-thanh-vien'),
+    };
+    const ordersSection = document.getElementById('orders-alone');
+    const ordersLink = document.querySelector('aside a[href="#orders-alone"]');
+
+    const openState = { 'san-pham': true, 'nhan-vien': false, 'thanh-vien': false };
+
+    function hideOrders() {
+      if (ordersSection && !ordersSection.classList.contains('hidden')) {
+        ordersSection.classList.add('hidden');
+      }
+    }
+
+    function setChildListVisibility(parentKey, shouldOpen) {
+      childLists.forEach(list => {
+        const isTarget = list.dataset.parentList === parentKey;
+        list.classList.toggle('hidden', !isTarget || !shouldOpen);
+      });
+      openState[parentKey] = shouldOpen;
+    }
+
+    function activateParent(parentKey) {
+      // LUÔN ẨN phần đơn hàng khi chuyển parent
+      hideOrders();
+
+      // Active trạng thái parent
+      parentTabs.forEach(t => t.classList.toggle('active', t.dataset.parent === parentKey));
+
+      // Hiển thị section tương ứng
+      Object.entries(parentSections).forEach(([key, section]) => {
+        if (!section) return;
+        section.classList.toggle('hidden', key !== parentKey);
+      });
+
+      // Mở child list của parent và đóng các list khác
+      setChildListVisibility(parentKey, true);
+
+      // Kích hoạt tab con đầu tiên
+      const firstChildLink = document.querySelector(`.child-list[data-parent-list="${parentKey}"] .child-tab`);
+      if (firstChildLink) activateChild(parentKey, firstChildLink.dataset.tab);
+    }
+
+    function activateChild(parentKey, tabKey) {
+      // LUÔN ẨN phần đơn hàng khi chuyển child
+      hideOrders();
+
+      // Active child tab
+      document.querySelectorAll(`.child-list[data-parent-list="${parentKey}"] .child-tab`).forEach(a => {
+        a.classList.toggle('active', a.dataset.tab === tabKey);
+      });
+
+      // Hiển thị nội dung trong section
+      const parentSectionEl = parentSections[parentKey];
+      if (!parentSectionEl) return;
+      parentSectionEl.querySelectorAll('.tab-content').forEach(content => {
+        const id = content.id.replace('tab-', '');
+        const isActive = id === tabKey;
+        content.classList.toggle('active', isActive);
+        content.classList.toggle('hidden', !isActive);
+      });
+
+      // Hook cho admin.js
+      window.dispatchEvent(new CustomEvent('childTabChanged', {
+        detail: { parent: parentKey, tab: tabKey }
+      }));
+    }
+
+    // Click parent: chuyển parent hoặc toggle child list (nhưng luôn ẩn orders)
+    parentTabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        const parentKey = tab.dataset.parent;
+        const isActiveParent = tab.classList.contains('active');
+
+        if (!isActiveParent) {
+          activateParent(parentKey);
+        } else {
+          // Toggle child list hiện tại, không thay đổi section
+          const shouldOpen = !openState[parentKey];
+          setChildListVisibility(parentKey, shouldOpen);
+          hideOrders(); // đảm bảo orders ẩn nếu đang mở
+        }
+      });
+    });
+
+    // Click child: hiển thị nội dung tương ứng, giữ child list mở và ẩn orders
+    document.querySelectorAll('.child-list .child-tab').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const parentKey = link.closest('.child-list').dataset.parentList;
+        setChildListVisibility(parentKey, true);
+        activateChild(parentKey, link.dataset.tab);
+      });
+    });
+
+    // Click "Quản lý đơn hàng": ẩn toàn bộ group, hiển thị riêng orders
+    if (ordersLink && ordersSection) {
+      ordersLink.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // Ẩn mọi group
+        Object.values(parentSections).forEach(sec => sec && sec.classList.add('hidden'));
+        // Ẩn mọi child list
+        childLists.forEach(list => list.classList.add('hidden'));
+        // Bỏ active các parent/child
+        parentTabs.forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.child-tab').forEach(ct => ct.classList.remove('active'));
+
+        // Hiển thị orders-alone
+        ordersSection.classList.remove('hidden');
+
+        // Thông báo cho admin.js
+        window.dispatchEvent(new CustomEvent('childTabChanged', {
+          detail: { parent: 'orders', tab: 'orders' }
+        }));
+      });
+    }
+
+    // Khởi tạo mặc định
+    activateParent('san-pham');
+  });

@@ -119,6 +119,11 @@
     .toast-exit {
       animation: slideOut 0.3s ease-in forwards;
     }
+
+    .parent-tab.active { background-color: rgba(255,255,255,0.15); }
+    .child-tab.active { background-color: rgba(255,255,255,0.25); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
@@ -139,271 +144,339 @@
   </header>
 
    <div class="flex flex-1 mt-12">
-    <aside class="w-64 bg-blue-600 text-white flex flex-col pt-4">
-      <nav class="flex-1 overflow-y-auto mt-4">
-        <ul class="space-y-2 px-4">
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link active" data-tab="tai-khoan">Quản lý tài khoản nhân viên</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="san-pham">Quản lý sản phẩm</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="combo">Quản lý combo</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="ban">Quản lý bàn</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="don-hang">Quản lý đơn hàng</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="thanh-vien">Quản lý thành viên</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="kich-co">Quản lý kích cỡ</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="topping">Quản lý topping</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lịch làm</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lương</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="khuyen-mai">Quản lý khuyến mãi</a></li>
-          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý doanh thu</a></li>
+<!-- Thay toàn bộ <aside> hiện tại bằng khối này -->
+<aside class="w-64 bg-blue-600 text-white flex flex-col pt-4">
+  <nav class="flex-1 overflow-y-auto mt-2">
+    <ul class="space-y-2 px-4">
+      <!-- Nhóm: Quản lý sản phẩm -->
+      <li>
+        <a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 parent-tab active" data-parent="san-pham">
+          Quản lý sản phẩm
+        </a>
+        <ul class="space-y-2 px-4 mt-2 child-list" data-parent-list="san-pham">
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab active" data-tab="san-pham">- Sản phẩm</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="combo">- Combo</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="ban">- Bàn</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="kich-co">- Kích cỡ</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="topping">- Topping</a></li>
         </ul>
-      </nav>
-    </aside>
+      </li>
+
+      <!-- Nhóm: Quản lý tài khoản nhân viên -->
+      <li>
+        <a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 parent-tab" data-parent="nhan-vien">
+          Quản lý tài khoản nhân viên
+        </a>
+        <ul class="space-y-2 px-4 mt-2 child-list hidden" data-parent-list="nhan-vien">
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="tai-khoan">- Tài khoản nhân viên</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="lich-lam">- Lịch làm</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="luong">- Lương</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="doanh-thu">- Doanh thu</a></li>
+        </ul>
+      </li>
+
+      <!-- Nhóm: Quản lý thành viên -->
+      <li>
+        <a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 parent-tab" data-parent="thanh-vien">
+          Quản lý thành viên
+        </a>
+        <ul class="space-y-2 px-4 mt-2 child-list hidden" data-parent-list="thanh-vien">
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="thanh-vien">- Thành viên</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="khuyen-mai">- Khuyến mãi</a></li>
+        </ul>
+      </li>
+
+      <!-- Bạn có thể để “Quản lý đơn hàng” là một mục riêng không có tab con -->
+      <li>
+        <a href="#orders-alone" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý đơn hàng</a>
+      </li>
+    </ul>
+  </nav>
+</aside>
 
   <!-- Main -->
 <main class="flex-1 container mx-auto px-6 py-8">
-  <!-- Quản lý tài khoản nhân viên -->
-  <div id="tab-tai-khoan" class="tab-content">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold text-gray-700">Quản lý tài khoản nhân viên</h2>
-      <button id="btnAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md">
-        + Thêm tài khoản
-      </button>
+  <!-- Parent: Quản lý sản phẩm -->
+  <section id="parent-san-pham" class="parent-section">
+    <!-- Tab: Quản lý sản phẩm -->
+    <div id="tab-san-pham" class="tab-content active">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý sản phẩm</h2>
+        <button id="btnAddProduct" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md">
+          + Thêm sản phẩm
+        </button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Tên sản phẩm</th>
+              <th class="px-4 py-3 border-b">Loại</th>
+              <th class="px-4 py-3 border-b">Giá</th>
+              <th class="px-4 py-3 border-b">Hình ảnh</th>
+              <th class="px-4 py-3 border-b">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="productTable" class="divide-y"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+
+    <!-- Tab: Quản lý Combo -->
+    <div id="tab-combo" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý Combo</h2>
+        <button id="btnAddCombo" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md">
+          + Thêm combo
+        </button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Tên combo</th>
+              <th class="px-4 py-3 border-b">Giá</th>
+              <th class="px-4 py-3 border-b">Sản phẩm</th>
+              <th class="px-4 py-3 border-b">Trạng thái</th>
+              <th class="px-4 py-3 border-b">Hình ảnh</th>
+              <th class="px-4 py-3 border-b">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="comboTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý bàn -->
+    <div id="tab-ban" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý bàn</h2>
+        <button id="btnAddTable" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm bàn</button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Tên bàn</th>
+              <th class="px-4 py-3 border-b">Trạng thái</th>
+              <th class="px-4 py-3 border-b text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="tableTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý kích cỡ -->
+    <div id="tab-kich-co" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý kích cỡ</h2>
+        <button id="btnAddSize" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm kích cỡ</button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Tên kích cỡ</th>
+              <th class="px-4 py-3 border-b">Giá thêm (đ)</th>
+              <th class="px-4 py-3 border-b text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="sizeTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý topping -->
+    <div id="tab-topping" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý topping</h2>
+        <button id="btnAddTopping" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm topping</button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Tên topping</th>
+              <th class="px-4 py-3 border-b">Giá thêm (đ)</th>
+              <th class="px-4 py-3 border-b text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="toppingTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Parent: Quản lý tài khoản nhân viên -->
+  <section id="parent-nhan-vien" class="parent-section hidden">
+    <!-- Tab: Quản lý tài khoản nhân viên -->
+    <div id="tab-tai-khoan" class="tab-content active">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý tài khoản nhân viên</h2>
+        <button id="btnAdd" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md">
+          + Thêm tài khoản
+        </button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Họ tên</th>
+              <th class="px-4 py-3 border-b">Số điện thoại</th>
+              <th class="px-4 py-3 border-b">Email</th>
+              <th class="px-4 py-3 border-b">Vai trò</th>
+              <th class="px-4 py-3 border-b">Tên đăng nhập</th>
+              <th class="px-4 py-3 border-b">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="accountTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý lịch làm -->
+    <div id="tab-lich-lam" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý lịch làm</h2>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-gray-600">Nội dung lịch làm sẽ hiển thị ở đây.</p>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý lương -->
+    <div id="tab-luong" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý lương</h2>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-gray-600">Nội dung lương sẽ hiển thị ở đây.</p>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý doanh thu -->
+    <div id="tab-doanh-thu" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý doanh thu</h2>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-4">
+        <p class="text-gray-600">Nội dung doanh thu sẽ hiển thị ở đây.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Parent: Quản lý thành viên -->
+  <section id="parent-thanh-vien" class="parent-section hidden">
+    <!-- Tab: Quản lý thành viên -->
+    <div id="tab-thanh-vien" class="tab-content active">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý thành viên</h2>
+        <button id="btnAddMember" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-md">
+          + Thêm thành viên
+        </button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Họ tên</th>
+              <th class="px-4 py-3 border-b">Số điện thoại</th>
+              <th class="px-4 py-3 border-b">Email</th>
+              <th class="px-4 py-3 border-b">Tổng đơn đã mua</th>
+              <th class="px-4 py-3 border-b text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="memberTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý khuyến mãi -->
+    <div id="tab-khuyen-mai" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý khuyến mãi</h2>
+        <button id="btnAddDiscount" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-md">
+          + Thêm khuyến mãi
+        </button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Mã KM</th>
+              <th class="px-4 py-3 border-b">Phần trăm giảm</th>
+              <th class="px-4 py-3 border-b">Mô tả</th>
+              <th class="px-4 py-3 border-b">Thành viên</th>
+              <th class="px-4 py-3 border-b">Ngày hết hạn</th>
+              <th class="px-4 py-3 border-b text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="discountTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+<section id="orders-alone" class="mt-6 hidden">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-700">Quản lý đơn hàng</h2>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4 flex flex-wrap gap-4 items-end">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Ngày từ</label>
+        <input type="date" id="filterStartDate" class="mt-1 p-2 border rounded-lg border-gray-300">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Ngày đến</label>
+        <input type="date" id="filterEndDate" class="mt-1 p-2 border rounded-lg border-gray-300">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nhân viên tạo đơn</label>
+        <input type="text" id="filterStaff" placeholder="Tên nhân viên" class="mt-1 p-2 border rounded-lg border-gray-300">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Khách hàng</label>
+        <select id="filterCustomer" class="mt-1 p-2 border rounded-lg border-gray-300">
+          <option value="">-- Tất cả --</option>
+          <option value="khach_vang_lai">Khách vãng lai</option>
+          <option value="thanh_vien">Thành viên</option>
+        </select>
+      </div>
+      <div>
+        <button id="btnFilterOrders" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Lọc</button>
+        <button id="btnResetFilter" class="bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400">Reset</button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto overflow-y-scroll max-h-[500px] bg-white rounded-lg shadow-md">
       <table class="min-w-full text-left border border-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th class="px-4 py-3 border-b">STT</th>
-            <th class="px-4 py-3 border-b">Họ tên</th>
-            <th class="px-4 py-3 border-b">Số điện thoại</th>
-            <th class="px-4 py-3 border-b">Email</th>
-            <th class="px-4 py-3 border-b">Vai trò</th>
-            <th class="px-4 py-3 border-b">Tên đăng nhập</th>
+            <th class="px-4 py-3 border-b">Ngày đặt</th>
+            <th class="px-4 py-3 border-b">Tổng tiền</th>
+            <th class="px-4 py-3 border-b">Tiền sau giảm</th>
+            <th class="px-4 py-3 border-b">Trạng thái</th>
+            <th class="px-4 py-3 border-b">Tên bàn</th>
+            <th class="px-4 py-3 border-b">Khách hàng</th>
+            <th class="px-4 py-3 border-b">Nhân viên tạo đơn</th>
             <th class="px-4 py-3 border-b">Thao tác</th>
           </tr>
         </thead>
-        <tbody id="accountTable" class="divide-y"></tbody>
+        <tbody id="orderTable" class="divide-y"></tbody>
       </table>
     </div>
-  </div>
-
-  <!-- Quản lý sản phẩm -->
-  <div id="tab-san-pham" class="tab-content hidden">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold text-gray-700">Quản lý sản phẩm</h2>
-      <button id="btnAddProduct" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md">
-        + Thêm sản phẩm
-      </button>
-    </div>
-    <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
-      <table class="min-w-full text-left border border-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-4 py-3 border-b">STT</th>
-            <th class="px-4 py-3 border-b">Tên sản phẩm</th>
-            <th class="px-4 py-3 border-b">Loại</th>
-            <th class="px-4 py-3 border-b">Giá</th>
-            <th class="px-4 py-3 border-b">Hình ảnh</th>
-            <th class="px-4 py-3 border-b">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody id="productTable" class="divide-y"></tbody>
-      </table>
-    </div>
-  </div>
-
-    <!-- Quản lý Combo -->
-<div id="tab-combo" class="tab-content hidden">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-gray-700">Quản lý Combo</h2>
-    <button id="btnAddCombo" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md">
-      + Thêm combo
-    </button>
-  </div>
-  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
-    <table class="min-w-full text-left border border-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-3 border-b">STT</th>
-          <th class="px-4 py-3 border-b">Tên combo</th>
-          <th class="px-4 py-3 border-b">Giá</th>
-          <th class="px-4 py-3 border-b">Sản phẩm</th>
-          <th class="px-4 py-3 border-b">Trạng thái</th>
-          <th class="px-4 py-3 border-b">Hình ảnh</th>
-          <th class="px-4 py-3 border-b">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="comboTable" class="divide-y"></tbody>
-    </table>
-  </div>
-</div>
-<!-- Tab Bàn -->
-<div id="tab-ban" class="tab-content hidden">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-gray-700">Quản lý bàn</h2>
-    <button id="btnAddTable" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm bàn</button>
-  </div>
-  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
-    <table class="min-w-full text-left border border-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-3 border-b">STT</th>
-          <th class="px-4 py-3 border-b">Tên bàn</th>
-          <th class="px-4 py-3 border-b">Trạng thái</th>
-          <th class="px-4 py-3 border-b text-center">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="tableTable" class="divide-y"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Tab Quản lý đơn hàng -->
-<div id="tab-don-hang" class="tab-content hidden">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-gray-700">Quản lý đơn hàng</h2>
-  </div>
-
-  <!-- Form lọc đơn hàng -->
-  <div class="bg-white p-4 rounded-lg shadow-md mb-4 flex flex-wrap gap-4 items-end">
-    <div>
-      <label class="block text-sm font-medium text-gray-700">Ngày từ</label>
-      <input type="date" id="filterStartDate" class="mt-1 p-2 border rounded-lg border-gray-300">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700">Ngày đến</label>
-      <input type="date" id="filterEndDate" class="mt-1 p-2 border rounded-lg border-gray-300">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700">Nhân viên tạo đơn</label>
-      <input type="text" id="filterStaff" placeholder="Tên nhân viên" class="mt-1 p-2 border rounded-lg border-gray-300">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-gray-700">Khách hàng</label>
-      <select id="filterCustomer" class="mt-1 p-2 border rounded-lg border-gray-300">
-        <option value="">-- Tất cả --</option>
-        <option value="khach_vang_lai">Khách vãng lai</option>
-        <option value="thanh_vien">Thành viên</option>
-      </select>
-    </div>
-    <div>
-      <button id="btnFilterOrders" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Lọc</button>
-      <button id="btnResetFilter" class="bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400">Reset</button>
-    </div>
-  </div>
-
-  <div class="overflow-x-auto overflow-y-scroll max-h-[500px] bg-white rounded-lg shadow-md">
-    <table class="min-w-full text-left border border-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-3 border-b">STT</th>
-          <th class="px-4 py-3 border-b">Ngày đặt</th>
-          <th class="px-4 py-3 border-b">Tổng tiền</th>
-          <th class="px-4 py-3 border-b">Tiền sau giảm</th>
-          <th class="px-4 py-3 border-b">Trạng thái</th>
-          <th class="px-4 py-3 border-b">Tên bàn</th>
-          <th class="px-4 py-3 border-b">Khách hàng</th>
-          <th class="px-4 py-3 border-b">Nhân viên tạo đơn</th>
-          <th class="px-4 py-3 border-b">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="orderTable" class="divide-y"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Tab Quản lý khuyến mãi -->
-<div id="tab-khuyen-mai" class="tab-content hidden">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-gray-700">Quản lý khuyến mãi</h2>
-    <button id="btnAddDiscount" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-md">
-      + Thêm khuyến mãi
-    </button>
-  </div>
-  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
-    <table class="min-w-full text-left border border-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-3 border-b">STT</th>
-          <th class="px-4 py-3 border-b">Mã KM</th>
-          <th class="px-4 py-3 border-b">Phần trăm giảm</th>
-          <th class="px-4 py-3 border-b">Mô tả</th>
-          <th class="px-4 py-3 border-b">Thành viên</th>
-          <th class="px-4 py-3 border-b">Ngày hết hạn</th>
-          <th class="px-4 py-3 border-b text-center">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="discountTable" class="divide-y"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Quản lý thành viên -->
-<div id="tab-thanh-vien" class="tab-content hidden">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-gray-700">Quản lý thành viên</h2>
-    <button id="btnAddMember" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-md">
-      + Thêm thành viên
-    </button>
-  </div>
-  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
-    <table class="min-w-full text-left border border-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-3 border-b">STT</th>
-          <th class="px-4 py-3 border-b">Họ tên</th>
-          <th class="px-4 py-3 border-b">Số điện thoại</th>
-          <th class="px-4 py-3 border-b">Email</th>
-          <th class="px-4 py-3 border-b">Tổng đơn đã mua</th>
-          <th class="px-4 py-3 border-b text-center">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="memberTable" class="divide-y"></tbody>
-    </table>
-  </div>
-</div>
-
-<!--Quản lý kích cỡ -->
-  <div id="tab-kich-co" class="tab-content hidden">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl font-semibold text-gray-700">Quản lý kích cỡ</h2>
-          <button id="btnAddSize" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm kích cỡ</button>
-        </div>
-        <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
-          <table class="min-w-full text-left border border-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-3 border-b">STT</th>
-                <th class="px-4 py-3 border-b">Tên kích cỡ</th>
-                <th class="px-4 py-3 border-b">Giá thêm (đ)</th>
-                <th class="px-4 py-3 border-b text-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody id="sizeTable" class="divide-y"></tbody>
-          </table>
-        </div>
-  </div>
-
-<!--Tab Quản lý topping -->
-  <div id="tab-topping" class="tab-content hidden">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold text-gray-700">Quản lý topping</h2>
-      <button id="btnAddTopping" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm topping</button>
-    </div>
-    <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
-      <table class="min-w-full text-left border border-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-4 py-3 border-b">STT</th>
-            <th class="px-4 py-3 border-b">Tên topping</th>
-            <th class="px-4 py-3 border-b">Giá thêm (đ)</th>
-            <th class="px-4 py-3 border-b text-center">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody id="toppingTable" class="divide-y"></tbody>
-      </table>
-    </div>
-  </div>
-
+  </section>
 </main>
 
   <!-- Modal Tài khoản nhân viên -->
