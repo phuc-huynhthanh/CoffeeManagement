@@ -148,6 +148,8 @@
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="ban">Quản lý bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="don-hang">Quản lý đơn hàng</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="thanh-vien">Quản lý thành viên</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="kich-co">Quản lý kích cỡ</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="topping">Quản lý topping</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lịch làm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500">Quản lý lương</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 tab-link" data-tab="khuyen-mai">Quản lý khuyến mãi</a></li>
@@ -356,6 +358,48 @@
         </tr>
       </thead>
       <tbody id="memberTable" class="divide-y"></tbody>
+    </table>
+  </div>
+</div>
+
+<!--Quản lý kích cỡ -->
+      <div id="tab-kich-co" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-semibold text-gray-700">Quản lý kích cỡ</h2>
+          <button id="btnAddSize" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm kích cỡ</button>
+        </div>
+        <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+          <table class="min-w-full text-left border border-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 border-b">STT</th>
+                <th class="px-4 py-3 border-b">Tên kích cỡ</th>
+                <th class="px-4 py-3 border-b">Giá thêm (đ)</th>
+                <th class="px-4 py-3 border-b text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="sizeTable" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BỔ SUNG: Tab Quản lý topping -->
+<div id="tab-topping" class="tab-content hidden">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-700">Quản lý topping</h2>
+    <button id="btnAddTopping" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm topping</button>
+  </div>
+  <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+    <table class="min-w-full text-left border border-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 border-b">STT</th>
+          <th class="px-4 py-3 border-b">Tên topping</th>
+          <th class="px-4 py-3 border-b">Giá thêm (đ)</th>
+          <th class="px-4 py-3 border-b text-center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="toppingTable" class="divide-y"></tbody>
     </table>
   </div>
 </div>
@@ -676,6 +720,50 @@
       <div class="flex justify-end space-x-2">
         <button type="button" id="btnCancelMember" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!--Modal Thêm/Sửa Kích cỡ -->
+  <div id="sizeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+      <h3 id="sizeModalTitle" class="text-lg font-semibold mb-4">Thêm kích cỡ</h3>
+      <form id="sizeForm" class="space-y-4">
+        <input type="hidden" id="sizeId">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Tên kích cỡ</label>
+          <input type="text" id="sizeName" class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-teal-500 focus:border-teal-500" placeholder="VD: S, M, L" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Giá thêm (đ)</label>
+          <input type="number" id="sizePrice" class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-teal-500 focus:border-teal-500" placeholder="VD: 5000" min="0" required>
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" id="btnCancelSize" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!--Modal Thêm/Sửa Topping -->
+<div id="toppingModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 id="toppingModalTitle" class="text-lg font-semibold mb-4">Thêm topping</h3>
+    <form id="toppingForm" class="space-y-4">
+      <input type="hidden" id="toppingId">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tên topping</label>
+        <input type="text" id="toppingName" class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-pink-500 focus:border-pink-500" placeholder="VD: Trân châu, thạch" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Giá thêm (đ)</label>
+        <input type="number" id="toppingPrice" class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-pink-500 focus:border-pink-500" placeholder="VD: 5000" min="0" required>
+      </div>
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancelTopping" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">Lưu</button>
       </div>
     </form>
   </div>

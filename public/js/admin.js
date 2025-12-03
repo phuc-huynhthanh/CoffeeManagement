@@ -1246,3 +1246,350 @@ window.deleteCombo = async (id) => {
     showToast('Không thể xóa combo: ' + error.message, 'error');
   }
 };
+
+// ========== MỚI: QUẢN LÝ KÍCH CỠ ==========
+const sizeTable = document.getElementById("sizeTable");
+const sizeModal = document.getElementById("sizeModal");
+const sizeForm = document.getElementById("sizeForm");
+const btnAddSize = document.getElementById("btnAddSize");
+const btnCancelSize = document.getElementById("btnCancelSize");
+
+// Load danh sách kích cỡ
+async function loadSizes() {
+  // console.log("🔎 [Sizes] Bắt đầu loadSizes()");
+  try {
+    const res = await fetch("http://localhost:3000/kichco/laytatca");
+    const contentType = res.headers.get("content-type");
+    // console.log("📡 [Sizes] Response status:", res.status, res.statusText);
+    // console.log("📡 [Sizes] Content-Type:", contentType);
+
+    let raw;
+    if (contentType && contentType.includes("application/json")) {
+      raw = await res.json();
+    } else {
+      const text = await res.text();
+      // console.warn("⚠️ [Sizes] Response không phải JSON, text:", text);
+      throw new Error("Response không phải JSON");
+    }
+
+    // Một số API có thể trả {success: true, data: [...]}, hoặc {du_lieu: [...]}
+    const data = Array.isArray(raw) ? raw : (raw.data ?? raw.du_lieu ?? raw);
+    // console.log("✅ [Sizes] Payload nhận được (raw):", raw);
+    // console.log("✅ [Sizes] Dữ liệu để render (data):", data);
+
+    sizeTable.innerHTML = "";
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      // console.log("ℹ️ [Sizes] Không có dữ liệu kích cỡ để hiển thị.");
+      sizeTable.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Chưa có kích cỡ nào.</td></tr>`;
+      return;
+    }
+
+    data.forEach((kc, index) => {
+      if (!kc) {
+        // console.warn("⚠️ [Sizes] Phần tử null/undefined tại index", index, kc);
+        return;
+      }
+      if (kc.ten_kich_co === undefined || kc.gia_them === undefined) {
+        // console.warn("⚠️ [Sizes] Thiếu trường trong phần tử:", kc);
+      }
+
+      const row = document.createElement("tr");
+      row.classList.add("hover:bg-gray-50");
+      row.innerHTML = `
+        <td class="px-4 py-3 border-b">${index + 1}</td>
+        <td class="px-4 py-3 border-b">${kc.ten_kich_co ?? "—"}</td>
+        <td class="px-4 py-3 border-b">${Number(kc.gia_them ?? 0).toLocaleString('vi-VN')}</td>
+        <td class="px-4 py-3 border-b text-center space-x-2">
+          <button onclick="editSize(${kc.kich_co_id})" class="px-3 py-1 bg-teal-500 text-white rounded hover:bg-teal-600">Sửa</button>
+          <button onclick="deleteSize(${kc.kich_co_id})" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Xóa</button>
+        </td>
+      `;
+      sizeTable.appendChild(row);
+    });
+
+    // console.log("🧮 [Sizes] Đã render số dòng:", sizeTable.querySelectorAll("tr").length);
+  } catch (err) {
+    // console.error("❌ [Sizes] Lỗi loadSizes:", err);
+    sizeTable.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Lỗi khi tải dữ liệu</td></tr>`;
+  }
+}
+
+// Mở modal thêm kích cỡ
+btnAddSize?.addEventListener("click", () => {
+  // console.log("🟢 [Sizes] Mở modal Thêm kích cỡ");
+  sizeForm.reset();
+  document.getElementById("sizeId").value = "";
+  document.getElementById("sizeModalTitle").textContent = "Thêm kích cỡ";
+  sizeModal.classList.remove("hidden");
+});
+
+// Đóng modal
+btnCancelSize?.addEventListener("click", () => {
+  // console.log("🔴 [Sizes] Đóng modal kích cỡ");
+  sizeModal.classList.add("hidden");
+});
+
+// Submit thêm/sửa kích cỡ
+sizeForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("sizeId").value;
+  const ten_kich_co = document.getElementById("sizeName").value.trim();
+  const gia_them = parseInt(document.getElementById("sizePrice").value, 10);
+
+  // console.log("📝 [Sizes] Submit form:", { id, ten_kich_co, gia_them });
+
+  if (!ten_kich_co || isNaN(gia_them)) {
+    showToast("⚠️ Vui lòng nhập đầy đủ và hợp lệ!", "error");
+    return;
+  }
+
+  try {
+    const url = id ? `http://localhost:3000/kichco/sua/${id}` : "http://localhost:3000/kichco/them";
+    const method = id ? "PUT" : "POST";
+    // console.log("📤 [Sizes] Gửi request:", { url, method, body: { ten_kich_co, gia_them } });
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ten_kich_co, gia_them })
+    });
+
+    const contentType = res.headers.get("content-type");
+    // console.log("📡 [Sizes] Submit status:", res.status, res.statusText, "CT:", contentType);
+
+    let result;
+    if (contentType && contentType.includes("application/json")) {
+      result = await res.json();
+    } else {
+      const text = await res.text();
+      // console.warn("⚠️ [Sizes] Submit response không phải JSON:", text);
+      throw new Error(text || "Response không phải JSON");
+    }
+
+    // console.log("✅ [Sizes] Kết quả submit:", result);
+
+    if (!res.ok) throw new Error(result.message || result.error || "Lỗi khi lưu kích cỡ");
+
+    showToast(id ? "✅ Cập nhật kích cỡ thành công!" : "✅ Thêm kích cỡ thành công!", "success");
+    sizeModal.classList.add("hidden");
+
+    // console.log("🔁 [Sizes] Gọi lại loadSizes() để cập nhật bảng");
+    await loadSizes();
+  } catch (err) {
+    // console.error("❌ [Sizes] Lỗi submit kích cỡ:", err);
+    showToast("❌ Lỗi: " + err.message, "error");
+  }
+});
+
+// Sửa kích cỡ
+window.editSize = async (id) => {
+  // console.log("✏️ [Sizes] editSize id =", id);
+  try {
+    const res = await fetch(`http://localhost:3000/kichco/layid/${id}`);
+    // console.log("📡 [Sizes] editSize status:", res.status, res.statusText);
+    const contentType = res.headers.get("content-type");
+
+    let data;
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      // console.warn("⚠️ [Sizes] editSize response không phải JSON:", text);
+      throw new Error("Response không phải JSON");
+    }
+
+    // console.log("✅ [Sizes] Dữ liệu kích cỡ để sửa:", data);
+
+    document.getElementById("sizeId").value = data.kich_co_id;
+    document.getElementById("sizeName").value = data.ten_kich_co;
+    document.getElementById("sizePrice").value = data.gia_them;
+
+    document.getElementById("sizeModalTitle").textContent = "Sửa kích cỡ";
+    sizeModal.classList.remove("hidden");
+  } catch (err) {
+    // console.error("❌ [Sizes] Lỗi editSize:", err);
+    showToast("❌ Không thể tải dữ liệu kích cỡ!", "error");
+  }
+};
+
+// Xóa kích cỡ
+window.deleteSize = async (id) => {
+  // console.log("🗑️ [Sizes] deleteSize id =", id);
+  if (!confirm("Bạn có chắc muốn xóa kích cỡ này?")) return;
+  try {
+    const res = await fetch(`http://localhost:3000/kichco/xoa/${id}`, { method: "DELETE" });
+    const contentType = res.headers.get("content-type");
+    // console.log("📡 [Sizes] delete status:", res.status, res.statusText, "CT:", contentType);
+
+    let result;
+    if (contentType && contentType.includes("application/json")) {
+      result = await res.json();
+    } else {
+      const text = await res.text();
+      // console.warn("⚠️ [Sizes] delete response không phải JSON:", text);
+      result = { message: text };
+    }
+
+    // console.log("✅ [Sizes] Kết quả delete:", result);
+
+    if (!res.ok) throw new Error(result.message || result.error || "Không thể xóa kích cỡ");
+    showToast("✅ Xóa kích cỡ thành công!", "success");
+    // console.log("🔁 [Sizes] Gọi lại loadSizes()");
+    await loadSizes();
+  } catch (err) {
+    // console.error("❌ [Sizes] Lỗi deleteSize:", err);
+    showToast("❌ Lỗi: " + err.message, "error");
+  }
+};
+
+window.addEventListener("DOMContentLoaded", () => {
+  // console.log("[DOMContentLoaded] Auto call loadSizes()");
+  loadSizes();
+})
+
+/* Elements */
+const toppingTable = document.getElementById("toppingTable");
+const toppingModal = document.getElementById("toppingModal");
+const toppingForm = document.getElementById("toppingForm");
+const btnAddTopping = document.getElementById("btnAddTopping");
+const btnCancelTopping = document.getElementById("btnCancelTopping");
+
+/* Load danh sách topping */
+async function loadToppings() {
+  try {
+    const res = await fetch("http://localhost:3000/topping/laytatca");
+    const contentType = res.headers.get("content-type");
+    let raw;
+    if (contentType && contentType.includes("application/json")) {
+      raw = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error("Response không phải JSON: " + text);
+    }
+    const data = Array.isArray(raw) ? raw : (raw.data ?? raw.du_lieu ?? raw);
+    toppingTable.innerHTML = "";
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      toppingTable.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">Chưa có topping nào.</td></tr>`;
+      return;
+    }
+    data.forEach((tp, index) => {
+      const row = document.createElement("tr");
+      row.classList.add("hover:bg-gray-50");
+      row.innerHTML = `
+        <td class="px-4 py-3 border-b">${index + 1}</td>
+        <td class="px-4 py-3 border-b">${tp.ten_topping ?? "—"}</td>
+        <td class="px-4 py-3 border-b">${Number(tp.gia_them ?? 0).toLocaleString('vi-VN')}</td>
+        <td class="px-4 py-3 border-b text-center space-x-2">
+          <button onclick="editTopping(${tp.topping_id})" class="px-3 py-1 bg-pink-500 text-white rounded hover:bg-pink-600">Sửa</button>
+          <button onclick="deleteTopping(${tp.topping_id})" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Xóa</button>
+        </td>
+      `;
+      toppingTable.appendChild(row);
+    });
+  } catch (err) {
+    console.error("❌ Lỗi loadToppings:", err);
+    toppingTable.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Lỗi khi tải dữ liệu</td></tr>`;
+  }
+}
+
+/* Mở modal thêm topping */
+btnAddTopping?.addEventListener("click", () => {
+  toppingForm.reset();
+  document.getElementById("toppingId").value = "";
+  document.getElementById("toppingModalTitle").textContent = "Thêm topping";
+  toppingModal.classList.remove("hidden");
+});
+
+/* Đóng modal */
+btnCancelTopping?.addEventListener("click", () => {
+  toppingModal.classList.add("hidden");
+});
+
+/* Submit thêm/sửa topping */
+toppingForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("toppingId").value;
+  const ten_topping = document.getElementById("toppingName").value.trim();
+  const gia_them = parseInt(document.getElementById("toppingPrice").value, 10);
+  if (!ten_topping || isNaN(gia_them)) {
+    Toast?.error ? Toast.error("⚠️ Vui lòng nhập đầy đủ và hợp lệ!") : showToast("⚠️ Vui lòng nhập đầy đủ và hợp lệ!", "error");
+    return;
+  }
+  try {
+    const url = id ? `http://localhost:3000/topping/sua/${id}` : "http://localhost:3000/topping/them";
+    const method = id ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ten_topping, gia_them })
+    });
+    const contentType = res.headers.get("content-type");
+    let result;
+    if (contentType && contentType.includes("application/json")) {
+      result = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error(text || "Response không phải JSON");
+    }
+    if (!res.ok) throw new Error(result.message || result.error || "Lỗi khi lưu topping");
+    Toast?.success ? Toast.success(id ? "✅ Cập nhật topping thành công!" : "✅ Thêm topping thành công!") : showToast(id ? "✅ Cập nhật topping thành công!" : "✅ Thêm topping thành công!", "success");
+    toppingModal.classList.add("hidden");
+    await loadToppings();
+  } catch (err) {
+    console.error("❌ Lỗi submit topping:", err);
+    Toast?.error ? Toast.error("❌ Lỗi: " + err.message) : showToast("❌ Lỗi: " + err.message, "error");
+  }
+});
+
+/* Sửa topping */
+window.editTopping = async (id) => {
+  try {
+    const res = await fetch(`http://localhost:3000/topping/layid/${id}`);
+    const contentType = res.headers.get("content-type");
+    let data;
+    if (contentType && contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const text = await res.text();
+      throw new Error("Response không phải JSON: " + text);
+    }
+    document.getElementById("toppingId").value = data.topping_id;
+    document.getElementById("toppingName").value = data.ten_topping;
+    document.getElementById("toppingPrice").value = data.gia_them;
+    document.getElementById("toppingModalTitle").textContent = "Sửa topping";
+    toppingModal.classList.remove("hidden");
+  } catch (err) {
+    console.error("❌ Lỗi editTopping:", err);
+    Toast?.error ? Toast.error("❌ Không thể tải dữ liệu topping!") : showToast("❌ Không thể tải dữ liệu topping!", "error");
+  }
+};
+
+/* Xóa topping */
+window.deleteTopping = async (id) => {
+  if (!confirm("Bạn có chắc muốn xóa topping này?")) return;
+  try {
+    const res = await fetch(`http://localhost:3000/topping/xoa/${id}`, { method: "DELETE" });
+    const contentType = res.headers.get("content-type");
+    let result;
+    if (contentType && contentType.includes("application/json")) {
+      result = await res.json();
+    } else {
+      const text = await res.text();
+      result = { message: text };
+    }
+    if (!res.ok) throw new Error(result.message || result.error || "Không thể xóa topping");
+    Toast?.success ? Toast.success("✅ Xóa topping thành công!") : showToast("✅ Xóa topping thành công!", "success");
+    await loadToppings();
+  } catch (err) {
+    console.error("❌ Lỗi deleteTopping:", err);
+    Toast?.error ? Toast.error("❌ Lỗi: " + err.message) : showToast("❌ Lỗi: " + err.message, "error");
+  }
+};
+
+/* Tự load khi mở tab topping */
+document.querySelector('[data-tab="topping"]')?.addEventListener("click", loadToppings);
+
+/* Nếu muốn auto load khi trang sẵn sàng, có thể thêm: */
+window.addEventListener("DOMContentLoaded", () => {
+  loadToppings();
+});
