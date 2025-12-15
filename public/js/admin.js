@@ -1932,12 +1932,40 @@ async function loadScheduleByWeek() {
     updateDateHeaders();
 
     try {
-        const response = await fetch(`/lich-lam-viec/theo-tuan?tuan_bat_dau=${currentWeekDates[0]}&tuan_ket_thuc=${currentWeekDates[6]}`);
-        const result = await response.json();
+        // 🔍 DEBUG CHI TIẾT
+        console. log('📅 startDate:', startDate);
+        console.log('📅 toISOString():', startDate.toISOString());
+        console.log('📅 currentWeekDates[0]:', currentWeekDates[0]);
+        console.log('📅 currentWeekDates[6]:', currentWeekDates[6]);
+
+        const requestPayload = {
+            tu_ngay: currentWeekDates[0],
+            den_ngay: currentWeekDates[6]
+        };
+        console.log('📤 Request payload:', JSON.stringify(requestPayload));
+
+        const response = await fetch('/lich-lam-viec/tim-khoang-ngay', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestPayload)
+        });
+
+        console.log('📥 Response status:', response.status);
+        
+        const responseText = await response.text();
+        console.log('📥 Response body:', responseText);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}:  ${responseText}`);
+        }
+
+        const result = JSON.parse(responseText);
 
         if (result.success) {
             scheduleData = result.data || [];
-            shiftsData = result.ca_lam || [];
+            shiftsData = result. ca_lam || [];
             renderScheduleTable();
             renderPendingList();
             updateScheduleStats();
@@ -1945,8 +1973,8 @@ async function loadScheduleByWeek() {
             Toast.error(result.message || 'Lỗi tải lịch làm');
         }
     } catch (error) {
-        console.error('Error:', error);
-        Toast.error('Lỗi kết nối server');
+        console.error('❌ Lỗi loadScheduleByWeek:', error);
+        Toast.error('Lỗi:  ' + error.message);
     }
 }
 
@@ -4252,3 +4280,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+
+
+
+//============================================== Lương =============================================

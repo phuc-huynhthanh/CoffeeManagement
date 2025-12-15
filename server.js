@@ -25,6 +25,8 @@ import DoanhThuCaRoutes from "./app/routes/DoanhThuCa.routes.js";
 import LichLamViecRoutes from "./app/routes/LichLamViec.routes.js";
 import ComboRoutes from "./app/routes/Combo.routes.js";
 import CaLamRoutes from "./app/routes/CaLam.routes.js";
+import LuongRoutes from "./app/routes/Luong.routes.js";
+import ChiTietThuongPhatRoutes from "./app/routes/ChiTietThuongPhat.routes.js";
 
 // Import payment controllers
 import paymentController from "./app/controllers/payment-controller.js";
@@ -72,6 +74,8 @@ app.use("/doanhthuca", DoanhThuCaRoutes);
 app.use("/lich-lam-viec", LichLamViecRoutes);
 app.use("/combo", ComboRoutes);
 app.use("/calam", CaLamRoutes);
+app.use("/luong", LuongRoutes);
+app.use("/chitietthuongphat", ChiTietThuongPhatRoutes);
 
 // Test route
 app.get("/test-payos", async (req, res) => {
