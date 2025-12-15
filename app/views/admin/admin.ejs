@@ -348,103 +348,121 @@
     <!-- Thống kê -->
     <div id="scheduleStats" class="mb-6">
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div class="bg-blue-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-blue-700" id="statTotal">0</div>
-                <div class="text-sm text-blue-600">Tổng ca</div>
+            <div class="bg-blue-100 p-4 rounded-lg text-center hover:shadow-lg transition">
+                <div class="text-3xl font-bold text-blue-700" id="statTotal">0</div>
+                <div class="text-sm text-blue-600 font-medium">Tổng ca</div>
             </div>
-            <div class="bg-green-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-green-700" id="statFilled">0</div>
-                <div class="text-sm text-green-600">Đủ NV</div>
+            <div class="bg-green-100 p-4 rounded-lg text-center hover: shadow-lg transition">
+                <div class="text-3xl font-bold text-green-700" id="statFilled">0</div>
+                <div class="text-sm text-green-600 font-medium">Đủ NV (≥3)</div>
             </div>
-            <div class="bg-red-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-red-700" id="statUnderstaffed">0</div>
-                <div class="text-sm text-red-600">Thiếu NV</div>
+            <div class="bg-red-100 p-4 rounded-lg text-center hover:shadow-lg transition">
+                <div class="text-3xl font-bold text-red-700" id="statUnderstaffed">0</div>
+                <div class="text-sm text-red-600 font-medium">Thiếu NV (&lt;3)</div>
             </div>
-            <div class="bg-orange-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-orange-700" id="statFull">0</div>
-                <div class="text-sm text-orange-600">Đầy ca</div>
+            <div class="bg-orange-100 p-4 rounded-lg text-center hover:shadow-lg transition">
+                <div class="text-3xl font-bold text-orange-700" id="statFull">0</div>
+                <div class="text-sm text-orange-600 font-medium">Đầy ca (9/9)</div>
             </div>
-            <div class="bg-gray-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-gray-700" id="statEmpty">0</div>
-                <div class="text-sm text-gray-600">Trống</div>
+            <div class="bg-gray-100 p-4 rounded-lg text-center hover:shadow-lg transition">
+                <div class="text-3xl font-bold text-gray-700" id="statEmpty">0</div>
+                <div class="text-sm text-gray-600 font-medium">Trống</div>
             </div>
         </div>
     </div>
 
     <!-- Bộ lọc tuần -->
-    <div class="bg-white p-4 rounded-lg shadow-md mb-4 flex flex-wrap gap-4 items-end">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Chọn tuần</label>
-            <input type="week" id="weekPicker" onchange="loadScheduleByWeek()" 
-                   class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+        <div class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Chọn tuần</label>
+                <input type="week" id="weekPicker" onchange="loadScheduleByWeek()" 
+                       class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="goToPreviousWeek()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-2">
+                    <span>←</span> Tuần trước
+                </button>
+                <button onclick="loadScheduleByWeek()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-2">
+                    <span>🔄</span> Tải lại
+                </button>
+                <button onclick="goToNextWeek()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-2">
+                    Tuần sau <span>→</span>
+                </button>
+                <button onclick="openAddScheduleModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-2">
+                    <span>+</span> Thêm lịch làm
+                </button>
+                <button onclick="sendScheduleByEmail()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-2">
+                <span>📧</span> Gửi lịch làm
+            </button>
+            </div>
         </div>
-        <button onclick="loadScheduleByWeek()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
-            <span>🔄</span> Tải lại
-        </button>
-        <button onclick="openAddScheduleModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
-            <span>+</span> Thêm lịch làm
-        </button>
-        <button onclick="goToPreviousWeek()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
-            ← Tuần trước
-        </button>
-        <button onclick="goToNextWeek()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
-            Tuần sau →
-        </button>
     </div>
 
     <!-- Chú thích -->
-    <div class="bg-white p-3 rounded-lg shadow-md mb-4 flex flex-wrap gap-4 text-sm">
-        <span class="flex items-center gap-1">
-            <span class="w-4 h-4 bg-green-100 border border-green-300 rounded"></span> Đủ nhân viên (≥3)
-        </span>
-        <span class="flex items-center gap-1">
-            <span class="w-4 h-4 bg-red-100 border border-red-300 rounded"></span> Thiếu nhân viên (&lt;3)
-        </span>
-        <span class="flex items-center gap-1">
-            <span class="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></span> Đầy ca (9/9)
-        </span>
-        <span class="flex items-center gap-1">
-            <span class="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></span> Có đăng ký chờ duyệt
-        </span>
-        <span class="text-gray-500 ml-4">| <strong>Tối thiểu:</strong> 3 NV | <strong>Tối đa:</strong> 9 NV</span>
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg shadow-md mb-4 border border-blue-100">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-5 bg-green-100 border-2 border-green-400 rounded-full"></span>
+                <span><strong>Đủ NV: </strong> ≥3 người</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-5 bg-red-100 border-2 border-red-400 rounded-full"></span>
+                <span><strong>Thiếu NV: </strong> &lt;3 người</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-5 bg-orange-100 border-2 border-orange-400 rounded-full"></span>
+                <span><strong>Đầy ca:</strong> 9/9</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-5 bg-yellow-100 border-2 border-yellow-400 rounded-full"></span>
+                <span><strong>Chờ duyệt</strong></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-5 h-5 bg-gray-100 border-2 border-gray-400 rounded-full"></span>
+                <span><strong>Trống</strong></span>
+            </div>
+        </div>
     </div>
 
-    <!-- Bảng lịch làm -->
+    <!-- Bảng lịch làm - Lịch xem tuần -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-        <div class="bg-blue-600 text-white px-4 py-3">
-            <h3 class="font-semibold">📊 Lịch làm việc theo tuần</h3>
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3">
+            <h3 class="font-semibold text-lg">📊 Lịch làm việc theo tuần</h3>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-100">
+                <thead class="bg-gray-100 border-b-2 border-gray-300">
                     <tr>
-                        <th class="px-4 py-3 border-b text-left font-semibold text-gray-700 min-w-[120px]">Ca làm</th>
-                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 2</th>
-                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 3</th>
-                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 4</th>
-                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 5</th>
-                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 6</th>
-                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 7</th>
-                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Chủ nhật</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 min-w-[140px]">Ca làm</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[110px]">Thứ 2</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[110px]">Thứ 3</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[110px]">Thứ 4</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[110px]">Thứ 5</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[110px]">Thứ 6</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[110px]">Thứ 7</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[110px]">Chủ nhật</th>
                     </tr>
-                    <tr id="dateHeaderRow" class="bg-gray-50">
-                        <th class="px-4 py-2 border-b"></th>
-                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
-                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
-                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
-                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
-                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
-                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
-                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                    <tr id="dateHeaderRow" class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-4 py-2 text-left font-medium text-gray-600"></th>
+                        <th class="px-4 py-2 text-center text-xs text-gray-500">--/--</th>
+                        <th class="px-4 py-2 text-center text-xs text-gray-500">--/--</th>
+                        <th class="px-4 py-2 text-center text-xs text-gray-500">--/--</th>
+                        <th class="px-4 py-2 text-center text-xs text-gray-500">--/--</th>
+                        <th class="px-4 py-2 text-center text-xs text-gray-500">--/--</th>
+                        <th class="px-4 py-2 text-center text-xs text-gray-500">--/--</th>
+                        <th class="px-4 py-2 text-center text-xs text-gray-500">--/--</th>
                     </tr>
                 </thead>
                 <tbody id="scheduleTableBody">
-                    <tr><td colspan="8" class="text-center py-8 text-gray-500">
-                        <div class="flex flex-col items-center gap-2">
-                            <span class="text-4xl">📅</span>
-                            <span>Chọn tuần để xem lịch làm việc</span>
-                        </div>
-                    </td></tr>
+                    <tr>
+                        <td colspan="8" class="text-center py-12 text-gray-400">
+                            <div class="flex flex-col items-center gap-3">
+                                <span class="text-6xl opacity-50">📅</span>
+                                <span class="font-medium">Chọn tuần để xem lịch làm việc</span>
+                            </div>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -452,34 +470,42 @@
 
     <!-- Danh sách chờ duyệt -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="bg-yellow-500 text-white px-4 py-3 flex justify-between items-center">
-            <h3 class="font-semibold">📋 Danh sách chờ duyệt (<span id="pendingCount">0</span>)</h3>
-            <div class="flex gap-2">
-                <button onclick="approveSelectedSchedules()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm flex items-center gap-1">
+        <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-3 flex justify-between items-center">
+            <h3 class="font-semibold text-lg">📋 Danh sách chờ duyệt (<span id="pendingCount">0</span>)</h3>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="approveSelectedSchedules()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition flex items-center gap-1">
                     <span>✓</span> Duyệt đã chọn
                 </button>
-                <button onclick="rejectSelectedSchedules()" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm flex items-center gap-1">
+                <button onclick="rejectSelectedSchedules()" class="bg-red-600 hover: bg-red-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition flex items-center gap-1">
                     <span>✕</span> Từ chối đã chọn
                 </button>
             </div>
         </div>
-        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+        <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50 sticky top-0">
+                <thead class="bg-gray-50 border-b border-gray-200 sticky top-0">
                     <tr>
-                        <th class="px-4 py-2 text-left w-10">
-                            <input type="checkbox" id="selectAllPending" onchange="toggleAllPendingCheckboxes()" class="w-4 h-4">
+                        <th class="px-4 py-3 text-left w-10">
+                            <input type="checkbox" id="selectAllPending" onchange="toggleAllPendingCheckboxes()" class="w-4 h-4 cursor-pointer rounded">
                         </th>
-                        <th class="px-4 py-2 text-left">Nhân viên</th>
-                        <th class="px-4 py-2 text-left">SĐT</th>
-                        <th class="px-4 py-2 text-left">Ngày làm</th>
-                        <th class="px-4 py-2 text-left">Ca làm</th>
-                        <th class="px-4 py-2 text-left">Thời gian đăng ký</th>
-                        <th class="px-4 py-2 text-center w-32">Thao tác</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 min-w-[150px]">Nhân viên</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">SĐT</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 min-w-[150px]">Email</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Ngày làm</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Ca làm</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 min-w-[150px]">Giờ làm</th>
+                        <th class="px-4 py-3 text-center font-semibold text-gray-700 min-w-[180px]">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody id="pendingScheduleList">
-                    <tr><td colspan="7" class="text-center py-4 text-gray-500">Không có lịch chờ duyệt</td></tr>
+                <tbody id="pendingScheduleList" class="divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="8" class="text-center py-6 text-gray-400">
+                            <div class="flex flex-col items-center gap-2">
+                                <span class="text-3xl opacity-50">✓</span>
+                                <span>Không có lịch chờ duyệt</span>
+                            </div>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -1060,189 +1086,219 @@
   </div>
 </div>
 
-<!-- Thay thế Modal Thêm/Sửa Lịch làm (khoảng dòng 1010-1050) -->
 
-<!-- Modal Thêm/Sửa Lịch làm -->
-<div id="scheduleModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 id="scheduleModalTitle" class="text-xl font-bold text-gray-800">Thêm lịch làm</h3>
-            <button onclick="closeScheduleModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+
+
+<!-- MODAL THÊM LỊCH LÀM VIỆC -->
+<div id="addScheduleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-4 flex justify-between items-center sticky top-0">
+            <h3 class="text-xl font-semibold">➕ Thêm lịch làm việc</h3>
+            <button onclick="closeAddScheduleModal()" class="text-2xl font-bold hover:text-gray-200 transition">&times;</button>
         </div>
-        <form id="scheduleForm">
-            <input type="hidden" id="scheduleId">
-            
-            <!-- Chọn nhân viên -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    👤 Nhân viên <span class="text-red-500">*</span>
-                </label>
-                <select id="scheduleEmployeeId" required
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">-- Chọn tài khoản nhân viên --</option>
-                </select>
-            </div>
-
-            <!-- Chọn ngày -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    📅 Ngày làm <span class="text-red-500">*</span>
-                </label>
-                <input type="date" id="scheduleDate" required onchange="checkShiftAvailability()"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            <!-- Chọn ca có sẵn -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    🕐 Chọn ca làm có sẵn
-                </label>
-                <select id="scheduleShiftId" onchange="checkShiftAvailability()"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">-- Chọn ca làm --</option>
-                </select>
-            </div>
-
-            <!-- Divider -->
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-300"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white text-gray-500">HOẶC tạo khung giờ tùy chỉnh</span>
-                </div>
-            </div>
-
-            <!-- Khung giờ tùy chỉnh -->
-            <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <label class="block text-sm font-medium text-blue-700 mb-3">
-                    ⏰ Tạo ca làm theo khung giờ (tối thiểu 4 tiếng, tối đa 8 tiếng)
-                </label>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Giờ bắt đầu</label>
-                        <select id="scheduleStartTime" onchange="updateEndTimeOptions(); updateShiftPreview();"
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Chọn --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Giờ kết thúc</label>
-                        <select id="scheduleEndTime" onchange="updateShiftPreview();"
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Chọn giờ bắt đầu trước --</option>
-                        </select>
-                    </div>
+        
+        <form id="addScheduleForm" onsubmit="handleAddSchedule(event)" class="p-6 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Nhân viên -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nhân viên <span class="text-red-500">*</span></label>
+                    <select id="nhanVienSelect" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">-- Chọn nhân viên --</option>
+                    </select>
                 </div>
 
-                <!-- Preview khung giờ -->
-                <div id="shiftTimePreview" class="mt-3"></div>
+                <!-- Ngày làm -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ngày làm <span class="text-red-500">*</span></label>
+                    <input type="date" id="ngayLamInput" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus: ring-2 focus:ring-green-500">
+                </div>
 
-                <!-- Gợi ý ca phổ biến -->
-                <div class="mt-3 text-xs text-gray-500">
-                    <p>💡 <strong>Gợi ý ca phổ biến:</strong></p>
-                    
-                    <!-- Ca 4 tiếng -->
-                    <p class="mt-2 text-gray-600 font-medium">Ca 4 tiếng:</p>
-                    <div class="flex flex-wrap gap-2 mt-1">
-                        <button type="button" onclick="setQuickShift('08:00', '12:00')" 
-                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
-                            8:00-12:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('12:00', '16:00')" 
-                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
-                            12:00-16:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('14:00', '18:00')" 
-                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
-                            14:00-18:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('18:00', '22:00')" 
-                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
-                            18:00-22:00
-                        </button>
-                    </div>
+                <!-- Ca làm -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ca làm <span class="text-red-500">*</span></label>
+                    <select id="caLamSelect" onchange="handleCaLamChange()" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">-- Chọn ca làm --</option>
+                    </select>
+                </div>
 
-                    <!-- Ca 6 tiếng -->
-                    <p class="mt-2 text-gray-600 font-medium">Ca 6 tiếng:</p>
-                    <div class="flex flex-wrap gap-2 mt-1">
-                        <button type="button" onclick="setQuickShift('08:00', '14:00')" 
-                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
-                            8:00-14:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('10:00', '16:00')" 
-                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
-                            10:00-16:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('14:00', '20:00')" 
-                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
-                            14:00-20:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('16:00', '22:00')" 
-                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
-                            16:00-22:00
-                        </button>
-                    </div>
+                <!-- Trạng thái -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                    <select id="trangThaiSelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus: outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="Đăng ký">Đăng ký</option>
+                        <option value="Đã xác nhận">Đã xác nhận</option>
+                        <option value="Hủy">Hủy</option>
+                    </select>
+                </div>
 
-                    <!-- Ca 8 tiếng (full) -->
-                    <p class="mt-2 text-gray-600 font-medium">Ca 8 tiếng (full):</p>
-                    <div class="flex flex-wrap gap-2 mt-1">
-                        <button type="button" onclick="setQuickShift('08:00', '16:00')" 
-                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
-                            8:00-16:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('10:00', '18:00')" 
-                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
-                            10:00-18:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('12:00', '20:00')" 
-                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
-                            12:00-20:00
-                        </button>
-                        <button type="button" onclick="setQuickShift('14:00', '22:00')" 
-                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
-                            14:00-22:00
-                        </button>
-                    </div>
+                <!-- Thời gian bắt đầu -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Giờ bắt đầu (tùy chỉnh)</label>
+                    <input type="time" id="batDauInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus: outline-none focus:ring-2 focus:ring-green-500" placeholder="07:00">
+                </div>
+
+                <!-- Thời gian kết thúc -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Giờ kết thúc (tùy chỉnh)</label>
+                    <input type="time" id="ketThucInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus: outline-none focus:ring-2 focus:ring-green-500" placeholder="16:00">
                 </div>
             </div>
 
-            <!-- Trạng thái ca -->
-            <div id="shiftStatus" class="mb-4 text-sm"></div>
-
-            <!-- Trạng thái đăng ký -->
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                <select id="scheduleStatus"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="Đăng ký">Đăng ký (Chờ duyệt)</option>
-                    <option value="Đã duyệt">Đã duyệt</option>
-                </select>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+                💡 <strong>Ghi chú:</strong> Nếu không nhập giờ tùy chỉnh, sẽ lấy giờ từ ca làm được chọn. 
             </div>
 
-            <div class="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onclick="closeScheduleModal()" 
-                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Hủy</button>
-                <button type="submit" id="scheduleSubmitBtn"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Lưu</button>
+            <div class="flex gap-3 justify-end pt-4 border-t border-gray-200">
+                <button type="button" onclick="closeAddScheduleModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition">
+                    Hủy
+                </button>
+                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
+                    Thêm lịch làm
+                </button>
             </div>
         </form>
     </div>
 </div>
 
+<!-- MODAL CHỈNH SỬA LỊCH LÀM VIỆC -->
+<div id="editScheduleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex justify-between items-center sticky top-0">
+            <h3 class="text-xl font-semibold">✏️ Chỉnh sửa lịch làm việc</h3>
+            <button onclick="closeEditScheduleModal()" class="text-2xl font-bold hover:text-gray-200 transition">&times;</button>
+        </div>
+        
+        <form id="editScheduleForm" onsubmit="handleEditSchedule(event)" class="p-6 space-y-4">
+            <input type="hidden" id="editLichId">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Nhân viên (chỉ xem) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nhân viên</label>
+                    <input type="text" id="editNhanVienDisplay" disabled class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-600">
+                </div>
+
+                <!-- Ngày làm -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ngày làm <span class="text-red-500">*</span></label>
+                    <input type="date" id="editNgayLamInput" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <!-- Ca làm -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ca làm</label>
+                    <select id="editCaLamSelect" onchange="handleEditCaLamChange()" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus: outline-none focus:ring-2 focus:ring-blue-500">
+                    </select>
+                </div>
+
+                <!-- Trạng thái -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                    <select id="editTrangThaiSelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Đăng ký">Đăng ký</option>
+                        <option value="Đã xác nhận">Đã xác nhận</option>
+                        <option value="Hủy">Hủy</option>
+                    </select>
+                </div>
+
+                <!-- Thời gian bắt đầu -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Giờ bắt đầu</label>
+                    <input type="time" id="editBatDauInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus: ring-blue-500">
+                </div>
+
+                <!-- Thời gian kết thúc -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Giờ kết thúc</label>
+                    <input type="time" id="editKetThucInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="flex gap-3 justify-end pt-4 border-t border-gray-200">
+                <button type="button" onclick="closeEditScheduleModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition">
+                    Hủy
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">
+                    Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Gửi Email -->
+
+<div id="sendEmailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md mx-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">📧 Gửi lịch làm qua email</h2>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email người nhận <span class="text-red-500">*</span></label>
+            <input 
+                type="email" 
+                id="recipientEmail" 
+                placeholder="example@gmail.com" 
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            >
+            <p id="emailError" class="text-red-500 text-sm mt-1 hidden"></p>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Ghi chú (tùy chọn)</label>
+            <textarea 
+                id="emailNote" 
+                placeholder="Nhập ghi chú thêm..." 
+                rows="3"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus: ring-2 focus:ring-purple-500 focus:border-transparent transition resize-none"
+            ></textarea>
+        </div>
+
+        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-sm text-blue-800">
+                <strong>ℹ️ Thông tin:</strong><br>
+                Email sẽ chứa bảng lịch làm chi tiết cho tuần này. 
+            </p>
+        </div>
+
+        <div class="flex gap-3 justify-end">
+            <button 
+                onclick="closeEmailModal()" 
+                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium transition duration-200"
+            >
+                Hủy
+            </button>
+            <button 
+                onclick="confirmSendEmail()" 
+                id="sendEmailBtn"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2"
+            >
+                <span id="sendBtnText">Gửi ngay</span>
+                <span id="sendBtnSpinner" class="hidden animate-spin">⏳</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div 
+    id="toastNotification" 
+    class="hidden fixed bottom-4 right-4 px-6 py-4 rounded-lg shadow-lg text-white font-medium max-w-sm z-50 animate-in fade-in slide-in-from-bottom-4 duration-300"
+>
+    <span id="toastMessage"></span>
+</div>
+
 <!-- Modal Chi tiết ca -->
-<div id="shiftDetailModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+<!-- <div id="shiftDetailModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
     <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[85vh] overflow-hidden mx-4">
         <div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
             <h3 id="shiftDetailTitle" class="text-lg font-bold">Chi tiết ca làm</h3>
             <button onclick="closeShiftDetailModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
         </div>
-        <div id="shiftDetailContent" class="p-4 overflow-y-auto max-h-[calc(85vh-60px)]">
+        <div id="shiftDetailContent" class="p-4 overflow-y-auto max-h-[calc(85vh-60px)]"> -->
             <!-- Nội dung sẽ được render bằng JS -->
-        </div>
+        <!-- </div>
     </div>
-</div>
+</div> -->
 
 <script>
 // ============================================
