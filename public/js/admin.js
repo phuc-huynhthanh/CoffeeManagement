@@ -1836,3 +1836,941 @@ document.addEventListener('DOMContentLoaded', () => {
     // Khởi tạo mặc định
     activateParent('san-pham');
   });
+
+  // QUẢN LÝ LỊCH LÀM VIỆC
+// ============================================
+
+const MIN_EMPLOYEES_PER_SHIFT = 3;
+const MAX_EMPLOYEES_PER_SHIFT = 9;
+
+let scheduleData = [];
+let shiftsData = [];
+let currentWeekDates = [];
+let scheduleEmployees = [];
+
+// Khởi tạo khi load tab lịch làm
+function initScheduleTab() {
+    const today = new Date();
+    const weekPicker = document.getElementById('weekPicker');
+    if (weekPicker) {
+        const year = today.getFullYear();
+        const week = getWeekNumber(today);
+        weekPicker.value = `${year}-W${week.toString().padStart(2, '0')}`;
+        loadScheduleByWeek();
+    }
+    loadShiftsForSelect();
+    loadEmployeesForScheduleSelect();
+}
+
+// Lấy số tuần trong năm
+function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+// Lấy ngày từ tuần
+function getDateFromWeek(weekStr) {
+    const [year, week] = weekStr.split('-W');
+    const date = new Date(year, 0, 1 + (week - 1) * 7);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+}
+
+// Chuyển tuần trước
+function goToPreviousWeek() {
+    const weekPicker = document.getElementById('weekPicker');
+    if (!weekPicker.value) return;
+    
+    const startDate = getDateFromWeek(weekPicker.value);
+    startDate.setDate(startDate.getDate() - 7);
+    
+    const year = startDate.getFullYear();
+    const week = getWeekNumber(startDate);
+    weekPicker.value = `${year}-W${week.toString().padStart(2, '0')}`;
+    loadScheduleByWeek();
+}
+
+// Chuyển tuần sau
+function goToNextWeek() {
+    const weekPicker = document.getElementById('weekPicker');
+    if (!weekPicker.value) return;
+    
+    const startDate = getDateFromWeek(weekPicker.value);
+    startDate.setDate(startDate.getDate() + 7);
+    
+    const year = startDate.getFullYear();
+    const week = getWeekNumber(startDate);
+    weekPicker.value = `${year}-W${week.toString().padStart(2, '0')}`;
+    loadScheduleByWeek();
+}
+
+// Load lịch làm theo tuần
+async function loadScheduleByWeek() {
+    const weekPicker = document.getElementById('weekPicker');
+    if (!weekPicker || !weekPicker.value) {
+        Toast.warning('Vui lòng chọn tuần');
+        return;
+    }
+
+    const startDate = getDateFromWeek(weekPicker.value);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+
+    // Tạo mảng ngày trong tuần
+    currentWeekDates = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        currentWeekDates.push(d.toISOString().split('T')[0]);
+    }
+
+    // Cập nhật header ngày
+    updateDateHeaders();
+
+    try {
+        const response = await fetch(`/api/lich-lam-viec/theo-tuan?tuan_bat_dau=${currentWeekDates[0]}&tuan_ket_thuc=${currentWeekDates[6]}`);
+        const result = await response.json();
+
+        if (result.success) {
+            scheduleData = result.data || [];
+            shiftsData = result.ca_lam || [];
+            renderScheduleTable();
+            renderPendingList();
+            updateScheduleStats();
+        } else {
+            Toast.error(result.message || 'Lỗi tải lịch làm');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Toast.error('Lỗi kết nối server');
+    }
+}
+
+// Cập nhật header ngày
+function updateDateHeaders() {
+    const dateHeaderRow = document.getElementById('dateHeaderRow');
+    if (!dateHeaderRow) return;
+
+    const dayNames = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+    let html = '<th class="px-4 py-2 border-b"></th>';
+    
+    currentWeekDates.forEach((dateStr, index) => {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const today = new Date().toISOString().split('T')[0];
+        const isToday = dateStr === today;
+        
+        html += `<th class="px-4 py-2 border-b text-center text-sm ${isToday ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-500'}">
+            ${day}/${month}${isToday ? ' (Hôm nay)' : ''}
+        </th>`;
+    });
+    dateHeaderRow.innerHTML = html;
+}
+
+// Render bảng lịch làm
+function renderScheduleTable() {
+    const tbody = document.getElementById('scheduleTableBody');
+    if (!tbody) return;
+
+    if (shiftsData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-500">
+            <div class="flex flex-col items-center gap-2">
+                <span class="text-4xl">⚠️</span>
+                <span>Chưa có ca làm nào được thiết lập</span>
+            </div>
+        </td></tr>`;
+        return;
+    }
+
+    let html = '';
+
+    shiftsData.forEach(shift => {
+        html += `<tr class="border-b hover:bg-gray-50">`;
+        html += `<td class="px-4 py-3 font-medium bg-gray-50">
+            <div class="font-semibold text-gray-800">${shift.ten_ca || 'N/A'}</div>
+            <div class="text-xs text-gray-500">${formatTime(shift.thoi_gian_bat_dau)} - ${formatTime(shift.thoi_gian_ket_thuc)}</div>
+        </td>`;
+
+        currentWeekDates.forEach(dateStr => {
+            const cellSchedules = scheduleData.filter(s => {
+                const scheduleDate = s.ngay_lam ? s.ngay_lam.split('T')[0] : '';
+                return scheduleDate === dateStr && s.ca_id === shift.ca_id;
+            });
+
+            const approvedCount = cellSchedules.filter(s => s.trang_thai === 'Đã duyệt').length;
+            const pendingCount = cellSchedules.filter(s => s.trang_thai === 'Đăng ký').length;
+
+            let statusClass = '';
+            let statusIcon = '';
+
+            if (approvedCount >= MAX_EMPLOYEES_PER_SHIFT) {
+                statusClass = 'bg-orange-50 border-l-4 border-orange-400';
+                statusIcon = '<span class="text-orange-600" title="Đầy ca">⚠️</span>';
+            } else if (approvedCount >= MIN_EMPLOYEES_PER_SHIFT) {
+                statusClass = 'bg-green-50 border-l-4 border-green-400';
+                statusIcon = '<span class="text-green-600" title="Đủ nhân viên">✅</span>';
+            } else if (approvedCount > 0 || pendingCount > 0) {
+                statusClass = 'bg-red-50 border-l-4 border-red-400';
+                statusIcon = '<span class="text-red-600" title="Thiếu nhân viên">⚠️</span>';
+            } else {
+                statusClass = 'bg-gray-50';
+            }
+
+            html += `<td class="px-2 py-2 text-center ${statusClass} cursor-pointer hover:bg-blue-50 transition-colors" 
+                        onclick="openShiftDetail('${dateStr}', ${shift.ca_id}, '${shift.ten_ca}')">
+                <div class="flex flex-col items-center gap-1">
+                    <div class="flex items-center gap-1">
+                        ${statusIcon}
+                        <span class="text-sm font-bold ${approvedCount >= MIN_EMPLOYEES_PER_SHIFT ? 'text-green-700' : 'text-red-700'}">${approvedCount}/${MAX_EMPLOYEES_PER_SHIFT}</span>
+                    </div>`;
+
+            if (pendingCount > 0) {
+                html += `<span class="text-xs bg-yellow-200 text-yellow-800 px-1 rounded">+${pendingCount} chờ</span>`;
+            }
+
+            // Hiển thị tên nhân viên đã duyệt (tối đa 2)
+            const approvedSchedules = cellSchedules.filter(s => s.trang_thai === 'Đã duyệt').slice(0, 2);
+            if (approvedSchedules.length > 0) {
+                html += `<div class="text-xs text-gray-600 mt-1 space-y-0.5">`;
+                approvedSchedules.forEach(s => {
+                    const shortName = s.ho_ten ? s.ho_ten.split(' ').slice(-2).join(' ') : 'N/A';
+                    html += `<div class="truncate max-w-[80px]" title="${s.ho_ten}">${shortName}</div>`;
+                });
+                if (approvedCount > 2) {
+                    html += `<div class="text-gray-400">+${approvedCount - 2} người...</div>`;
+                }
+                html += `</div>`;
+            }
+
+            html += `</div></td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    tbody.innerHTML = html;
+}
+
+// Format time
+function formatTime(timeStr) {
+    if (!timeStr) return '--:--';
+    return timeStr.substring(0, 5);
+}
+
+// Render danh sách chờ duyệt
+function renderPendingList() {
+    const tbody = document.getElementById('pendingScheduleList');
+    const pendingCountEl = document.getElementById('pendingCount');
+    if (!tbody) return;
+
+    const pendingSchedules = scheduleData.filter(s => s.trang_thai === 'Đăng ký');
+    
+    if (pendingCountEl) {
+        pendingCountEl.textContent = pendingSchedules.length;
+    }
+
+    if (pendingSchedules.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">
+            <div class="flex flex-col items-center gap-2">
+                <span class="text-3xl">✅</span>
+                <span>Không có lịch chờ duyệt</span>
+            </div>
+        </td></tr>`;
+        return;
+    }
+
+    // Sắp xếp theo thời gian đăng ký (ai đăng ký trước được hiển thị trước)
+    pendingSchedules.sort((a, b) => a.lich_id - b.lich_id);
+
+    let html = '';
+    pendingSchedules.forEach((s, index) => {
+        const ngayLam = s.ngay_lam ? new Date(s.ngay_lam).toLocaleDateString('vi-VN') : 'N/A';
+        const thoiGianCa = `${formatTime(s.thoi_gian_bat_dau)} - ${formatTime(s.thoi_gian_ket_thuc)}`;
+
+        html += `<tr class="border-b hover:bg-yellow-50">
+            <td class="px-4 py-3">
+                <input type="checkbox" class="pending-checkbox w-4 h-4" value="${s.lich_id}" />
+            </td>
+            <td class="px-4 py-3">
+                <div class="font-medium">${s.ho_ten || 'N/A'}</div>
+                <div class="text-xs text-gray-500">#${index + 1} trong hàng đợi</div>
+            </td>
+            <td class="px-4 py-3 text-gray-600">${s.sdt || 'N/A'}</td>
+            <td class="px-4 py-3">
+                <div class="font-medium">${ngayLam}</div>
+            </td>
+            <td class="px-4 py-3">
+                <div class="font-medium">${s.ten_ca || 'N/A'}</div>
+                <div class="text-xs text-gray-500">${thoiGianCa}</div>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-500">
+                ${s.lich_id ? `ID: ${s.lich_id}` : ''}
+            </td>
+            <td class="px-4 py-3 text-center">
+                <button onclick="approveSchedule(${s.lich_id})" 
+                        class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 mr-1 text-sm" 
+                        title="Duyệt">✓</button>
+                <button onclick="rejectSchedule(${s.lich_id})" 
+                        class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm" 
+                        title="Từ chối">✕</button>
+            </td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+}
+
+// Cập nhật thống kê
+function updateScheduleStats() {
+    let totalShifts = shiftsData.length * 7;
+    let filledShifts = 0;
+    let understaffedShifts = 0;
+    let fullShifts = 0;
+    let emptyShifts = 0;
+
+    shiftsData.forEach(shift => {
+        currentWeekDates.forEach(dateStr => {
+            const cellSchedules = scheduleData.filter(s => {
+                const scheduleDate = s.ngay_lam ? s.ngay_lam.split('T')[0] : '';
+                return scheduleDate === dateStr && s.ca_id === shift.ca_id && s.trang_thai === 'Đã duyệt';
+            });
+
+            const count = cellSchedules.length;
+
+            if (count >= MAX_EMPLOYEES_PER_SHIFT) {
+                fullShifts++;
+            } else if (count >= MIN_EMPLOYEES_PER_SHIFT) {
+                filledShifts++;
+            } else if (count > 0) {
+                understaffedShifts++;
+            } else {
+                emptyShifts++;
+            }
+        });
+    });
+
+    document.getElementById('statTotal').textContent = totalShifts;
+    document.getElementById('statFilled').textContent = filledShifts;
+    document.getElementById('statUnderstaffed').textContent = understaffedShifts;
+    document.getElementById('statFull').textContent = fullShifts;
+    document.getElementById('statEmpty').textContent = emptyShifts;
+}
+
+// Mở modal chi tiết ca
+async function openShiftDetail(date, shiftId, shiftName) {
+    const modal = document.getElementById('shiftDetailModal');
+    const title = document.getElementById('shiftDetailTitle');
+    const content = document.getElementById('shiftDetailContent');
+
+    const dateObj = new Date(date);
+    const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    title.textContent = `${shiftName} - ${dayNames[dateObj.getDay()]} ${dateObj.toLocaleDateString('vi-VN')}`;
+
+    content.innerHTML = `<div class="text-center py-8"><span class="text-2xl">⏳</span> Đang tải...</div>`;
+    modal.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`/api/lich-lam-viec/chi-tiet-ca?ngay=${date}&ca_id=${shiftId}`);
+        const result = await response.json();
+
+        if (result.success) {
+            let html = `
+                <div class="mb-4 p-4 rounded-lg ${result.du_nhan_vien ? 'bg-green-100 border border-green-300' : 'bg-red-100 border border-red-300'}">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-semibold text-lg">
+                                Số nhân viên: <span class="font-bold">${result.so_luong}/${MAX_EMPLOYEES_PER_SHIFT}</span>
+                            </p>
+                            <p class="text-sm ${result.du_nhan_vien ? 'text-green-700' : 'text-red-700'}">
+                                ${result.du_nhan_vien ? 
+                                    '✅ Đủ nhân viên (tối thiểu 3)' : 
+                                    `⚠️ Thiếu ${MIN_EMPLOYEES_PER_SHIFT - result.so_luong} nhân viên nữa`
+                                }
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600">Còn trống: <span class="font-bold">${result.con_trong}</span> vị trí</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (result.data && result.data.length > 0) {
+                html += `<div class="overflow-x-auto">
+                    <table class="w-full border">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-3 py-2 text-left border">#</th>
+                                <th class="px-3 py-2 text-left border">Nhân viên</th>
+                                <th class="px-3 py-2 text-left border">SĐT</th>
+                                <th class="px-3 py-2 text-left border">Trạng thái</th>
+                                <th class="px-3 py-2 text-center border">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+                result.data.forEach((item, index) => {
+                    const statusClass = item.trang_thai === 'Đã duyệt' ? 'bg-green-100 text-green-700' :
+                                       item.trang_thai === 'Đăng ký' ? 'bg-yellow-100 text-yellow-700' :
+                                       'bg-red-100 text-red-700';
+
+                    html += `<tr class="border-b hover:bg-gray-50">
+                        <td class="px-3 py-2 border">${index + 1}</td>
+                        <td class="px-3 py-2 border font-medium">${item.ho_ten || 'N/A'}</td>
+                        <td class="px-3 py-2 border">${item.sdt || 'N/A'}</td>
+                        <td class="px-3 py-2 border">
+                            <span class="px-2 py-1 rounded text-sm font-medium ${statusClass}">${item.trang_thai}</span>
+                        </td>
+                        <td class="px-3 py-2 border text-center">
+                            ${item.trang_thai === 'Đăng ký' ? `
+                                <button onclick="approveSchedule(${item.lich_id})" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600 mr-1">Duyệt</button>
+                                <button onclick="rejectSchedule(${item.lich_id})" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">Từ chối</button>
+                            ` : `
+                                <button onclick="deleteSchedule(${item.lich_id})" class="bg-gray-500 text-white px-2 py-1 rounded text-sm hover:bg-gray-600">Xóa</button>
+                            `}
+                        </td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+            } else {
+                html += `<div class="text-center py-8 text-gray-500">
+                    <span class="text-3xl">📭</span>
+                    <p class="mt-2">Chưa có nhân viên đăng ký ca này</p>
+                </div>`;
+            }
+
+            // Nút thêm nhanh
+            if (result.con_trong > 0) {
+                html += `
+                    <div class="mt-4 pt-4 border-t">
+                        <button onclick="openAddScheduleModalWithDate('${date}', ${shiftId})" 
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full">
+                            + Thêm nhân viên vào ca này
+                        </button>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="mt-4 pt-4 border-t">
+                        <button disabled class="bg-gray-400 text-white px-4 py-2 rounded-lg w-full cursor-not-allowed">
+                            Ca này đã đầy (${MAX_EMPLOYEES_PER_SHIFT}/${MAX_EMPLOYEES_PER_SHIFT})
+                        </button>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = `<div class="text-center py-8 text-red-500">❌ ${result.message || 'Lỗi tải dữ liệu'}</div>`;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        content.innerHTML = `<div class="text-center py-8 text-red-500">❌ Lỗi kết nối server</div>`;
+    }
+}
+
+function closeShiftDetailModal() {
+    document.getElementById('shiftDetailModal').classList.add('hidden');
+}
+
+// Mở modal thêm lịch làm
+async function openAddScheduleModal() {
+    document.getElementById('scheduleModalTitle').textContent = 'Thêm lịch làm';
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('scheduleId').value = '';
+    document.getElementById('scheduleDate').min = new Date().toISOString().split('T')[0];
+    
+    // Reset các trường
+    const shiftTimePreview = document.getElementById('shiftTimePreview');
+    const shiftStatus = document.getElementById('shiftStatus');
+    if (shiftTimePreview) shiftTimePreview.innerHTML = '';
+    if (shiftStatus) shiftStatus.innerHTML = '';
+    
+    // Load danh sách nhân viên và ca làm
+    await loadEmployeesForScheduleSelect();
+    await loadShiftsForSelect();
+    
+    // Render time selects cho khung giờ tùy chỉnh
+    renderTimeSelects();
+    
+    document.getElementById('scheduleModal').classList.remove('hidden');
+}
+
+async function openAddScheduleModalWithDate(date, shiftId) {
+    document.getElementById('scheduleModalTitle').textContent = 'Thêm lịch làm';
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('scheduleId').value = '';
+    
+    const shiftTimePreview = document.getElementById('shiftTimePreview');
+    const shiftStatus = document.getElementById('shiftStatus');
+    if (shiftTimePreview) shiftTimePreview.innerHTML = '';
+    if (shiftStatus) shiftStatus.innerHTML = '';
+    
+    // Load danh sách nhân viên và ca làm
+    await loadEmployeesForScheduleSelect();
+    await loadShiftsForSelect();
+    
+    // Render time selects
+    renderTimeSelects();
+    
+    // Set giá trị ngày và ca
+    document.getElementById('scheduleDate').value = date;
+    document.getElementById('scheduleShiftId').value = shiftId;
+    
+    // Kiểm tra tình trạng ca
+    checkShiftAvailability();
+    
+    document.getElementById('scheduleModal').classList.remove('hidden');
+}
+
+// Load nhân viên cho select
+async function loadEmployeesForScheduleSelect() {
+    try {
+        // Gọi API lấy danh sách tài khoản chi tiết (bao gồm thông tin nhân viên và tài khoản)
+        const response = await fetch('http://localhost:3000/taikhoan/chitiet');
+        const result = await response.json();
+
+        const select = document.getElementById('scheduleEmployeeId');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
+
+        if (result.du_lieu && result.du_lieu.length > 0) {
+            result.du_lieu.forEach(item => {
+                const nv = item.nhan_vien;
+                const tk = item.tai_khoan;
+                
+                // Chỉ hiển thị nhân viên (không phải Admin) và có tài khoản
+                if (nv && tk && tk.ten_vai_tro !== 'Admin') {
+                    select.innerHTML += `<option value="${nv.nhan_vien_id}">
+                        ${tk.ten_dang_nhap} - ${nv.ho_ten} ${nv.sdt ? `(${nv.sdt})` : ''}
+                    </option>`;
+                }
+            });
+        }
+
+        scheduleEmployees = result.du_lieu || [];
+    } catch (error) {
+        console.error('Error loadEmployeesForScheduleSelect:', error);
+        showToast('Không thể tải danh sách nhân viên', 'error');
+    }
+}
+
+// Load ca làm cho select
+async function loadShiftsForSelect() {
+    try {
+        const response = await fetch('/api/lich-lam-viec/ca-lam');
+        const result = await response.json();
+
+        if (result.success) {
+            const select = document.getElementById('scheduleShiftId');
+            if (select) {
+                select.innerHTML = '<option value="">-- Chọn ca làm --</option>';
+                (result.data || []).forEach(shift => {
+                    select.innerHTML += `<option value="${shift.ca_id}">${shift.ten_ca} (${formatTime(shift.thoi_gian_bat_dau)} - ${formatTime(shift.thoi_gian_ket_thuc)})</option>`;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Kiểm tra số lượng nhân viên khi chọn ngày/ca
+async function checkShiftAvailability() {
+    const date = document.getElementById('scheduleDate').value;
+    const shiftId = document.getElementById('scheduleShiftId').value;
+    const statusEl = document.getElementById('shiftStatus');
+    const submitBtn = document.getElementById('scheduleSubmitBtn');
+
+    if (!date || !shiftId) {
+        statusEl.innerHTML = '';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/lich-lam-viec/chi-tiet-ca?ngay=${date}&ca_id=${shiftId}`);
+        const result = await response.json();
+
+        if (result.success) {
+            if (result.con_trong <= 0) {
+                statusEl.innerHTML = `<div class="bg-red-100 text-red-700 p-2 rounded">⚠️ Ca này đã đầy (${MAX_EMPLOYEES_PER_SHIFT}/${MAX_EMPLOYEES_PER_SHIFT})</div>`;
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (result.so_luong >= MIN_EMPLOYEES_PER_SHIFT) {
+                statusEl.innerHTML = `<div class="bg-green-100 text-green-700 p-2 rounded">✅ Đủ nhân viên (${result.so_luong}/${MAX_EMPLOYEES_PER_SHIFT}), còn ${result.con_trong} vị trí</div>`;
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                statusEl.innerHTML = `<div class="bg-yellow-100 text-yellow-700 p-2 rounded">📝 Còn ${result.con_trong} vị trí (${result.so_luong}/${MAX_EMPLOYEES_PER_SHIFT})</div>`;
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Submit form thêm lịch làm
+// Submit form thêm lịch làm
+document.addEventListener('DOMContentLoaded', function() {
+    const scheduleForm = document.getElementById('scheduleForm');
+    if (scheduleForm) {
+        scheduleForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const startTime = document.getElementById('scheduleStartTime').value;
+            const endTime = document.getElementById('scheduleEndTime').value;
+            
+            // Validate khung giờ
+            if (!startTime || !endTime) {
+                showToast('Vui lòng chọn khung giờ làm việc', 'error');
+                return;
+            }
+
+            const validation = validateShiftTime(startTime, endTime);
+            if (!validation.valid) {
+                showToast(validation.message, 'error');
+                return;
+            }
+
+            const data = {
+                nhan_vien_id: document.getElementById('scheduleEmployeeId').value,
+                ngay_lam: document.getElementById('scheduleDate').value,
+                trang_thai: document.getElementById('scheduleStatus').value,
+                thoi_gian_bat_dau: startTime,
+                thoi_gian_ket_thuc: endTime,
+                ca_id: null // Không dùng ca_id nữa, dùng khung giờ tùy chỉnh
+            };
+
+            if (!data.nhan_vien_id || !data.ngay_lam) {
+                showToast('Vui lòng điền đầy đủ thông tin', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/lich-lam-viec', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message || 'Thêm lịch làm thành công', 'success');
+                    closeScheduleModal();
+                    closeShiftDetailModal();
+                    loadScheduleByWeek();
+                } else {
+                    showToast(result.message || 'Lỗi thêm lịch làm', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Lỗi kết nối server', 'error');
+            }
+        });
+    }
+});
+
+// Duyệt lịch làm
+async function approveSchedule(lichId) {
+    try {
+        const response = await fetch(`/api/lich-lam-viec/duyet/${lichId}`, { method: 'PUT' });
+        const result = await response.json();
+
+        if (result.success) {
+            Toast.success(result.message || 'Duyệt thành công');
+            loadScheduleByWeek();
+            closeShiftDetailModal();
+        } else {
+            Toast.error(result.message || 'Lỗi duyệt lịch làm');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Toast.error('Lỗi kết nối server');scheduleForm
+    }
+}
+// Đóng modal thêm lịch làm
+function closeScheduleModal() {
+    document.getElementById('scheduleModal').classList.add('hidden');
+}
+
+// Đóng modal chi tiết ca
+function closeShiftDetailModal() {
+    document.getElementById('shiftDetailModal').classList.add('hidden');
+}
+
+// Từ chối lịch làm
+async function rejectSchedule(lichId) {
+    if (!confirm('Bạn có chắc muốn từ chối lịch làm này?')) return;
+
+    try {
+        const response = await fetch(`/api/lich-lam-viec/tu-choi/${lichId}`, { method: 'PUT' });
+        const result = await response.json();
+
+        if (result.success) {
+            Toast.success(result.message || 'Đã từ chối');
+            loadScheduleByWeek();
+            closeShiftDetailModal();
+        } else {
+            Toast.error(result.message || 'Lỗi từ chối lịch làm');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Toast.error('Lỗi kết nối server');
+    }
+}
+
+// Xóa lịch làm
+async function deleteSchedule(lichId) {
+    if (!confirm('Bạn có chắc muốn xóa lịch làm này?')) return;
+
+    try {
+        const response = await fetch(`/api/lich-lam-viec/${lichId}`, { method: 'DELETE' });
+        const result = await response.json();
+
+        if (result.success) {
+            Toast.success(result.message || 'Xóa thành công');
+            loadScheduleByWeek();
+            closeShiftDetailModal();
+        } else {
+            Toast.error(result.message || 'Lỗi xóa lịch làm');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Toast.error('Lỗi kết nối server');
+    }
+}
+
+// Duyệt nhiều lịch làm cùng lúc
+async function approveSelectedSchedules() {
+    const checkboxes = document.querySelectorAll('.pending-checkbox:checked');
+    if (checkboxes.length === 0) {
+        Toast.warning('Vui lòng chọn ít nhất một lịch làm');
+        return;
+    }
+
+    const lichIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+    if (!confirm(`Bạn có chắc muốn duyệt ${lichIds.length} lịch làm đã chọn?`)) return;
+
+    try {
+        const response = await fetch('/api/lich-lam-viec/duyet-nhieu', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lichIds })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            Toast.success(result.message);
+            loadScheduleByWeek();
+        } else {
+            Toast.error(result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Toast.error('Lỗi kết nối server');
+    }
+}
+
+// Từ chối nhiều lịch làm cùng lúc
+async function rejectSelectedSchedules() {
+    const checkboxes = document.querySelectorAll('.pending-checkbox:checked');
+    if (checkboxes.length === 0) {
+        Toast.warning('Vui lòng chọn ít nhất một lịch làm');
+        return;
+    }
+
+    const lichIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+    if (!confirm(`Bạn có chắc muốn từ chối ${lichIds.length} lịch làm đã chọn?`)) return;
+
+    try {
+        const response = await fetch('/api/lich-lam-viec/tu-choi-nhieu', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lichIds })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            Toast.success(result.message);
+            loadScheduleByWeek();
+        } else {
+            Toast.error(result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Toast.error('Lỗi kết nối server');
+    }
+}
+
+const MIN_SHIFT_HOURS = 4; // Tối thiểu 4 tiếng
+const MAX_SHIFT_HOURS = 8; // Tối đa 8 tiếng
+
+// Tạo danh sách khung giờ (từ 8:00 đến 22:00, cách nhau 1 tiếng)
+function generateTimeSlots() {
+    const slots = [];
+    for (let hour = 8; hour <= 22; hour++) {
+        slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+    return slots;
+}
+
+// Tính số giờ giữa 2 thời điểm
+function calculateHours(startTime, endTime) {
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    return (endH + endM/60) - (startH + startM/60);
+}
+
+// Validate khung giờ ca làm
+function validateShiftTime(startTime, endTime) {
+    if (!startTime || !endTime) {
+        return { valid: false, message: 'Vui lòng chọn giờ bắt đầu và kết thúc' };
+    }
+    
+    const hours = calculateHours(startTime, endTime);
+    
+    if (hours < MIN_SHIFT_HOURS) {
+        return { valid: false, message: `Ca làm phải tối thiểu ${MIN_SHIFT_HOURS} tiếng (hiện tại: ${hours} tiếng)` };
+    }
+    
+    if (hours > MAX_SHIFT_HOURS) {
+        return { valid: false, message: `Ca làm không được quá ${MAX_SHIFT_HOURS} tiếng (hiện tại: ${hours} tiếng)` };
+    }
+    
+    if (startTime >= endTime) {
+        return { valid: false, message: 'Giờ kết thúc phải sau giờ bắt đầu' };
+    }
+    
+    return { valid: true, hours };
+}
+
+// Render select giờ bắt đầu và kết thúc
+function renderTimeSelects() {
+    const startSelect = document.getElementById('scheduleStartTime');
+    const endSelect = document.getElementById('scheduleEndTime');
+    
+    if (!startSelect || !endSelect) return;
+    
+    const timeSlots = generateTimeSlots();
+    
+    // Render giờ bắt đầu (từ 8:00 đến 18:00 - để còn chỗ cho ca tối thiểu 4 tiếng)
+    startSelect.innerHTML = '<option value="">-- Chọn giờ bắt đầu --</option>';
+    timeSlots.forEach(time => {
+        const hour = parseInt(time.split(':')[0]);
+        // Giờ bắt đầu tối đa là 18:00 (để ca 4 tiếng kết thúc lúc 22:00)
+        if (hour <= 18) {
+            startSelect.innerHTML += `<option value="${time}">${time}</option>`;
+        }
+    });
+    
+    // Render giờ kết thúc - sẽ được cập nhật khi chọn giờ bắt đầu
+    endSelect.innerHTML = '<option value="">-- Chọn giờ bắt đầu trước --</option>';
+}
+
+// Cập nhật giờ kết thúc dựa trên giờ bắt đầu (4-8 tiếng)
+function updateEndTimeOptions() {
+    const startSelect = document.getElementById('scheduleStartTime');
+    const endSelect = document.getElementById('scheduleEndTime');
+    const startTime = startSelect.value;
+    
+    if (!startTime) {
+        endSelect.innerHTML = '<option value="">-- Chọn giờ bắt đầu trước --</option>';
+        updateShiftPreview();
+        return;
+    }
+    
+    const startHour = parseInt(startTime.split(':')[0]);
+    const minEndHour = startHour + MIN_SHIFT_HOURS; // Tối thiểu 4 tiếng
+    const maxEndHour = Math.min(startHour + MAX_SHIFT_HOURS, 22); // Tối đa 8 tiếng hoặc 22:00
+    
+    endSelect.innerHTML = '<option value="">-- Chọn giờ kết thúc --</option>';
+    
+    // Tạo các option từ minEndHour đến maxEndHour
+    for (let hour = minEndHour; hour <= maxEndHour; hour++) {
+        const time = `${hour.toString().padStart(2, '0')}:00`;
+        const hours = hour - startHour;
+        endSelect.innerHTML += `<option value="${time}">${time} (${hours} tiếng)</option>`;
+    }
+    
+    updateShiftPreview();
+}
+
+// Cập nhật preview ca làm
+function updateShiftPreview() {
+    const startTime = document.getElementById('scheduleStartTime')?.value;
+    const endTime = document.getElementById('scheduleEndTime')?.value;
+    const previewEl = document.getElementById('shiftTimePreview');
+    
+    if (!previewEl) return;
+    
+    if (!startTime || !endTime) {
+        previewEl.innerHTML = '';
+        return;
+    }
+    
+    const validation = validateShiftTime(startTime, endTime);
+    
+    if (validation.valid) {
+        previewEl.innerHTML = `
+            <div class="bg-green-100 text-green-700 p-3 rounded-lg border border-green-300">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">✅</span>
+                    <div>
+                        <p class="font-semibold">Ca làm: ${startTime} - ${endTime}</p>
+                        <p class="text-sm">Thời lượng: ${validation.hours} tiếng</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        previewEl.innerHTML = `
+            <div class="bg-red-100 text-red-700 p-3 rounded-lg border border-red-300">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">⚠️</span>
+                    <p>${validation.message}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Chọn nhanh khung giờ
+function setQuickShift(startTime, endTime) {
+    const startSelect = document.getElementById('scheduleStartTime');
+    const endSelect = document.getElementById('scheduleEndTime');
+    
+    if (startSelect && endSelect) {
+        // Set giờ bắt đầu
+        startSelect.value = startTime;
+        
+        // Cập nhật options giờ kết thúc
+        updateEndTimeOptions();
+        
+        // Đợi một chút để options được render xong rồi set giá trị
+        setTimeout(() => {
+            endSelect.value = endTime;
+            updateShiftPreview();
+        }, 50);
+    }
+}
+// Chọn/bỏ chọn tất cả checkbox
+function toggleAllPendingCheckboxes() {
+    const selectAll = document.getElementById('selectAllPending');
+    const checkboxes = document.querySelectorAll('.pending-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+

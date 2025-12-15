@@ -102,6 +102,26 @@ export const ProductController = {
       next(error);
     }
   },
+  // Lấy sản phẩm bán chạy
+async laySanPhamBanChay(req, res) {
+    try {
+        const soLanToiThieu = parseInt(req.query.min) || 10;
+        const data = await ProductModel.laySanPhamBanChay(soLanToiThieu);
+        
+        // Trả về danh sách san_pham_id bán chạy
+        const danhSachBanChay = data.map(item => item.san_pham_id);
+        
+        res.json({ 
+            success: true, 
+            data: danhSachBanChay,
+            chi_tiet: data
+        });
+    } catch (error) {
+        console.error('Error laySanPhamBanChay:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+},
+
 
   // Xóa sản phẩm
   async delete(req, res, next) {

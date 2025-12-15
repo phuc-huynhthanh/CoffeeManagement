@@ -341,15 +341,150 @@
       </div>
     </div>
 
-    <!-- Tab: Quản lý lịch làm -->
-    <div id="tab-lich-lam" class="tab-content hidden">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold text-gray-700">Quản lý lịch làm</h2>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-4">
-        <p class="text-gray-600">Lịch làm</p>
-      </div>
+    <!-- Tab Lịch làm -->
+<div id="tab-lich-lam" class="tab-content hidden">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">📅 Quản lý lịch làm việc</h2>
+    
+    <!-- Thống kê -->
+    <div id="scheduleStats" class="mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-blue-100 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-blue-700" id="statTotal">0</div>
+                <div class="text-sm text-blue-600">Tổng ca</div>
+            </div>
+            <div class="bg-green-100 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-green-700" id="statFilled">0</div>
+                <div class="text-sm text-green-600">Đủ NV</div>
+            </div>
+            <div class="bg-red-100 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-red-700" id="statUnderstaffed">0</div>
+                <div class="text-sm text-red-600">Thiếu NV</div>
+            </div>
+            <div class="bg-orange-100 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-orange-700" id="statFull">0</div>
+                <div class="text-sm text-orange-600">Đầy ca</div>
+            </div>
+            <div class="bg-gray-100 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-gray-700" id="statEmpty">0</div>
+                <div class="text-sm text-gray-600">Trống</div>
+            </div>
+        </div>
     </div>
+
+    <!-- Bộ lọc tuần -->
+    <div class="bg-white p-4 rounded-lg shadow-md mb-4 flex flex-wrap gap-4 items-end">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Chọn tuần</label>
+            <input type="week" id="weekPicker" onchange="loadScheduleByWeek()" 
+                   class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <button onclick="loadScheduleByWeek()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <span>🔄</span> Tải lại
+        </button>
+        <button onclick="openAddScheduleModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
+            <span>+</span> Thêm lịch làm
+        </button>
+        <button onclick="goToPreviousWeek()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+            ← Tuần trước
+        </button>
+        <button onclick="goToNextWeek()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+            Tuần sau →
+        </button>
+    </div>
+
+    <!-- Chú thích -->
+    <div class="bg-white p-3 rounded-lg shadow-md mb-4 flex flex-wrap gap-4 text-sm">
+        <span class="flex items-center gap-1">
+            <span class="w-4 h-4 bg-green-100 border border-green-300 rounded"></span> Đủ nhân viên (≥3)
+        </span>
+        <span class="flex items-center gap-1">
+            <span class="w-4 h-4 bg-red-100 border border-red-300 rounded"></span> Thiếu nhân viên (&lt;3)
+        </span>
+        <span class="flex items-center gap-1">
+            <span class="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></span> Đầy ca (9/9)
+        </span>
+        <span class="flex items-center gap-1">
+            <span class="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></span> Có đăng ký chờ duyệt
+        </span>
+        <span class="text-gray-500 ml-4">| <strong>Tối thiểu:</strong> 3 NV | <strong>Tối đa:</strong> 9 NV</span>
+    </div>
+
+    <!-- Bảng lịch làm -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        <div class="bg-blue-600 text-white px-4 py-3">
+            <h3 class="font-semibold">📊 Lịch làm việc theo tuần</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-3 border-b text-left font-semibold text-gray-700 min-w-[120px]">Ca làm</th>
+                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 2</th>
+                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 3</th>
+                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 4</th>
+                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 5</th>
+                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 6</th>
+                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Thứ 7</th>
+                        <th class="px-4 py-3 border-b text-center font-semibold text-gray-700 min-w-[100px]">Chủ nhật</th>
+                    </tr>
+                    <tr id="dateHeaderRow" class="bg-gray-50">
+                        <th class="px-4 py-2 border-b"></th>
+                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                        <th class="px-4 py-2 border-b text-center text-sm text-gray-500">--/--</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleTableBody">
+                    <tr><td colspan="8" class="text-center py-8 text-gray-500">
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="text-4xl">📅</span>
+                            <span>Chọn tuần để xem lịch làm việc</span>
+                        </div>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Danh sách chờ duyệt -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-yellow-500 text-white px-4 py-3 flex justify-between items-center">
+            <h3 class="font-semibold">📋 Danh sách chờ duyệt (<span id="pendingCount">0</span>)</h3>
+            <div class="flex gap-2">
+                <button onclick="approveSelectedSchedules()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm flex items-center gap-1">
+                    <span>✓</span> Duyệt đã chọn
+                </button>
+                <button onclick="rejectSelectedSchedules()" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm flex items-center gap-1">
+                    <span>✕</span> Từ chối đã chọn
+                </button>
+            </div>
+        </div>
+        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                        <th class="px-4 py-2 text-left w-10">
+                            <input type="checkbox" id="selectAllPending" onchange="toggleAllPendingCheckboxes()" class="w-4 h-4">
+                        </th>
+                        <th class="px-4 py-2 text-left">Nhân viên</th>
+                        <th class="px-4 py-2 text-left">SĐT</th>
+                        <th class="px-4 py-2 text-left">Ngày làm</th>
+                        <th class="px-4 py-2 text-left">Ca làm</th>
+                        <th class="px-4 py-2 text-left">Thời gian đăng ký</th>
+                        <th class="px-4 py-2 text-center w-32">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingScheduleList">
+                    <tr><td colspan="7" class="text-center py-4 text-gray-500">Không có lịch chờ duyệt</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
     <!-- Tab: Quản lý lương -->
     <div id="tab-luong" class="tab-content hidden">
@@ -363,13 +498,95 @@
 
     <!-- Tab: Quản lý doanh thu -->
     <div id="tab-doanh-thu" class="tab-content hidden">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold text-gray-700">Quản lý doanh thu</h2>
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-xl font-semibold text-gray-700">Quản lý doanh thu</h2>
+  </div>
+
+  <!-- Bộ lọc -->
+  <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+    <div class="flex gap-4 items-center flex-wrap">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Lọc theo:</label>
+        <select id="filter-type" class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus: ring-blue-500">
+          <option value="day">Hôm nay</option>
+          <option value="week">Tuần này</option>
+          <option value="month" selected>Tháng này</option>
+          <option value="year">Năm này</option>
+          <option value="custom">Tùy chọn</option>
+        </select>
       </div>
-      <div class="bg-white rounded-lg shadow-md p-4">
-        <p class="text-gray-600">Doanh thu</p>
+      <div>
+  <label class="block text-sm font-medium text-gray-700 mb-2">Ca làm việc:</label>
+  <select id="filter-shift" class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <option value="all">Tất cả ca</option>
+    <option value="morning">Ca sáng (8:00 - 14:00)</option>
+    <option value="evening">Ca tối (14:00 - 20:00)</option>
+  </select>
+</div>
+
+      <!-- Date picker cho custom -->
+      <div id="custom-date-range" class="hidden flex gap-2">
+        <input type="date" id="start-date" class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus: ring-blue-500">
+        <span class="text-gray-500">đến</span>
+        <input type="date" id="end-date" class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
+
+      <button id="btn-filter" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+        Lọc
+      </button>
     </div>
+  </div>
+
+  <!-- Thống kê tổng quát -->
+  <div class="grid grid-cols-1 md: grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-md p-4">
+      <p class="text-gray-600 text-sm">Tổng doanh thu</p>
+      <p class="text-2xl font-bold text-green-600" id="total-revenue">0 đ</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4">
+      <p class="text-gray-600 text-sm">Số đơn hàng</p>
+      <p class="text-2xl font-bold text-blue-600" id="total-orders">0</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4">
+      <p class="text-gray-600 text-sm">Doanh thu trung bình/đơn</p>
+      <p class="text-2xl font-bold text-purple-600" id="avg-revenue">0 đ</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-4">
+      <p class="text-gray-600 text-sm">Đơn hàng đã thanh toán</p>
+      <p class="text-2xl font-bold text-orange-600" id="paid-orders">0</p>
+    </div>
+  </div>
+
+  <!-- Biểu đồ -->
+  <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Biểu đồ doanh thu</h3>
+    <div style="position: relative; height: 400px;">
+      <canvas id="revenue-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Bảng chi tiết -->
+  <div class="bg-white rounded-lg shadow-md p-4">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Chi tiết doanh thu theo ngày</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-600">
+        <thead class="text-xs uppercase bg-gray-100 text-gray-700">
+          <tr>
+            <th class="px-4 py-2">Ngày</th>
+            <th class="px-4 py-2">Số đơn hàng</th>
+            <th class="px-4 py-2">Doanh thu</th>
+            <th class="px-4 py-2">Trạng thái thanh toán</th>
+          </tr>
+        </thead>
+        <tbody id="revenue-table-body">
+          <tr>
+            <td colspan="4" class="px-4 py-2 text-center text-gray-500">Đang tải dữ liệu...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
   </section>
 
   <!-- Parent: Quản lý thành viên -->
@@ -843,6 +1060,190 @@
   </div>
 </div>
 
+<!-- Thay thế Modal Thêm/Sửa Lịch làm (khoảng dòng 1010-1050) -->
+
+<!-- Modal Thêm/Sửa Lịch làm -->
+<div id="scheduleModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 id="scheduleModalTitle" class="text-xl font-bold text-gray-800">Thêm lịch làm</h3>
+            <button onclick="closeScheduleModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <form id="scheduleForm">
+            <input type="hidden" id="scheduleId">
+            
+            <!-- Chọn nhân viên -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    👤 Nhân viên <span class="text-red-500">*</span>
+                </label>
+                <select id="scheduleEmployeeId" required
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Chọn tài khoản nhân viên --</option>
+                </select>
+            </div>
+
+            <!-- Chọn ngày -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    📅 Ngày làm <span class="text-red-500">*</span>
+                </label>
+                <input type="date" id="scheduleDate" required onchange="checkShiftAvailability()"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Chọn ca có sẵn -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    🕐 Chọn ca làm có sẵn
+                </label>
+                <select id="scheduleShiftId" onchange="checkShiftAvailability()"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Chọn ca làm --</option>
+                </select>
+            </div>
+
+            <!-- Divider -->
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-gray-500">HOẶC tạo khung giờ tùy chỉnh</span>
+                </div>
+            </div>
+
+            <!-- Khung giờ tùy chỉnh -->
+            <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <label class="block text-sm font-medium text-blue-700 mb-3">
+                    ⏰ Tạo ca làm theo khung giờ (tối thiểu 4 tiếng, tối đa 8 tiếng)
+                </label>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Giờ bắt đầu</label>
+                        <select id="scheduleStartTime" onchange="updateEndTimeOptions(); updateShiftPreview();"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- Chọn --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Giờ kết thúc</label>
+                        <select id="scheduleEndTime" onchange="updateShiftPreview();"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- Chọn giờ bắt đầu trước --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Preview khung giờ -->
+                <div id="shiftTimePreview" class="mt-3"></div>
+
+                <!-- Gợi ý ca phổ biến -->
+                <div class="mt-3 text-xs text-gray-500">
+                    <p>💡 <strong>Gợi ý ca phổ biến:</strong></p>
+                    
+                    <!-- Ca 4 tiếng -->
+                    <p class="mt-2 text-gray-600 font-medium">Ca 4 tiếng:</p>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        <button type="button" onclick="setQuickShift('08:00', '12:00')" 
+                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                            8:00-12:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('12:00', '16:00')" 
+                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                            12:00-16:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('14:00', '18:00')" 
+                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                            14:00-18:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('18:00', '22:00')" 
+                                class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                            18:00-22:00
+                        </button>
+                    </div>
+
+                    <!-- Ca 6 tiếng -->
+                    <p class="mt-2 text-gray-600 font-medium">Ca 6 tiếng:</p>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        <button type="button" onclick="setQuickShift('08:00', '14:00')" 
+                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
+                            8:00-14:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('10:00', '16:00')" 
+                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
+                            10:00-16:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('14:00', '20:00')" 
+                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
+                            14:00-20:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('16:00', '22:00')" 
+                                class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">
+                            16:00-22:00
+                        </button>
+                    </div>
+
+                    <!-- Ca 8 tiếng (full) -->
+                    <p class="mt-2 text-gray-600 font-medium">Ca 8 tiếng (full):</p>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        <button type="button" onclick="setQuickShift('08:00', '16:00')" 
+                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
+                            8:00-16:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('10:00', '18:00')" 
+                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
+                            10:00-18:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('12:00', '20:00')" 
+                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
+                            12:00-20:00
+                        </button>
+                        <button type="button" onclick="setQuickShift('14:00', '22:00')" 
+                                class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
+                            14:00-22:00
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trạng thái ca -->
+            <div id="shiftStatus" class="mb-4 text-sm"></div>
+
+            <!-- Trạng thái đăng ký -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                <select id="scheduleStatus"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="Đăng ký">Đăng ký (Chờ duyệt)</option>
+                    <option value="Đã duyệt">Đã duyệt</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t">
+                <button type="button" onclick="closeScheduleModal()" 
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Hủy</button>
+                <button type="submit" id="scheduleSubmitBtn"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Chi tiết ca -->
+<div id="shiftDetailModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[85vh] overflow-hidden mx-4">
+        <div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
+            <h3 id="shiftDetailTitle" class="text-lg font-bold">Chi tiết ca làm</h3>
+            <button onclick="closeShiftDetailModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+        </div>
+        <div id="shiftDetailContent" class="p-4 overflow-y-auto max-h-[calc(85vh-60px)]">
+            <!-- Nội dung sẽ được render bằng JS -->
+        </div>
+    </div>
+</div>
+
 <script>
 // ============================================
 // TOAST NOTIFICATION SYSTEM
@@ -906,6 +1307,300 @@ window.Toast = {
 </script>
 
 <script src="/js/admin.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Kiểm tra xem scope đã tồn tại chưa
+  if (typeof window.revenueModule === 'undefined') {
+    window.revenueModule = {
+      revenueChart: null,
+      allOrders: [],
+
+      // Hàm format tiền
+      formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+          style: 'currency',
+          currency: 'VND'
+        }).format(amount);
+      },
+
+      // Hàm lấy ngày đầu tuần
+      getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+      },
+
+      // Hàm lấy khoảng ngày theo filter
+      getDateRange(filterType) {
+        const today = new Date();
+        let startDate, endDate = new Date(today);
+
+        switch(filterType) {
+          case 'day':
+            startDate = new Date(today);
+            break;
+          case 'week': 
+            startDate = this.getWeekStart(today);
+            break;
+          case 'month':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            break;
+          case 'year':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            break;
+          default:
+            return null;
+        }
+
+        return {
+          startDate: new Date(startDate.setHours(0, 0, 0, 0)),
+          endDate: new Date(endDate. setHours(23, 59, 59, 999))
+        };
+      },
+
+      // Hàm xác định ca làm việc
+      getShift(date) {
+        const hour = new Date(date).getHours();
+        if (hour >= 8 && hour < 14) {
+          return 'morning';
+        } else if (hour >= 14 && hour < 20) {
+          return 'evening';
+        }
+        return 'outside'; // Ngoài giờ làm việc
+      },
+
+      // Hàm lấy tên ca làm việc
+      getShiftLabel(shift) {
+        const labels = {
+          'morning':  'Ca sáng',
+          'evening': 'Ca tối',
+          'outside': 'Ngoài giờ'
+        };
+        return labels[shift] || shift;
+      },
+
+      // Hàm lọc dữ liệu
+      filterOrders(orders, startDate, endDate, shift = 'all') {
+        return orders.filter(order => {
+          const orderDate = new Date(order.ngay_dat);
+          const dateInRange = orderDate >= startDate && orderDate <= endDate;
+
+          if (shift === 'all') {
+            return dateInRange;
+          }
+
+          const orderShift = this.getShift(order.ngay_dat);
+          return dateInRange && orderShift === shift;
+        });
+      },
+
+      // Hàm nhóm dữ liệu theo ngày
+      groupByDate(orders) {
+        const grouped = {};
+        orders.forEach(order => {
+          const date = new Date(order.ngay_dat).toLocaleDateString('vi-VN');
+          if (!grouped[date]) {
+            grouped[date] = { date, count: 0, revenue: 0, paid: 0 };
+          }
+          grouped[date].count++;
+          grouped[date].revenue += parseInt(order.tien_sau_giam);
+          if (order.trang_thai === 'Đã thanh toán') {
+            grouped[date].paid++;
+          }
+        });
+        return Object.values(grouped).sort((a, b) => new Date(a.date) - new Date(b.date));
+      },
+
+      // Hàm cập nhật biểu đồ
+      updateChart(orders, filterType) {
+        const grouped = this.groupByDate(orders);
+        const labels = grouped.map(g => g.date);
+        const revenues = grouped.map(g => g. revenue);
+
+        const ctx = document.getElementById('revenue-chart');
+        if (! ctx) return;
+
+        const chartContext = ctx.getContext('2d');
+
+        if (this.revenueChart) {
+          this.revenueChart. destroy();
+        }
+
+        this.revenueChart = new Chart(chartContext, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets:  [
+              {
+                label: 'Doanh thu (đ)',
+                data: revenues,
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend:  {
+                display: true,
+                position: 'top'
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: (value) => {
+                    return value. toLocaleString('vi-VN') + ' đ';
+                  }
+                }
+              }
+            }
+          }
+        });
+      },
+
+      // Hàm cập nhật thống kê
+      updateStats(orders) {
+        const totalRevenue = orders.reduce((sum, order) => sum + parseInt(order.tien_sau_giam), 0);
+        const totalOrders = orders. length;
+        const avgRevenue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+        const paidOrders = orders.filter(o => o.trang_thai === 'Đã thanh toán').length;
+
+        const totalRevenueEl = document.getElementById('total-revenue');
+        const totalOrdersEl = document.getElementById('total-orders');
+        const avgRevenueEl = document.getElementById('avg-revenue');
+        const paidOrdersEl = document.getElementById('paid-orders');
+
+        if (totalRevenueEl) totalRevenueEl.textContent = this.formatCurrency(totalRevenue);
+        if (totalOrdersEl) totalOrdersEl.textContent = totalOrders;
+        if (avgRevenueEl) avgRevenueEl.textContent = this.formatCurrency(avgRevenue);
+        if (paidOrdersEl) paidOrdersEl.textContent = paidOrders;
+      },
+
+      // Hàm cập nhật bảng
+      updateTable(orders) {
+        const grouped = this.groupByDate(orders);
+        const tbody = document.getElementById('revenue-table-body');
+
+        if (! tbody) return;
+
+        tbody. innerHTML = grouped.map(g => {
+          const shiftsInDay = {};
+          orders
+            .filter(o => new Date(o.ngay_dat).toLocaleDateString('vi-VN') === g.date)
+            .forEach(o => {
+              const shift = this.getShift(o.ngay_dat);
+              if (!shiftsInDay[shift]) shiftsInDay[shift] = 0;
+              shiftsInDay[shift]++;
+            });
+
+          const shiftInfo = Object.entries(shiftsInDay)
+            .map(([shift, count]) => `${this.getShiftLabel(shift)}: ${count}`)
+            .join(' | ');
+
+          return `
+            <tr class="border-b hover:bg-gray-50">
+              <td class="px-4 py-2">${g. date}</td>
+              <td class="px-4 py-2">${g.count}</td>
+              <td class="px-4 py-2 font-semibold text-green-600">${this. formatCurrency(g.revenue)}</td>
+              <td class="px-4 py-2 text-xs">${shiftInfo}</td>
+              <td class="px-4 py-2">
+                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">${g.paid}/${g.count}</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      },
+
+      // Hàm lọc và cập nhật
+      applyFilter() {
+        const filterType = document.getElementById('filter-type').value;
+        const shift = document. getElementById('filter-shift').value;
+        let filteredOrders = [];
+
+        if (filterType === 'custom') {
+          const startDate = document.getElementById('start-date').value;
+          const endDate = document.getElementById('end-date').value;
+
+          if (! startDate || !endDate) {
+            alert('Vui lòng chọn khoảng ngày');
+            return;
+          }
+
+          filteredOrders = this.filterOrders(this.allOrders,
+            new Date(startDate),
+            new Date(endDate + 'T23:59:59'),
+            shift
+          );
+        } else {
+          const range = this.getDateRange(filterType);
+          filteredOrders = this.filterOrders(this.allOrders, range.startDate, range.endDate, shift);
+        }
+
+        this.updateStats(filteredOrders);
+        this.updateChart(filteredOrders, filterType);
+        this.updateTable(filteredOrders);
+      },
+
+      // Load dữ liệu từ API
+      async loadOrders() {
+        try {
+          const response = await fetch('http://localhost:3000/donhang/laytatca');
+          const data = await response.json();
+          this.allOrders = data || [];
+          this.applyFilter(); // Mặc định lọc theo tháng này
+        } catch (error) {
+          console.error('Lỗi tải dữ liệu:', error);
+        }
+      },
+
+      // Khởi tạo event listeners
+      init() {
+        const filterTypeEl = document.getElementById('filter-type');
+        const filterShiftEl = document.getElementById('filter-shift');
+        const btnFilterEl = document.getElementById('btn-filter');
+        const customDateRange = document.getElementById('custom-date-range');
+
+        if (filterTypeEl) {
+          filterTypeEl.addEventListener('change', () => {
+            if (filterTypeEl. value === 'custom') {
+              customDateRange?. classList.remove('hidden');
+            } else {
+              customDateRange?.classList.add('hidden');
+              this.applyFilter();
+            }
+          });
+        }
+
+        if (filterShiftEl) {
+          filterShiftEl. addEventListener('change', () => this.applyFilter());
+        }
+
+        if (btnFilterEl) {
+          btnFilterEl.addEventListener('click', () => this.applyFilter());
+        }
+
+        this.loadOrders();
+      }
+    };
+
+    // Khởi tạo sau khi DOM sẵn sàng
+    if (document. readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        window.revenueModule.init();
+      });
+    } else {
+      window.revenueModule.init();
+    }
+  }
+</script>
+
 
 </body>
 </html>

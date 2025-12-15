@@ -24,6 +24,22 @@ export const ProductModel = {
     return result.insertId;
   },
 
+  // Lấy danh sách sản phẩm bán chạy (số lần bán >= 10)
+  async laySanPhamBanChay(soLanToiThieu = 10) {
+    const query = `
+        SELECT sp.san_pham_id, SUM(ctdh.so_luong) as tong_ban
+        FROM san_pham sp
+        INNER JOIN chi_tiet_don_hang ctdh ON sp.san_pham_id = ctdh.san_pham_id
+        INNER JOIN don_hang dh ON ctdh.don_hang_id = dh.don_hang_id
+        WHERE dh.trang_thai = 'Đã thanh toán'
+        GROUP BY sp.san_pham_id
+        HAVING tong_ban >= ?
+        ORDER BY tong_ban DESC
+    `;
+    const [rows] = await db.query(query, [soLanToiThieu]);
+    return rows;
+  },
+
   // Cập nhật sản phẩm
   async update(id, { ten_san_pham, mo_ta, loai_id, hinh_anh, gia_co_ban }) {
     const [result] = await db.query(
@@ -34,6 +50,7 @@ export const ProductModel = {
     );
     return result.affectedRows;
   },
+  
 
   // Xóa sản phẩm
   async delete(id) {

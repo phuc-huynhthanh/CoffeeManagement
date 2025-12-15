@@ -68,7 +68,7 @@ app.use("/chitiettopping", ChiTietToppingRoutes);
 app.use("/thanhvien", ThanhVienRoutes);
 app.use("/view", ViewsRoutes);
 app.use("/doanhthuca", DoanhThuCaRoutes);
-app.use("/lichlamviec", LichLamViecRoutes);
+app.use("/lich-lam-viec", LichLamViecRoutes);
 app.use("/combo", ComboRoutes);
 
 // Test route

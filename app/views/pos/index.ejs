@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/assets/coffee.png" type="image/png" />
     <title>Brother's Hai Coffee</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       /* Toast Container */
@@ -154,6 +155,330 @@
         font-weight: bold;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       }
+      /* Badge Bán chạy */
+  .bestseller-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+    animation: pulse-badge 2s infinite;
+    z-index: 10;
+  }
+
+  @keyframes pulse-badge {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+  /* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet (768px - 1024px) */
+@media screen and (max-width: 1024px) {
+  /* Layout chính */
+  .main-container {
+    flex-direction: column;
+  }
+  
+  /* Phần sản phẩm chiếm full width */
+  .product-section {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Phần hóa đơn chuyển xuống dưới */
+  .bill-section {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 400px;
+    position: relative;
+  }
+  
+  /* Grid sản phẩm 3 cột */
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  /* Header responsive */
+  .header-container {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .header-left,
+  .header-right {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+/* Mobile Large (481px - 768px) */
+@media screen and (max-width: 768px) {
+  /* Grid sản phẩm 2 cột */
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  /* Sản phẩm nhỏ hơn */
+  .product {
+    padding: 12px;
+  }
+  
+  .product img {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .product h3 {
+    font-size: 14px;
+  }
+  
+  .product p {
+    font-size: 12px;
+  }
+  
+  /* Tab buttons */
+  .tab-button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  /* Search và Filter */
+  .search-filter-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .search-filter-container input,
+  .search-filter-container select {
+    width: 100%;
+  }
+  
+  /* Bill section */
+  .bill-section {
+    max-height: 350px;
+  }
+  
+  /* Buttons */
+  .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+  }
+  
+  /* Modal bàn */
+  .ban-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Header */
+  .header-container {
+    padding: 12px;
+  }
+  
+  #tenNhanVien {
+    font-size: 14px;
+  }
+}
+
+/* Mobile Small (320px - 480px) */
+@media screen and (max-width: 480px) {
+  /* Grid sản phẩm 1 cột hoặc 2 cột nhỏ */
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  /* Sản phẩm compact */
+  .product {
+    padding: 8px;
+  }
+  
+  .product img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .product h3 {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  
+  .product p {
+    font-size: 11px;
+  }
+  
+  /* Badge bán chạy nhỏ hơn */
+  .bestseller-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    top: 4px;
+    right: 4px;
+  }
+  
+  .combo-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+  
+  /* Tab buttons nhỏ hơn */
+  .tab-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  /* Bill items */
+  .bill-item {
+    padding: 8px;
+    font-size: 13px;
+  }
+  
+  .bill-item .flex {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* Tổng tiền */
+  .total-section {
+    padding: 12px;
+  }
+  
+  .total-section span {
+    font-size: 16px;
+  }
+  
+  /* Modal size/topping */
+  .size-modal > div {
+    width: 95%;
+    max-width: 350px;
+    margin: 10px;
+  }
+  
+  .size-modal h2 {
+    font-size: 16px;
+  }
+  
+  /* Modal thanh toán */
+  .payment-modal > div {
+    width: 95%;
+    padding: 16px;
+  }
+  
+  .payment-modal .flex-col.md\\:flex-row {
+    flex-direction: column;
+  }
+  
+  /* Modal bàn */
+  .ban-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .ban-grid > div {
+    padding: 8px;
+    font-size: 12px;
+  }
+  
+  /* Header compact */
+  .header-container {
+    padding: 8px 12px;
+  }
+  
+  #tenNhanVien {
+    font-size: 12px;
+  }
+  
+  #logoutBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Landscape mobile */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .main-container {
+    flex-direction: row;
+  }
+  
+  .product-section {
+    width: 60%;
+  }
+  
+  .bill-section {
+    width: 40%;
+    max-height: 100vh;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Touch-friendly: Tăng kích thước vùng click */
+@media (hover: none) and (pointer: coarse) {
+  .product {
+    min-height: 120px;
+  }
+  
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  input, select {
+    min-height: 44px;
+    font-size: 16px; /* Tránh zoom trên iOS */
+  }
+  
+  .tab-button {
+    min-height: 44px;
+  }
+}
+
+/* Ẩn scrollbar nhưng vẫn scroll được */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Utility classes cho responsive */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+@media screen and (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+}
     </style>
   </head>
   <body class="bg-gray-100 flex flex-col min-h-screen">
@@ -162,29 +487,29 @@
 
     <!-- Header -->
     <header
-      class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 flex justify-between items-center shadow-md fixed w-full z-[100]"
+      class="header-container bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 md:px-8 py-3 md:py-4 flex flex-col md:flex-row justify-between items-center shadow-md fixed w-full z-[100] gap-3 md:gap-0"
     >
-      <h1 class="text-2xl font-bold tracking-wide">☕Brother's Hai Coffee</h1>
-      <div class="flex gap-3 items-center">
+      <h1 class="text-xl md:text-2xl font-bold tracking-wide">☕Brother's Hai Coffee</h1>
+      <div class="header-right flex flex-wrap gap-2 md:gap-3 items-center justify-center w-full md:w-auto">
         <input
           id="search"
           type="text"
           placeholder="Tìm kiếm sản phẩm..."
-          class="px-4 py-2 rounded-lg text-gray-800 w-64 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          class="px-3 md:px-4 py-2 rounded-lg text-gray-800 w-full sm:w-40 md:w-64 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm md:text-base"
         />
-        <select id="filter" class="px-3 py-2 rounded-lg text-gray-800">
+        <select id="filter" class="px-2 md:px-3 py-2 rounded-lg text-gray-800 text-sm md:text-base">
           <option value="">Tất cả loại</option>
           <% loai.forEach(l => { %>
           <option value="<%= l %>"><%= l %></option>
           <% }) %>
         </select>
         <div
-          class="flex items-center gap-2 bg-white text-gray-800 px-3 py-1 rounded-full shadow-md"
+          class="flex items-center gap-2 bg-white text-gray-800 px-2 md:px-3 py-1 rounded-full shadow-md"
         >
-          <p id="tenNhanVien" class="font-semibold text-sm"></p>
+          <p id="tenNhanVien" class="font-semibold text-xs md:text-sm max-w-[80px] md:max-w-[150px] truncate"></p>
           <button
             id="logoutBtn"
-            class="ml-2 text-red-500 hover:text-red-700 font-semibold text-sm"
+            class="ml-1 md:ml-2 text-red-500 hover:text-red-700 font-semibold text-xs md:text-sm"
           >
             Đăng xuất
           </button>
@@ -193,38 +518,36 @@
     </header>
 
     <!-- Nội dung -->
-    <div class="flex flex-1 overflow-hidden ">
-      <div class="flex-1 flex flex-col">
+    <div class="main-container flex flex-1 overflow-hidden">
+      <div class="product-section flex-1 flex flex-col">
         <!-- Tab Navigation -->
-        <!-- Tab Navigation -->
-<div class="sticky top-20 z-20 bg-white flex border-b px-6 py-3 gap-4 !w-full !fixed -mt-2">
-  <button class="tab-button active px-4 py-2 rounded-t-xl font-semibold text-gray-700 hover:bg-blue-100 transition" data-tab="products">
-    🍵 Sản Phẩm
-  </button>
-  <button class="tab-button  px-4 py-2 rounded-t-xl font-semibold text-gray-700 hover:bg-blue-100 transition" data-tab="combos">
-    🎁 Combo
-  </button>
-</div>
-
+        <div class="sticky top-[120px] md:top-20 z-20 bg-white flex border-b px-4 md:px-6 py-2 md:py-3 gap-2 md:gap-4 !w-full !fixed -mt-2">
+          <button class="tab-button active px-3 md:px-4 py-2 rounded-t-xl font-semibold text-sm md:text-base text-gray-700 hover:bg-blue-100 transition" data-tab="products">
+            🍵 Sản Phẩm
+          </button>
+          <button class="tab-button px-3 md:px-4 py-2 rounded-t-xl font-semibold text-sm md:text-base text-gray-700 hover:bg-blue-100 transition" data-tab="combos">
+            🎁 Combo
+          </button>
+        </div>
 
         <!-- Tab Content -->
         <div class="flex-1 overflow-hidden">
-          <div id="products-tab" class="tab-content block h-full overflow-y-auto">
-            <div id="product-list" class="mt-32 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6 w-3/4">
+          <div id="products-tab" class="tab-content block h-full overflow-y-auto hide-scrollbar">
+            <div id="product-list" class="product-grid mt-36 md:mt-32 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 p-3 md:p-6 w-full lg:w-3/4">
               <% sanPham.forEach(p => { %>
-              <div class="product bg-white rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-4 relative"
+              <div class="product bg-white rounded-xl md:rounded-2xl shadow hover:shadow-xl hover:scale-105 transform transition cursor-pointer flex flex-col items-center text-center p-2 md:p-4 relative"
                 data-id="<%= p.san_pham_id %>" data-ten="<%= p.ten_san_pham %>" data-gia="<%= p.gia_co_ban %>" data-loai="<%= p.ten_loai %>">
-                <img src="<%= p.hinh_anh %>" alt="<%= p.ten_san_pham %>" class="w-28 h-28 object-cover rounded-xl mb-3"/>
-                <h3 class="text-lg font-semibold text-gray-800"><%= p.ten_san_pham %></h3>
-                <p class="text-gray-500 text-sm mb-1"><%= p.ten_loai %></p>
-                <p class="text-blue-600 font-bold"><%= Number(p.gia_co_ban).toLocaleString() %> đ</p>
+                <img src="<%= p.hinh_anh %>" alt="<%= p.ten_san_pham %>" class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-cover rounded-lg md:rounded-xl mb-2 md:mb-3"/>
+                <h3 class="text-sm md:text-lg font-semibold text-gray-800 line-clamp-2"><%= p.ten_san_pham %></h3>
+                <p class="text-gray-500 text-xs md:text-sm mb-1"><%= p.ten_loai %></p>
+                <p class="text-blue-600 font-bold text-sm md:text-base"><%= Number(p.gia_co_ban).toLocaleString() %> đ</p>
               </div>
               <% }) %>
             </div>
           </div>
 
-          <div id="combos-tab" class="tab-content hidden h-full overflow-y-auto">
-            <div id="combo-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 p-6 w-3/4 mt-32">
+          <div id="combos-tab" class="tab-content hidden h-full overflow-y-auto hide-scrollbar">
+            <div id="combo-list" class="product-grid grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 p-3 md:p-6 w-full lg:w-3/4 mt-36 md:mt-32">
               <!-- Combo được JS render vào đây -->
             </div>
           </div>
@@ -232,20 +555,19 @@
       </div>
 
       <!-- Hóa đơn -->
-      <aside id="billAside" class="w-full sm:w-96 bg-white shadow-xl border-l rounded-tl-2xl flex flex-col"
-        style="position: fixed; top: 80px; right: 0; height: 90vh; z-index: 50;">
-        <div class="p-4 bg-blue-600 text-white font-semibold text-lg flex-shrink-0 rounded-tl-2xl">Hóa đơn</div>
-        <div id="bill" class="flex-1 p-4 overflow-y-auto">
-          <p id="empty" class="text-gray-400 text-center mt-10">Chưa có sản phẩm nào</p>
+      <aside id="billAside" class="bill-section w-full sm:w-80 md:w-96 bg-white shadow-xl border-l rounded-tl-2xl flex flex-col fixed top-[120px] md:top-[80px] right-0 h-[calc(100vh-120px)] md:h-[90vh] z-50">
+        <div class="p-3 md:p-4 bg-blue-600 text-white font-semibold text-base md:text-lg flex-shrink-0 rounded-tl-2xl">Hóa đơn</div>
+        <div id="bill" class="flex-1 p-3 md:p-4 overflow-y-auto hide-scrollbar">
+          <p id="empty" class="text-gray-400 text-center mt-6 md:mt-10 text-sm md:text-base">Chưa có sản phẩm nào</p>
         </div>
-        <div class="border-t p-4 bg-gray-50 flex flex-col gap-2 flex-shrink-0">
-          <div class="flex justify-between mb-2 text-lg">
+        <div class="border-t p-3 md:p-4 bg-gray-50 flex flex-col gap-2 flex-shrink-0">
+          <div class="flex justify-between mb-1 md:mb-2 text-base md:text-lg">
             <span>Tổng tiền:</span>
             <span id="total" class="font-bold text-blue-600">0 đ</span>
           </div>
-          <button id="chooseTableBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text white py-3 rounded-xl font-semibold transition">Chọn bàn</button>
-          <button id="completeBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-semibold transition hidden">Hoàn tất</button>
-          <button id="viewTablesBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition">Xem danh sách bàn</button>
+          <button id="chooseTableBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 md:py-3 rounded-xl font-semibold transition text-sm md:text-base">Chọn bàn</button>
+          <button id="completeBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 md:py-3 rounded-xl font-semibold transition hidden text-sm md:text-base">Hoàn tất</button>
+          <button id="viewTablesBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 rounded-xl font-semibold transition text-sm md:text-base">Xem danh sách bàn</button>
         </div>
       </aside>
     </div>
@@ -253,16 +575,16 @@
     <!-- Modal danh sách bàn -->
     <div
       id="banContainer"
-      class="hidden fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40"
+      class="hidden fixed inset-0 flex items-center justify-center z-[200] bg-black bg-opacity-40 p-4"
     >
       <div
-        class="bg-white rounded-2xl shadow-xl p-6 w-11/12 max-w-5xl max-h-[80vh] overflow-y-auto"
+        class="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-full max-w-5xl max-h-[85vh] overflow-y-auto"
       >
-        <h2 class="text-lg font-semibold mb-4 text-center">Chọn bàn</h2>
-        <div id="banList" class="grid grid-cols-4 gap-4"></div>
+        <h2 class="text-base md:text-lg font-semibold mb-3 md:mb-4 text-center">Chọn bàn</h2>
+        <div id="banList" class="ban-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4"></div>
         <button
           id="closeBanBtn"
-          class="mt-4 w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300"
+          class="mt-3 md:mt-4 w-full bg-gray-200 py-2 md:py-3 rounded-lg hover:bg-gray-300 text-sm md:text-base"
         >
           Đóng
         </button>
@@ -272,31 +594,31 @@
     <!-- Modal xem danh sách bàn + món -->
     <div
       id="viewBanContainer"
-      class="hidden fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40"
+      class="hidden fixed inset-0 flex items-center justify-center z-[200] bg-black bg-opacity-40 p-4"
     >
       <div
-        class="bg-white rounded-2xl shadow-xl w-11/12 max-w-5xl h-[80vh] flex flex-col"
+        class="bg-white rounded-2xl shadow-xl w-full max-w-5xl h-[85vh] flex flex-col"
       >
         <!-- Header -->
-        <div class="p-6 border-b">
-          <h2 class="text-lg font-semibold text-center">Danh sách bàn</h2>
+        <div class="p-4 md:p-6 border-b flex-shrink-0">
+          <h2 class="text-base md:text-lg font-semibold text-center">Danh sách bàn</h2>
         </div>
 
         <!-- Nội dung bàn scrollable -->
-        <div id="viewBanList" class="p-6 flex-1 overflow-y-auto">
+        <div id="viewBanList" class="p-3 md:p-6 flex-1 overflow-y-auto hide-scrollbar">
           <div
             id="viewBanGrid"
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4"
           >
             <!-- Các bàn sẽ được JS render vào đây -->
           </div>
         </div>
 
         <!-- Footer: Nút Đóng cố định -->
-        <div class="p-4 border-t flex-shrink-0">
+        <div class="p-3 md:p-4 border-t flex-shrink-0">
           <button
             onclick="closeViewBanModal()"
-            class="w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300 font-semibold"
+            class="w-full bg-gray-200 py-2 md:py-3 rounded-lg hover:bg-gray-300 font-semibold text-sm md:text-base"
           >
             Đóng
           </button>
@@ -327,6 +649,50 @@
     warning(m, d) { this.show(m, 'warning', d); },
     info(m, d) { this.show(m, 'info', d); }
   };
+
+  // ============================================
+  // BESTSELLER SYSTEM (SẢN PHẨM BÁN CHẠY)
+  // ============================================
+  let sanPhamBanChay = [];
+
+  async function loadSanPhamBanChay() {
+    try {
+      const response = await fetch('/sanpham/ban-chay?min=10');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        sanPhamBanChay = result.data;
+        console.log('🔥 Sản phẩm bán chạy:', sanPhamBanChay);
+        updateBestsellerBadges();
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải sản phẩm bán chạy:', error);
+      sanPhamBanChay = [];
+    }
+  }
+
+  function laSanPhamBanChay(sanPhamId) {
+    return sanPhamBanChay.includes(Number(sanPhamId));
+  }
+
+  function updateBestsellerBadges() {
+    document.querySelectorAll('.product').forEach(el => {
+      const sanPhamId = el.dataset.id;
+      
+      // Xóa badge cũ nếu có
+      const oldBadge = el.querySelector('.bestseller-badge');
+      if (oldBadge) oldBadge.remove();
+      
+      // Thêm badge mới nếu là sản phẩm bán chạy
+      if (laSanPhamBanChay(sanPhamId)) {
+        const badge = document.createElement('div');
+        badge.className = 'bestseller-badge';
+        badge.innerHTML = '🔥 Bán chạy';
+        el.appendChild(badge);
+      }
+    });
+  }
+
   // ============================================
   // TAB SYSTEM
   // ============================================
@@ -546,6 +912,9 @@
     // Khởi tạo tabs và combo
     initTabs();
     loadCombos();
+    
+    // Load sản phẩm bán chạy
+    loadSanPhamBanChay();
 
     kichCoList = [];
     fetch("/kichco/laytatca")
@@ -852,6 +1221,7 @@
             const modal = document.createElement("div");
             modal.className =
               "fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40";
+              modal.style.zIndex = "9999"; // Đảm bảo z-index cao nhất
             modal.innerHTML = `
               <div class="bg-white rounded-2xl p-6 shadow-lg w-full max-w-2xl mx-auto">
                 <div class="flex flex-col md:flex-row gap-6">
@@ -930,7 +1300,7 @@
                 Toast.error("❌ Không thể kết nối đến server!");
               }
             });
-
+            
             modal.querySelector("#searchMemberBtn").addEventListener("click", async () => {
               const sdt = modal.querySelector("#memberPhoneInput").value.trim();
               if (!sdt) {
@@ -1064,6 +1434,9 @@
                   localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
                   renderViewBan();
                   renderBan();
+                  
+                  // Reload danh sách sản phẩm bán chạy sau khi thanh toán
+                  loadSanPhamBanChay();
                 } else {
                   Toast.error("Lỗi khi lưu đơn hàng: " + (data.message || JSON.stringify(data)));
                   console.error(data);
@@ -1316,6 +1689,9 @@
               delete hoaDonTheoBan[banIdFromUrl];
               localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
               sessionStorage.removeItem(`pending_order_${banIdFromUrl}`);
+              
+              // Reload danh sách sản phẩm bán chạy sau khi thanh toán
+              loadSanPhamBanChay();
               
               Toast.success("🎉 Thanh toán thành công!", 2000);
               setTimeout(() => {
