@@ -2,14 +2,15 @@
 import { LuongModel } from "../models/Luong.model.js";
 
 export const LuongController = {
-  async layTatCa(req, res) {
-    try {
-      const data = await LuongModel.layTatCa();
-      res.json(data);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
+async layTatCa(req, res) {
+  try {
+    const { thang, nam } = req.query;
+    const data = await LuongModel.layTatCa(thang, nam);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+},
 
   async timTheoId(req, res) {
     try {
@@ -73,4 +74,28 @@ export const LuongController = {
       res.status(500).json({ error: error.message });
     }
   },
+    // 🔒 CHỐT LƯƠNG
+  async chotLuong(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          error: "Thiếu luong_id"
+        });
+      }
+
+      const data = await LuongModel.chotLuong(id);
+
+      res.json({
+        message: "Chốt lương thành công",
+        data
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error.message
+      });
+    }
+  }
+
 };

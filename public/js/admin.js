@@ -1695,7 +1695,7 @@ window.addEventListener('childTabChanged', (e) => {
       // loadSchedules();
       break;
     case 'luong':
-      // loadPayrolls();
+      loadLuong();
       break;
     case 'doanh-thu':
       // loadRevenues();
@@ -1705,6 +1705,9 @@ window.addEventListener('childTabChanged', (e) => {
       break;
     case 'khuyen-mai':
       // loadDiscounts();
+      break;
+    case 'thuong-phat':
+        loadThuongPhat();
       break;
   }
 });
@@ -4286,3 +4289,969 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 //============================================== Lương =============================================
+// QUẢN LÝ THƯỞNG PHẠT
+// ============================================
+
+const THUONG_PHAT_API = "/chitietthuongphat";
+const LUONG_API_TP = "/luong";
+
+let allThuongPhat = [];
+let allLuongForSelect = [];
+let employeesForThuongPhat = [];
+
+// Load danh sách thưởng phạt
+async function loadThuongPhat() {
+    try {
+        const res = await fetch(`${THUONG_PHAT_API}/laytatca`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        allThuongPhat = Array.isArray(data) ? data : (data.data || []);
+
+        console.log("✓ Đã tải danh sách thưởng phạt:", allThuongPhat.length);
+        
+        // Load thêm dữ liệu liên quan
+        await loadLuongForSelect();
+        
+        renderThuongPhatTable(allThuongPhat);
+        calculateThuongPhatStats();
+    } catch (error) {
+        console.error("❌ Lỗi loadThuongPhat:", error);
+        showToast("Không thể tải danh sách thưởng phạt", "error");
+
+        const tbody = document.getElementById("thuongPhatTable");
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-red-500">❌ Lỗi tải dữ liệu</td></tr>`;
+        }
+    }
+}
+
+// Load danh sách lương cho select
+async function loadLuongForSelect() {
+    try {
+        const res = await fetch(`${LUONG_API_TP}/laytatca`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        allLuongForSelect = Array.isArray(data) ? data : (data.data || []);
+
+        // Load thêm danh sách nhân viên để hiển thị tên
+        const resNV = await fetch("/nhanvien/laytatca");
+        const dataNV = await resNV.json();
+        employeesForThuongPhat = Array.isArray(dataNV) ? dataNV : (dataNV.data || []);
+
+        populateLuongSelects();
+    } catch (error) {
+        console.error("❌ Lỗi loadLuongForSelect:", error);
+    }
+}
+
+// Populate các select lương
+function populateLuongSelects() {
+    const select = document.getElementById("thuongPhatLuongId");
+    const filterSelect = document.getElementById("filterThuongPhatLuong");
+
+    if (select) {
+        select.innerHTML = '<option value="">-- Chọn bảng lương --</option>';
+        allLuongForSelect.forEach(luong => {
+            const nv = employeesForThuongPhat.find(e => e.nhan_vien_id === luong.nhan_vien_id);
+            const tenNV = nv ? nv.ho_ten : `NV #${luong.nhan_vien_id}`;
+            select.innerHTML += `<option value="${luong.luong_id}">${tenNV} - Tháng ${luong.thang}/${luong.nam}</option>`;
+        });
+    }
+
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">-- Tất cả --</option>';
+        allLuongForSelect.forEach(luong => {
+            const nv = employeesForThuongPhat.find(e => e.nhan_vien_id === luong.nhan_vien_id);
+            const tenNV = nv ? nv.ho_ten : `NV #${luong.nhan_vien_id}`;
+            filterSelect.innerHTML += `<option value="${luong.luong_id}">${tenNV} - ${luong.thang}/${luong.nam}</option>`;
+        });
+    }
+}
+
+// Render bảng thưởng phạt
+function renderThuongPhatTable(items) {
+    const tbody = document.getElementById("thuongPhatTable");
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-8 text-gray-500">
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="text-4xl">📋</span>
+                        <span>Chưa có dữ liệu thưởng phạt</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    items.forEach((item, index) => {
+        const soTien = Number(item.so_tien || 0).toLocaleString('vi-VN');
+        const ngayApDung = item.ngay_ap_dung
+            ? new Date(item.ngay_ap_dung).toLocaleDateString('vi-VN')
+            : '—';
+
+        const isThuong = item.loai === 'Thuong' || item.loai === 'thuong';
+        const loaiClass = isThuong ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+        const loaiText = isThuong ? '🎁 Thưởng' : '⚠️ Phạt';
+        const soTienClass = isThuong ? 'text-green-600' : 'text-red-600';
+        const soTienPrefix = isThuong ? '+' : '-';
+
+        // Tìm thông tin bảng lương và nhân viên
+        const luong = allLuongForSelect.find(l => l.luong_id === item.luong_id);
+        let luongInfo = `#${item.luong_id}`;
+        if (luong) {
+            const nv = employeesForThuongPhat.find(e => e.nhan_vien_id === luong.nhan_vien_id);
+            const tenNV = nv ? nv.ho_ten : `NV #${luong.nhan_vien_id}`;
+            luongInfo = `${tenNV} - T${luong.thang}/${luong.nam}`;
+        }
+
+        html += `
+            <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3 text-center text-gray-600">${index + 1}</td>
+                <td class="px-4 py-3">
+                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm font-medium">
+                        ${luongInfo}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-center">
+                    <span class="${loaiClass} px-3 py-1 rounded-full text-sm font-semibold">
+                        ${loaiText}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <span class="${soTienClass} font-bold text-lg">${soTienPrefix}${soTien}đ</span>
+                </td>
+                <td class="px-4 py-3 text-gray-700 max-w-xs">
+                    <span class="line-clamp-2" title="${item.ly_do || ''}">${item.ly_do || '—'}</span>
+                </td>
+                <td class="px-4 py-3 text-center text-sm text-gray-500">${ngayApDung}</td>
+                <td class="px-4 py-3 text-center">
+                    <div class="flex gap-1 justify-center">
+                        <button onclick="editThuongPhat(${item.chi_tiet_id})" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm transition-colors">
+                            ✏️ Sửa
+                        </button>
+                        <button onclick="deleteThuongPhat(${item.chi_tiet_id})" 
+                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-sm transition-colors">
+                            🗑️ Xóa
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+// Tính thống kê thưởng phạt
+function calculateThuongPhatStats() {
+    const totalThuong = allThuongPhat
+        .filter(item => item.loai === 'Thuong' || item.loai === 'thuong')
+        .reduce((sum, item) => sum + Number(item.so_tien || 0), 0);
+
+    const totalPhat = allThuongPhat
+        .filter(item => item.loai === 'Phat' || item.loai === 'phat')
+        .reduce((sum, item) => sum + Number(item.so_tien || 0), 0);
+
+    const countThuong = allThuongPhat.filter(item => item.loai === 'Thuong' || item.loai === 'thuong').length;
+    const countPhat = allThuongPhat.filter(item => item.loai === 'Phat' || item.loai === 'phat').length;
+
+    const statTotalThuong = document.getElementById("statTotalThuong");
+    const statTotalPhat = document.getElementById("statTotalPhat");
+    const statCountThuong = document.getElementById("statCountThuong");
+    const statCountPhat = document.getElementById("statCountPhat");
+
+    if (statTotalThuong) statTotalThuong.textContent = '+' + totalThuong.toLocaleString('vi-VN') + 'đ';
+    if (statTotalPhat) statTotalPhat.textContent = '-' + totalPhat.toLocaleString('vi-VN') + 'đ';
+    if (statCountThuong) statCountThuong.textContent = countThuong;
+    if (statCountPhat) statCountPhat.textContent = countPhat;
+}
+
+// Lọc thưởng phạt
+function filterThuongPhat() {
+    const filterLoai = document.getElementById("filterThuongPhatLoai")?.value;
+    const filterLuong = document.getElementById("filterThuongPhatLuong")?.value;
+
+    let filtered = [...allThuongPhat];
+
+    if (filterLoai) {
+        filtered = filtered.filter(item => item.loai === filterLoai);
+    }
+
+    if (filterLuong) {
+        filtered = filtered.filter(item => item.luong_id === parseInt(filterLuong));
+    }
+
+    renderThuongPhatTable(filtered);
+}
+
+// Reset bộ lọc
+function resetThuongPhatFilter() {
+    const filterLoai = document.getElementById("filterThuongPhatLoai");
+    const filterLuong = document.getElementById("filterThuongPhatLuong");
+
+    if (filterLoai) filterLoai.value = "";
+    if (filterLuong) filterLuong.value = "";
+
+    renderThuongPhatTable(allThuongPhat);
+}
+
+// Mở modal thêm thưởng phạt
+async function openAddThuongPhatModal() {
+    document.getElementById("thuongPhatModalTitle").textContent = "Thêm thưởng/phạt";
+    document.getElementById("thuongPhatForm").reset();
+    document.getElementById("thuongPhatId").value = "";
+
+    // Set ngày hiện tại
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("thuongPhatNgay").value = today;
+
+    await loadLuongForSelect();
+    document.getElementById("thuongPhatModal").classList.remove("hidden");
+    document.getElementById("thuongPhatModal").classList.add("flex");
+}
+
+// Đóng modal
+function closeThuongPhatModal() {
+    document.getElementById("thuongPhatModal").classList.add("hidden");
+    document.getElementById("thuongPhatModal").classList.remove("flex");
+}
+
+// Sửa thưởng phạt - SỬA ENDPOINT
+async function editThuongPhat(chiTietId) {
+    try {
+        // ✅ Đổi từ /layid/ sang /timtheoid/
+        const res = await fetch(`${THUONG_PHAT_API}/timtheoid/${chiTietId}`);
+        if (!res.ok) throw new Error("Không thể tải dữ liệu");
+
+        const item = await res.json();
+
+        await loadLuongForSelect();
+
+        document.getElementById("thuongPhatModalTitle").textContent = "Sửa thưởng/phạt";
+        document.getElementById("thuongPhatId").value = item.chi_tiet_id;
+        document.getElementById("thuongPhatLuongId").value = item.luong_id;
+        document.getElementById("thuongPhatLoai").value = item.loai;
+        document.getElementById("thuongPhatSoTien").value = item.so_tien;
+        document.getElementById("thuongPhatLyDo").value = item.ly_do || "";
+
+        if (item.ngay_ap_dung) {
+            const date = new Date(item.ngay_ap_dung).toISOString().split('T')[0];
+            document.getElementById("thuongPhatNgay").value = date;
+        }
+
+        document.getElementById("thuongPhatModal").classList.remove("hidden");
+        document.getElementById("thuongPhatModal").classList.add("flex");
+    } catch (error) {
+        console.error("❌ Lỗi editThuongPhat:", error);
+        showToast("Không thể tải dữ liệu", "error");
+    }
+}
+
+// Xóa thưởng phạt
+async function deleteThuongPhat(chiTietId) {
+    if (!confirm("Bạn có chắc muốn xóa mục thưởng/phạt này?")) return;
+
+    try {
+        const res = await fetch(`${THUONG_PHAT_API}/xoa/${chiTietId}`, { method: "DELETE" });
+
+        const result = await res.json();
+        
+        if (!res.ok) {
+            throw new Error(result.error || result.message || "Không thể xóa");
+        }
+
+        showToast("Xóa thành công!", "success");
+        loadThuongPhat();
+    } catch (error) {
+        console.error("❌ Lỗi deleteThuongPhat:", error);
+        showToast("Lỗi: " + error.message, "error");
+    }
+}
+
+// Submit form thưởng phạt - SỬA ENDPOINT
+document.addEventListener("DOMContentLoaded", function () {
+    const thuongPhatForm = document.getElementById("thuongPhatForm");
+    if (thuongPhatForm) {
+        thuongPhatForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const chiTietId = document.getElementById("thuongPhatId").value;
+            const luongId = document.getElementById("thuongPhatLuongId").value;
+            const loai = document.getElementById("thuongPhatLoai").value;
+            const soTien = document.getElementById("thuongPhatSoTien").value;
+            const lyDo = document.getElementById("thuongPhatLyDo").value.trim();
+            const ngayApDung = document.getElementById("thuongPhatNgay").value;
+
+            if (!luongId || !loai || !soTien) {
+                showToast("Vui lòng điền đầy đủ thông tin bắt buộc!", "error");
+                return;
+            }
+
+            const payload = {
+                luong_id: parseInt(luongId),
+                loai: loai,
+                so_tien: parseFloat(soTien),
+                ly_do: lyDo || null,
+                ngay_ap_dung: ngayApDung || null
+            };
+
+            console.log("📤 Payload gửi đi:", payload);
+
+            try {
+                // ✅ Đổi từ /sua/ sang /capnhat/
+                const url = chiTietId
+                    ? `${THUONG_PHAT_API}/capnhat/${chiTietId}`
+                    : `${THUONG_PHAT_API}/them`;
+                const method = chiTietId ? "PUT" : "POST";
+
+                console.log("📤 URL:", url, "Method:", method);
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json();
+                console.log("📥 Response:", result);
+
+                if (!res.ok) {
+                    throw new Error(result.error || result.message || "Lỗi khi lưu");
+                }
+
+                showToast(chiTietId ? "Cập nhật thành công!" : "Thêm thành công!", "success");
+                closeThuongPhatModal();
+                loadThuongPhat();
+            } catch (error) {
+                console.error("❌ Lỗi submit thưởng phạt:", error);
+                showToast("Lỗi: " + error.message, "error");
+            }
+        });
+    }
+});
+
+// Export functions to window
+window.openAddThuongPhatModal = openAddThuongPhatModal;
+window.closeThuongPhatModal = closeThuongPhatModal;
+window.editThuongPhat = editThuongPhat;
+window.deleteThuongPhat = deleteThuongPhat;
+window.filterThuongPhat = filterThuongPhat;
+window.resetThuongPhatFilter = resetThuongPhatFilter;
+window.loadThuongPhat = loadThuongPhat;
+
+//=========================Quan ly luong =============================
+// ...existing code...
+
+// ============================================
+// QUẢN LÝ LƯƠNG
+// ============================================
+
+const LUONG_API = "/luong";
+
+let allLuong = [];
+let employeesForLuong = [];
+
+// Load danh sách lương
+async function loadLuong() {
+    try {
+        const res = await fetch(`${LUONG_API}/laytatca`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        allLuong = Array.isArray(data) ? data : (data.data || []);
+
+        console.log("✓ Đã tải danh sách lương:", allLuong.length);
+
+        // Load nhân viên cho select
+        await loadEmployeesForLuong();
+
+        renderLuongTable(allLuong);
+        calculateLuongStats();
+    } catch (error) {
+        console.error("❌ Lỗi loadLuong:", error);
+        showToast("Không thể tải danh sách lương", "error");
+
+        const tbody = document.getElementById("luongTable");
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-red-500">❌ Lỗi tải dữ liệu</td></tr>`;
+        }
+    }
+}
+
+// Load danh sách nhân viên cho select
+async function loadEmployeesForLuong() {
+    try {
+        const res = await fetch("/nhanvien/laytatca");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        employeesForLuong = Array.isArray(data) ? data : (data.data || []);
+
+        populateLuongEmployeeSelects();
+    } catch (error) {
+        console.error("❌ Lỗi loadEmployeesForLuong:", error);
+    }
+}
+
+// Populate select nhân viên
+function populateLuongEmployeeSelects() {
+    const select = document.getElementById("luongNhanVienId");
+    const filterSelect = document.getElementById("filterLuongNhanVien");
+
+    if (select) {
+        select.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
+        employeesForLuong.forEach(nv => {
+            select.innerHTML += `<option value="${nv.nhan_vien_id}">${nv.ho_ten} (${nv.sdt || 'N/A'})</option>`;
+        });
+    }
+
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">-- Tất cả --</option>';
+        employeesForLuong.forEach(nv => {
+            filterSelect.innerHTML += `<option value="${nv.nhan_vien_id}">${nv.ho_ten}</option>`;
+        });
+    }
+}
+
+// Render bảng lương
+function renderLuongTable(items) {
+    const tbody = document.getElementById("luongTable");
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center py-8 text-gray-500">
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="text-4xl">💰</span>
+                        <span>Chưa có dữ liệu lương</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    items.forEach((item, index) => {
+        const luongCoBan = Number(item.luong_co_ban || 0).toLocaleString('vi-VN');
+        const tongThuong = Number(item.tong_thuong || 0).toLocaleString('vi-VN');
+        const tongPhat = Number(item.tong_phat || 0).toLocaleString('vi-VN');
+        const tongLuong = Number(item.tong_luong || 0).toLocaleString('vi-VN');
+        const ngayTinhLuong = item.ngay_tinh_luong
+            ? new Date(item.ngay_tinh_luong).toLocaleDateString('vi-VN')
+            : '—';
+
+        // Sử dụng tên từ JOIN hoặc fallback
+        const tenNhanVien = item.ten_nhan_vien || `NV #${item.nhan_vien_id}`;
+
+        html += `
+            <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                <td class="px-3 py-3 text-center text-gray-600">${index + 1}</td>
+                <td class="px-3 py-3">
+                    <div class="font-medium text-gray-800">${tenNhanVien}</div>
+                    <div class="text-xs text-gray-500">${item.sdt_nhan_vien || ''}</div>
+                </td>
+                <td class="px-3 py-3 text-center">
+                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm font-medium">
+                        T${item.thang}/${item.nam}
+                    </span>
+                </td>
+                <td class="px-3 py-3 text-right font-medium text-gray-700">${luongCoBan}đ</td>
+                <td class="px-3 py-3 text-center">
+                    <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-sm font-semibold">
+                        ${item.so_ca_lam || 0}
+                    </span>
+                </td>
+                <td class="px-3 py-3 text-right text-green-600 font-medium">+${tongThuong}đ</td>
+                <td class="px-3 py-3 text-right text-red-600 font-medium">-${tongPhat}đ</td>
+                <td class="px-3 py-3 text-right">
+                    <span class="text-lg font-bold text-orange-600">${tongLuong}đ</span>
+                </td>
+                <td class="px-3 py-3 text-center text-sm text-gray-500">${ngayTinhLuong}</td>
+                <td class="px-3 py-3 text-center">
+                    <div class="flex gap-1 justify-center">
+                        <button onclick="viewLuongDetail(${item.luong_id})" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-2 py-1.5 rounded text-sm transition-colors" title="Chi tiết">
+                            👁️
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+// Tính thống kê lương
+function calculateLuongStats() {
+    const totalLuong = allLuong.reduce((sum, item) => sum + Number(item.tong_luong || 0), 0);
+    const totalThuong = allLuong.reduce((sum, item) => sum + Number(item.tong_thuong || 0), 0);
+    const totalPhat = allLuong.reduce((sum, item) => sum + Number(item.tong_phat || 0), 0);
+    const totalCaLam = allLuong.reduce((sum, item) => sum + Number(item.so_ca_lam || 0), 0);
+
+    const statTotalLuong = document.getElementById("statTotalLuong");
+    const statTotalThuongLuong = document.getElementById("statTotalThuongLuong");
+    const statTotalPhatLuong = document.getElementById("statTotalPhatLuong");
+    const statTotalCaLam = document.getElementById("statTotalCaLam");
+
+    if (statTotalLuong) statTotalLuong.textContent = totalLuong.toLocaleString('vi-VN') + 'đ';
+    if (statTotalThuongLuong) statTotalThuongLuong.textContent = '+' + totalThuong.toLocaleString('vi-VN') + 'đ';
+    if (statTotalPhatLuong) statTotalPhatLuong.textContent = '-' + totalPhat.toLocaleString('vi-VN') + 'đ';
+    if (statTotalCaLam) statTotalCaLam.textContent = totalCaLam + ' ca';
+}
+
+// Lọc lương
+function filterLuong() {
+    const filterThang = document.getElementById("filterLuongThang")?.value;
+    const filterNam = document.getElementById("filterLuongNam")?.value;
+    const filterNhanVien = document.getElementById("filterLuongNhanVien")?.value;
+
+    let filtered = [...allLuong];
+
+    if (filterThang) {
+        filtered = filtered.filter(item => item.thang === parseInt(filterThang));
+    }
+
+    if (filterNam) {
+        filtered = filtered.filter(item => item.nam === parseInt(filterNam));
+    }
+
+    if (filterNhanVien) {
+        filtered = filtered.filter(item => item.nhan_vien_id === parseInt(filterNhanVien));
+    }
+
+    renderLuongTable(filtered);
+}
+
+// Reset bộ lọc
+function resetLuongFilter() {
+    const filterThang = document.getElementById("filterLuongThang");
+    const filterNam = document.getElementById("filterLuongNam");
+    const filterNhanVien = document.getElementById("filterLuongNhanVien");
+
+    if (filterThang) filterThang.value = "";
+    if (filterNam) filterNam.value = "";
+    if (filterNhanVien) filterNhanVien.value = "";
+
+    renderLuongTable(allLuong);
+}
+
+// Mở modal thêm lương
+// async function openAddLuongModal() {
+//     document.getElementById("luongModalTitle").textContent = "Thêm bảng lương";
+//     document.getElementById("luongForm").reset();
+//     document.getElementById("luongId").value = "";
+
+//     // Set tháng/năm hiện tại
+//     const now = new Date();
+//     document.getElementById("luongThang").value = now.getMonth() + 1;
+//     document.getElementById("luongNam").value = now.getFullYear();
+
+//     // Reset preview
+//     updateLuongPreview();
+
+//     await loadEmployeesForLuong();
+//     document.getElementById("luongModal").classList.remove("hidden");
+//     document.getElementById("luongModal").classList.add("flex");
+// }
+
+// Đóng modal
+function closeLuongModal() {
+    document.getElementById("luongModal").classList.add("hidden");
+    document.getElementById("luongModal").classList.remove("flex");
+}
+
+// Xem chi tiết lương (hiển thị chi tiết thưởng phạt)
+async function viewLuongDetail(luongId) {
+    try {
+        // Lấy thông tin lương
+        const resLuong = await fetch(`${LUONG_API}/timtheoid/${luongId}`);
+        if (!resLuong.ok) throw new Error("Không thể tải thông tin lương");
+        const luong = await resLuong.json();
+
+        // Lấy chi tiết thưởng phạt của bảng lương này
+        const resTP = await fetch(`/chitietthuongphat/timkiem`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ luong_id: luongId })
+        });
+
+        let chiTietTP = [];
+        if (resTP.ok) {
+            chiTietTP = await resTP.json();
+        }
+
+        // Hiển thị modal chi tiết
+        showLuongDetailModal(luong, chiTietTP);
+    } catch (error) {
+        console.error("❌ Lỗi viewLuongDetail:", error);
+        showToast("Không thể tải chi tiết lương", "error");
+    }
+}
+
+// Hiển thị modal chi tiết lương
+function showLuongDetailModal(luong, chiTietTP) {
+    const tenNV = luong.ten_nhan_vien || `NV #${luong.nhan_vien_id}`;
+
+    let tpHtml = '';
+    if (chiTietTP && chiTietTP.length > 0) {
+        chiTietTP.forEach(tp => {
+            const isThuong = tp.loai === 'Thuong' || tp.loai === 'thuong';
+            const icon = isThuong ? '🎁' : '⚠️';
+            const colorClass = isThuong ? 'text-green-600' : 'text-red-600';
+            const prefix = isThuong ? '+' : '-';
+            const ngay = tp.ngay_ap_dung ? new Date(tp.ngay_ap_dung).toLocaleDateString('vi-VN') : '—';
+
+            tpHtml += `
+                <tr class="border-b">
+                    <td class="py-2">${icon} ${isThuong ? 'Thưởng' : 'Phạt'}</td>
+                    <td class="py-2 ${colorClass} font-medium">${prefix}${Number(tp.so_tien).toLocaleString('vi-VN')}đ</td>
+                    <td class="py-2 text-gray-600">${tp.ly_do || '—'}</td>
+                    <td class="py-2 text-gray-500 text-sm">${ngay}</td>
+                </tr>
+            `;
+        });
+    } else {
+        tpHtml = `<tr><td colspan="4" class="py-4 text-center text-gray-500">Không có chi tiết thưởng phạt</td></tr>`;
+    }
+
+    const modalHtml = `
+        <div id="luongDetailModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold">💰 Chi tiết lương - ${tenNV}</h3>
+                        <button onclick="closeLuongDetailModal()" class="text-white/80 hover:text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <!-- Thông tin chung -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Kỳ lương</p>
+                            <p class="text-lg font-bold text-blue-600">Tháng ${luong.thang}/${luong.nam}</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Số ca làm</p>
+                            <p class="text-lg font-bold text-purple-600">${luong.so_ca_lam || 0} ca</p>
+                        </div>
+                    </div>
+
+                    <!-- Bảng tính lương -->
+                    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                        <h4 class="font-semibold text-gray-700 mb-3">📊 Bảng tính lương</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Lương cơ bản:</span>
+                                <span class="font-medium">${Number(luong.luong_co_ban).toLocaleString('vi-VN')}đ</span>
+                            </div>
+                            <div class="flex justify-between text-green-600">
+                                <span>Tổng thưởng:</span>
+                                <span class="font-medium">+${Number(luong.tong_thuong).toLocaleString('vi-VN')}đ</span>
+                            </div>
+                            <div class="flex justify-between text-red-600">
+                                <span>Tổng phạt:</span>
+                                <span class="font-medium">-${Number(luong.tong_phat).toLocaleString('vi-VN')}đ</span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="flex justify-between text-lg">
+                                <span class="font-bold text-gray-800">TỔNG LƯƠNG:</span>
+                                <span class="font-bold text-orange-600">${Number(luong.tong_luong).toLocaleString('vi-VN')}đ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chi tiết thưởng phạt -->
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-3">📋 Chi tiết thưởng/phạt</h4>
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="py-2 px-2 text-left">Loại</th>
+                                    <th class="py-2 px-2 text-left">Số tiền</th>
+                                    <th class="py-2 px-2 text-left">Lý do</th>
+                                    <th class="py-2 px-2 text-left">Ngày</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tpHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById("luongDetailModal");
+    if (existingModal) existingModal.remove();
+
+    // Add new modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// Đóng modal chi tiết lương
+function closeLuongDetailModal() {
+    const modal = document.getElementById("luongDetailModal");
+    if (modal) modal.remove();
+}
+
+// Sửa lương
+async function editLuong(luongId) {
+    try {
+        const res = await fetch(`${LUONG_API}/timtheoid/${luongId}`);
+        if (!res.ok) throw new Error("Không thể tải dữ liệu");
+
+        const item = await res.json();
+
+        await loadEmployeesForLuong();
+
+        document.getElementById("luongModalTitle").textContent = "Sửa bảng lương";
+        document.getElementById("luongId").value = item.luong_id;
+        document.getElementById("luongNhanVienId").value = item.nhan_vien_id;
+        document.getElementById("luongThang").value = item.thang;
+        document.getElementById("luongNam").value = item.nam;
+        document.getElementById("luongCoBan").value = item.luong_co_ban;
+        document.getElementById("luongSoCaLam").value = item.so_ca_lam || 0;
+        document.getElementById("luongTongThuong").value = item.tong_thuong || 0;
+        document.getElementById("luongTongPhat").value = item.tong_phat || 0;
+
+        updateLuongPreview();
+
+        document.getElementById("luongModal").classList.remove("hidden");
+        document.getElementById("luongModal").classList.add("flex");
+    } catch (error) {
+        console.error("❌ Lỗi editLuong:", error);
+        showToast("Không thể tải dữ liệu lương", "error");
+    }
+}
+
+// Xóa lương
+async function deleteLuong(luongId) {
+    if (!confirm("Bạn có chắc muốn xóa bảng lương này?\n⚠️ Các chi tiết thưởng/phạt liên quan cũng sẽ bị xóa!")) return;
+
+    try {
+        const res = await fetch(`${LUONG_API}/xoa/${luongId}`, { method: "DELETE" });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            throw new Error(result.error || result.message || "Không thể xóa");
+        }
+
+        showToast("Xóa bảng lương thành công!", "success");
+        loadLuong();
+    } catch (error) {
+        console.error("❌ Lỗi deleteLuong:", error);
+        showToast("Lỗi: " + error.message, "error");
+    }
+}
+
+// Cập nhật preview tổng lương
+function updateLuongPreview() {
+    const luongCoBan = parseFloat(document.getElementById("luongCoBan")?.value) || 0;
+    const tongThuong = parseFloat(document.getElementById("luongTongThuong")?.value) || 0;
+    const tongPhat = parseFloat(document.getElementById("luongTongPhat")?.value) || 0;
+
+    const tongLuong = luongCoBan + tongThuong - tongPhat;
+
+    const previewEl = document.getElementById("luongTongLuongPreview");
+    if (previewEl) {
+        previewEl.textContent = tongLuong.toLocaleString('vi-VN') + 'đ';
+        previewEl.className = tongLuong >= 0
+            ? "text-2xl font-bold text-green-600"
+            : "text-2xl font-bold text-red-600";
+    }
+}
+
+// Submit form lương
+document.addEventListener("DOMContentLoaded", function () {
+    const luongForm = document.getElementById("luongForm");
+    if (luongForm) {
+        luongForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const luongId = document.getElementById("luongId").value;
+            const nhanVienId = document.getElementById("luongNhanVienId").value;
+            const thang = document.getElementById("luongThang").value;
+            const nam = document.getElementById("luongNam").value;
+            const luongCoBan = document.getElementById("luongCoBan").value;
+            const soCaLam = document.getElementById("luongSoCaLam").value || 0;
+            const tongThuong = document.getElementById("luongTongThuong").value || 0;
+            const tongPhat = document.getElementById("luongTongPhat").value || 0;
+
+            if (!nhanVienId || !thang || !nam || !luongCoBan) {
+                showToast("Vui lòng điền đầy đủ thông tin bắt buộc!", "error");
+                return;
+            }
+
+            const tongLuong = parseFloat(luongCoBan) + parseFloat(tongThuong) - parseFloat(tongPhat);
+
+            const payload = {
+                nhan_vien_id: parseInt(nhanVienId),
+                thang: parseInt(thang),
+                nam: parseInt(nam),
+                luong_co_ban: parseFloat(luongCoBan),
+                so_ca_lam: parseInt(soCaLam),
+                tong_thuong: parseFloat(tongThuong),
+                tong_phat: parseFloat(tongPhat),
+                tong_luong: tongLuong,
+                ngay_tinh_luong: new Date().toISOString().split('T')[0]
+            };
+
+            console.log("📤 Payload gửi đi:", payload);
+
+            try {
+                const url = luongId
+                    ? `${LUONG_API}/capnhat/${luongId}`
+                    : `${LUONG_API}/them`;
+                const method = luongId ? "PUT" : "POST";
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json();
+                console.log("📥 Response:", result);
+
+                if (!res.ok) {
+                    throw new Error(result.error || result.message || "Lỗi khi lưu");
+                }
+
+                showToast(luongId ? "Cập nhật lương thành công!" : "Thêm lương thành công!", "success");
+                closeLuongModal();
+                loadLuong();
+            } catch (error) {
+                console.error("❌ Lỗi submit lương:", error);
+                showToast("Lỗi: " + error.message, "error");
+            }
+        });
+    }
+
+    // Event listeners cho tính tổng lương tự động
+    ["luongCoBan", "luongTongThuong", "luongTongPhat"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", updateLuongPreview);
+        }
+    });
+});
+
+// Export functions to window
+// window.openAddLuongModal = openAddLuongModal;
+window.closeLuongModal = closeLuongModal;
+// window.editLuong = editLuong;
+// window.deleteLuong = deleteLuong;
+window.viewLuongDetail = viewLuongDetail;
+window.closeLuongDetailModal = closeLuongDetailModal;
+window.filterLuong = filterLuong;
+window.resetLuongFilter = resetLuongFilter;
+window.loadLuong = loadLuong;
+// window.updateLuongPreview = updateLuongPreview;
+
+
+//=========================Send mail Luong =============================
+async function guiBangLuongToanBo() {
+  if (!confirm("Bạn có chắc muốn gửi bảng lương cho toàn bộ nhân viên?")) return;
+
+  const thang = document.getElementById("filterLuongThang").value;
+  const nam = document.getElementById("filterLuongNam").value;
+
+  try {
+    const res = await fetch(
+      `http://localhost:3000/luong/laytatca?thang=${thang}&nam=${nam}`
+    );
+    const data = await res.json();
+
+    if (!data.length) {
+      alert("Không có dữ liệu lương để gửi");
+      return;
+    }
+
+    // Gửi mail từng nhân viên
+    for (const luong of data) {
+      const html = taoNoiDungEmailLuong(luong);
+
+      await fetch("http://localhost:3000/mail/sendmail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: luong.email_nhan_vien,
+          subject: `Bảng lương ${luong.thang}/${luong.nam}`,
+          html,
+        }),
+      });
+    }
+
+showToast("✅ Đã gửi bảng lương thành công!", "success");  } catch (err) {
+    console.error(err);
+    showToast("❌ Lỗi khi gửi bảng lương", "error");
+  }
+}
+function taoNoiDungEmailLuong(luong) {
+  return `
+  <div style="max-width:600px;margin:auto;font-family:Arial,sans-serif;
+              background:#fff;border-radius:16px;padding:24px;
+              box-shadow:0 20px 40px rgba(0,0,0,.15)">
+    <h2 style="color:#ea580c;text-align:center;margin-bottom:20px">
+      💰 BẢNG LƯƠNG ${luong.thang}/${luong.nam}
+    </h2>
+
+    <p><strong>👤 Nhân viên:</strong> ${luong.ten_nhan_vien}</p>
+    <p><strong>📞 SĐT:</strong> ${luong.sdt_nhan_vien}</p>
+
+    <hr style="margin:16px 0">
+
+    <table width="100%" cellpadding="8" cellspacing="0"
+           style="border-collapse:collapse">
+      <tr>
+        <td>Lương cơ bản</td>
+        <td align="right">${luong.luong_co_ban.toLocaleString()} đ</td>
+      </tr>
+      <tr>
+        <td>Số ca làm</td>
+        <td align="right">${luong.so_ca_lam} ca</td>
+      </tr>
+      <tr>
+        <td>Thưởng</td>
+        <td align="right" style="color:green">
+          +${luong.tong_thuong.toLocaleString()} đ
+        </td>
+      </tr>
+      <tr>
+        <td>Phạt</td>
+        <td align="right" style="color:red">
+          -${luong.tong_phat.toLocaleString()} đ
+        </td>
+      </tr>
+      <tr style="font-weight:bold;border-top:1px solid #ddd">
+        <td>TỔNG LƯƠNG</td>
+        <td align="right" style="color:#ea580c">
+          ${luong.tong_luong.toLocaleString()} đ
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin-top:20px;font-size:13px;color:#666;text-align:center">
+      Ngày tính lương: ${new Date(luong.ngay_tinh_luong).toLocaleDateString("vi-VN")}
+    </p>
+  </div>
+  `;
+}
