@@ -496,19 +496,11 @@
     <div class="main-container flex flex-1 overflow-hidden">
       <div class="product-section flex-1 flex flex-col">
         <!-- Tab Navigation -->
-        <div
-          class="sticky top-[120px] md:top-20 z-20 bg-white flex border-b px-4 md:px-6 py-2 md:py-3 gap-2 md:gap-4 !w-full !fixed -mt-2"
-        >
-          <button
-            class="tab-button active px-3 md:px-4 py-2 rounded-t-xl font-semibold text-sm md:text-base text-gray-700 hover:bg-blue-100 transition"
-            data-tab="products"
-          >
+        <div class="sticky top-[120px] md:top-20 z-20 bg-white flex border-b px-4 md:px-6 py-2 md:py-3 gap-2 md:gap-4 !w-full !fixed -mt-2">
+          <button class="tab-button active px-3 md:px-4 py-2 rounded-t-xl font-semibold text-sm md:text-base text-gray-700 hover:bg-blue-100 transition" data-tab="products">
             🍵 Sản Phẩm
           </button>
-          <button
-            class="tab-button px-3 md:px-4 py-2 rounded-t-xl font-semibold text-sm md:text-base text-gray-700 hover:bg-blue-100 transition"
-            data-tab="combos"
-          >
+          <button class="tab-button px-3 md:px-4 py-2 rounded-t-xl font-semibold text-sm md:text-base text-gray-700 hover:bg-blue-100 transition" data-tab="combos">
             🎁 Combo
           </button>
         </div>
@@ -555,9 +547,7 @@
         id="billAside"
         class="bill-section w-full sm:w-80 md:w-96 bg-white shadow-xl border-l rounded-tl-2xl flex flex-col fixed top-[120px] md:top-[80px] right-0 h-[calc(100vh-120px)] md:h-[90vh] z-50"
       >
-        <div class="p-3 md:p-4 bg-blue-600 text-white font-semibold text-base md:text-lg flex-shrink-0 rounded-tl-2xl">
-          Hóa đơn
-        </div>
+        <div class="p-3 md:p-4 bg-blue-600 text-white font-semibold text-base md:text-lg flex-shrink-0 rounded-tl-2xl">Hóa đơn</div>
         <div id="bill" class="flex-1 p-3 md:p-4 overflow-y-auto hide-scrollbar">
           <p id="empty" class="text-gray-400 text-center mt-6 md:mt-10 text-sm md:text-base">Chưa có sản phẩm nào</p>
         </div>
@@ -566,22 +556,13 @@
             <span>Tổng tiền:</span>
             <span id="total" class="font-bold text-blue-600">0 đ</span>
           </div>
-          <button
-            id="chooseTableBtn"
-            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 md:py-3 rounded-xl font-semibold transition text-sm md:text-base"
-          >
+          <button id="chooseTableBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 md:py-3 rounded-xl font-semibold transition text-sm md:text-base">
             Chọn bàn
           </button>
-          <button
-            id="completeBtn"
-            class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 md:py-3 rounded-xl font-semibold transition hidden text-sm md:text-base"
-          >
+          <button id="completeBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 md:py-3 rounded-xl font-semibold transition hidden text-sm md:text-base">
             Hoàn tất
           </button>
-          <button
-            id="viewTablesBtn"
-            class="w-full bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 rounded-xl font-semibold transition text-sm md:text-base"
-          >
+          <button id="viewTablesBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 rounded-xl font-semibold transition text-sm md:text-base">
             Xem danh sách bàn
           </button>
         </div>
@@ -593,9 +574,7 @@
       <div class="bg-white rounded-2xl shadow-xl p-4 md:p-6 w-full max-w-5xl max-h-[85vh] overflow-y-auto">
         <h2 class="text-base md:text-lg font-semibold mb-3 md:mb-4 text-center">Chọn bàn</h2>
         <div id="banList" class="ban-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4"></div>
-        <button id="closeBanBtn" class="mt-3 md:mt-4 w-full bg-gray-200 py-2 md:py-3 rounded-lg hover:bg-gray-300 text-sm md:text-base">
-          Đóng
-        </button>
+        <button id="closeBanBtn" class="mt-3 md:mt-4 w-full bg-gray-200 py-2 md:py-3 rounded-lg hover:bg-gray-300 text-sm md:text-base">Đóng</button>
       </div>
     </div>
 
@@ -611,9 +590,7 @@
         </div>
 
         <div class="p-3 md:p-4 border-t flex-shrink-0">
-          <button onclick="closeViewBanModal()" class="w-full bg-gray-200 py-2 md:py-3 rounded-lg hover:bg-gray-300 font-semibold text-sm md:text-base">
-            Đóng
-          </button>
+          <button onclick="closeViewBanModal()" class="w-full bg-gray-200 py-2 md:py-3 rounded-lg hover:bg-gray-300 font-semibold text-sm md:text-base">Đóng</button>
         </div>
       </div>
     </div>
@@ -641,18 +618,10 @@
           toast.classList.add("toast-exit");
           setTimeout(() => toast.remove(), 300);
         },
-        success(m, d) {
-          this.show(m, "success", d);
-        },
-        error(m, d) {
-          this.show(m, "error", d);
-        },
-        warning(m, d) {
-          this.show(m, "warning", d);
-        },
-        info(m, d) {
-          this.show(m, "info", d);
-        },
+        success(m, d) { this.show(m, "success", d); },
+        error(m, d) { this.show(m, "error", d); },
+        warning(m, d) { this.show(m, "warning", d); },
+        info(m, d) { this.show(m, "info", d); },
       };
 
       // ============================================
@@ -904,7 +873,7 @@
       }
 
       // ==========================
-      // MEMBER DISCOUNT (THEO BẬC) - FIX CHUẨN
+      // MEMBER DISCOUNT (THEO BẬC)
       // ==========================
       const MEMBER_DISCOUNT = {
         tierMap: null,
@@ -1210,6 +1179,31 @@
           viewBanContainerEl.classList.remove("hidden");
         });
 
+        // ✅ THÊM: hàm xóa món khỏi bàn
+        function xoaMonKhoiBan(banId, tenBan) {
+          const current = JSON.parse(localStorage.getItem("hoaDonTheoBan")) || {};
+          const list = current[banId] || [];
+
+          if (!list.length) {
+            Toast.warning("Bàn này chưa có món để xóa!");
+            return;
+          }
+
+          const ok = confirm(`Bạn có chắc muốn xóa toàn bộ món của ${tenBan} không?`);
+          if (!ok) return;
+
+          delete current[banId];
+          localStorage.setItem("hoaDonTheoBan", JSON.stringify(current));
+
+          // cập nhật biến đang dùng
+          hoaDonTheoBan = current;
+
+          // render lại UI
+          renderViewBan();
+          renderBan();
+          Toast.success(`Đã xóa món của ${tenBan}`);
+        }
+
         function renderViewBan() {
           const viewBanGrid = document.getElementById("viewBanGrid");
           viewBanGrid.innerHTML = "";
@@ -1241,10 +1235,22 @@
               });
               div.appendChild(ul);
 
+              // Nút thanh toán
               const payBtn = document.createElement("button");
               payBtn.className =
                 "absolute top-2 right-2 w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center font-semibold";
               payBtn.textContent = "💰";
+
+              // ✅ NÚT XÓA NGAY DƯỚI NÚT THANH TOÁN
+              const delBtn = document.createElement("button");
+              delBtn.className =
+                "absolute top-14 right-2 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center font-semibold";
+              delBtn.textContent = "🗑️";
+              delBtn.title = "Xóa món khỏi bàn";
+
+              delBtn.addEventListener("click", () => {
+                xoaMonKhoiBan(ban.ban_id, ban.ten_ban);
+              });
 
               payBtn.addEventListener("click", () => {
                 const modal = document.createElement("div");
@@ -1310,7 +1316,6 @@
                       const monAn = hoaDonTheoBan[ban.ban_id] || [];
                       const tongTienBan = calcTongTienBan(monAn);
 
-                      // ✅ Ghi đè % giảm theo mã (không cập nhật totalEl ngoài bill)
                       applyPercentDiscountToModal(modal, tongTienBan, Number(data.data.phan_tram_giam), "🎟️ Mã KM:");
                     } else {
                       Toast.error("❌ Mã khuyến mãi không hợp lệ hoặc đã được sử dụng!");
@@ -1339,22 +1344,17 @@
                     modal.querySelector("#memberName").textContent = `👤 ${member.ho_ten}`;
                     modal.dataset.memberId = member.thanh_vien_id;
 
-                    // Lưu bac_id
                     modal.dataset.bacId = member.bac_id ?? "";
 
-                    // Tính tổng tiền bàn
                     const monAn = hoaDonTheoBan[ban.ban_id] || [];
                     const tongTienBan = calcTongTienBan(monAn);
 
-                    // Lấy % giảm theo bậc
                     const percentTier = await MEMBER_DISCOUNT.getDiscountByBacId(member.bac_id);
 
-                    // Chỉ áp bậc nếu chưa áp mã (ưu tiên mã)
                     const hasPromoApplied = !!modal.dataset.mucGiamGiaId;
                     if (!hasPromoApplied) {
                       applyPercentDiscountToModal(modal, tongTienBan, percentTier, "🎖️ Theo bậc:");
                     } else {
-                      // Nếu đã áp mã thì chỉ hiển thị thông báo tìm thấy member
                       Toast.info("Đã tìm thấy thành viên (đang áp dụng ưu đãi theo mã KM)!");
                     }
 
@@ -1365,10 +1365,8 @@
                     modal.querySelector("#memberDiscountInfo").textContent = "";
                     modal.dataset.memberId = "";
                     modal.dataset.bacId = "";
-                    // reset giảm
                     delete modal.dataset.phanTramGiam;
                     delete modal.dataset.tienSauGiam;
-                    // không reset mucGiamGiaId ở đây (tùy bạn), mình giữ nguyên hành vi
                     console.error(err);
                   }
                 });
@@ -1385,11 +1383,6 @@
 
                   const phanTramGiam = modal.dataset.phanTramGiam ? Number(modal.dataset.phanTramGiam) : 0;
                   const tienSauGiam = tongTienBan * (1 - phanTramGiam / 100);
-
-                  console.log("💰 Tổng tiền trước giảm:", tongTienBan.toLocaleString() + " đ");
-                  if (phanTramGiam > 0) {
-                    console.log(`💸 Áp dụng giảm ${phanTramGiam}% -> Tổng tiền sau giảm:`, tienSauGiam.toLocaleString() + " đ");
-                  }
 
                   const chiTiet = [];
                   monAn.forEach((item) => {
@@ -1463,8 +1456,6 @@
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(thanhVien),
                         });
-
-                        console.log("✅ Cập nhật mã giảm giá thành công:", thanhVien);
                       }
 
                       delete hoaDonTheoBan[ban.ban_id];
@@ -1496,11 +1487,6 @@
 
                   const phanTramGiam = modal.dataset.phanTramGiam ? Number(modal.dataset.phanTramGiam) : 0;
                   const tienSauGiam = tongTienBan * (1 - phanTramGiam / 100);
-
-                  console.log("💰 Tổng tiền trước giảm:", tongTienBan.toLocaleString() + " đ");
-                  if (phanTramGiam > 0) {
-                    console.log(`💸 Áp dụng giảm ${phanTramGiam}% -> Tổng tiền sau giảm:`, tienSauGiam.toLocaleString() + " đ");
-                  }
 
                   const payosItems = [];
                   monAn.forEach((item) => {
@@ -1535,8 +1521,6 @@
                     cancelUrl: `${window.location.origin}/view/pos?payment=cancel`,
                     items: payosItems,
                   };
-
-                  console.log("📦 Payload gửi đến PayOS:", JSON.stringify(payosPayload, null, 2));
 
                   const chiTiet = [];
                   monAn.forEach((item) => {
@@ -1590,7 +1574,6 @@
                     chi_tiet: chiTiet,
                   };
 
-                  console.log("💾 Order data được lưu vào sessionStorage:", orderData);
                   sessionStorage.setItem(`pending_order_${ban.ban_id}`, JSON.stringify(orderData));
 
                   try {
@@ -1601,10 +1584,7 @@
                     });
 
                     const data = await res.json();
-                    console.log("📡 Response data:", data);
-
                     if (data.error === 0 && data.data?.checkoutUrl) {
-                      console.log("✅ Tạo payment link thành công:", data.data.checkoutUrl);
                       Toast.success("Đang chuyển đến trang thanh toán...");
                       modal.remove();
                       setTimeout(() => {
@@ -1623,6 +1603,7 @@
               });
 
               div.appendChild(payBtn);
+              div.appendChild(delBtn); // ✅ thêm nút xóa
             }
 
             viewBanGrid.appendChild(div);
@@ -1665,8 +1646,6 @@
             if (orderData) {
               orderData.trang_thai = "Đã thanh toán";
 
-              console.log("💳 Đơn hàng chuẩn bị lưu:", orderData);
-
               try {
                 const res = await fetch("http://localhost:3000/donhang/them", {
                   method: "POST",
@@ -1675,8 +1654,6 @@
                 });
 
                 if (res.ok) {
-                  console.log("✅ Đơn hàng đã được lưu thành công!");
-
                   if (orderData.muc_giam_gia_id && orderData.thanh_vien_id) {
                     const updatePayload = {
                       thanh_vien_id: orderData.thanh_vien_id,
@@ -1684,15 +1661,11 @@
                       ten_thanh_vien: orderData.ten_thanh_vien || "Thành viên",
                     };
 
-                    console.log("🎟️ Cập nhật mã giảm giá:", updatePayload);
-
                     await fetch(`http://localhost:3000/mucgiamgia/capnhatthongtin/${orderData.muc_giam_gia_id}`, {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify(updatePayload),
                     });
-
-                    console.log("✅ Đã cập nhật mã giảm giá thành công!");
                   }
 
                   delete hoaDonTheoBan[banIdFromUrl];
@@ -1706,8 +1679,6 @@
                     window.location.href = "/view/pos";
                   }, 2000);
                 } else {
-                  const errorData = await res.json();
-                  console.error("❌ Lỗi từ server:", errorData);
                   Toast.error("Lỗi khi lưu đơn hàng!");
                   setTimeout(() => {
                     window.location.href = "/view/pos";
@@ -1721,7 +1692,6 @@
                 }, 2000);
               }
             } else {
-              console.warn("⚠️ Không tìm thấy pending order trong sessionStorage");
               setTimeout(() => {
                 window.location.href = "/view/pos";
               }, 1000);
@@ -1733,6 +1703,11 @@
             window.location.href = "/view/pos";
           }, 2000);
         }
+
+        // ✅ đóng modal chọn bàn (bạn có nút nhưng chưa gắn event trong bản gửi)
+        document.getElementById("closeBanBtn").addEventListener("click", () => {
+          banContainerEl.classList.add("hidden");
+        });
       });
     </script>
   </body>

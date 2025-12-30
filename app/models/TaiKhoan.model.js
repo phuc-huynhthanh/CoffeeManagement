@@ -80,16 +80,28 @@ async layTatCaChiTiet() {
     return result.insertId;
   },
 
-  // ✏️ Cập nhật tài khoản
-  async capNhat(id, { ten_dang_nhap, mat_khau, vai_tro_id }) {
+// ✏️ Cập nhật tài khoản (mat_khau optional)
+async capNhat(id, { ten_dang_nhap, mat_khau, vai_tro_id }) {
+  // Nếu mat_khau = null/undefined/"" -> không cập nhật mật khẩu
+  if (!mat_khau) {
     const [result] = await db.query(
       `UPDATE tai_khoan
-       SET ten_dang_nhap = ?, mat_khau = ?, vai_tro_id = ?
+       SET ten_dang_nhap = ?, vai_tro_id = ?
        WHERE tai_khoan_id = ?`,
-      [ten_dang_nhap, mat_khau, vai_tro_id, id]
+      [ten_dang_nhap, vai_tro_id, id]
     );
     return result.affectedRows;
-  },
+  }
+
+  // Có mat_khau -> cập nhật cả mật khẩu (đã hash từ controller)
+  const [result] = await db.query(
+    `UPDATE tai_khoan
+     SET ten_dang_nhap = ?, mat_khau = ?, vai_tro_id = ?
+     WHERE tai_khoan_id = ?`,
+    [ten_dang_nhap, mat_khau, vai_tro_id, id]
+  );
+  return result.affectedRows;
+},
 
   // ❌ Xóa tài khoản
   async xoa(id) {

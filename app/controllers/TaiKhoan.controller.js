@@ -74,28 +74,52 @@ async layTatCaChiTiet(req, res, next) {
     }
   },
 
-  // ✏️ Cập nhật tài khoản
-  async capNhat(req, res, next) {
-    try {
-      const { id } = req.params;
-      const { ten_dang_nhap, mat_khau, vai_tro_id } = req.body;
 
-      const soDong = await TaiKhoanModel.capNhat(id, {
-        ten_dang_nhap,
-        mat_khau,
-        vai_tro_id,
-      });
+// ✏️ Cập nhật tài khoản (Sửa theo id)
+async capNhat(req, res, next) {
+  try {
+    const { id } = req.params;
+    let { ten_dang_nhap, mat_khau, vai_tro_id } = req.body;
 
-      if (!soDong)
-        return res
-          .status(404)
-          .json({ thong_bao: "Không tìm thấy tài khoản để cập nhật" });
-
-      res.json({ thong_bao: "Cập nhật tài khoản thành công" });
-    } catch (loi) {
-      next(loi);
+    if (!id) return res.status(400).json({ thong_bao: "Thiếu ID tài khoản" });
+    if (!ten_dang_nhap || !vai_tro_id) {
+      return res.status(400).json({ thong_bao: "Thiếu ten_dang_nhap hoặc vai_tro_id" });
     }
-  },
+
+    // 1) kiểm tra tài khoản tồn tại
+    const taiKhoanCu = await TaiKhoanModel.timTheoId(id);
+    if (!taiKhoanCu) {
+      return res.status(404).json({ thong_bao: "Không tìm thấy tài khoản để cập nhật" });
+    }
+
+    // 2) check trùng tên đăng nhập (nếu đổi)
+    const tonTai = await TaiKhoanModel.timMot({ ten_dang_nhap });
+    if (tonTai && Number(tonTai.tai_khoan_id) !== Number(id)) {
+      return res.status(409).json({ thong_bao: "Tên đăng nhập đã tồn tại" });
+    }
+
+    // 3) nếu có nhập mật khẩu thì hash, không thì bỏ qua (giữ nguyên)
+    let mat_khau_hash = null;
+    if (mat_khau && String(mat_khau).trim() !== "") {
+      mat_khau_hash = await bcrypt.hash(mat_khau, 10);
+    }
+
+    const soDong = await TaiKhoanModel.capNhat(id, {
+      ten_dang_nhap,
+      mat_khau: mat_khau_hash, // null nghĩa là không update mật khẩu
+      vai_tro_id,
+    });
+
+    if (!soDong) {
+      return res.status(400).json({ thong_bao: "Cập nhật thất bại" });
+    }
+
+    res.json({ thong_bao: "Cập nhật tài khoản thành công" });
+  } catch (loi) {
+    next(loi);
+  }
+},
+
 
   // ❌ Xóa tài khoản
   async xoa(req, res, next) {

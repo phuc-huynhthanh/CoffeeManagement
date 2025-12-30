@@ -1158,6 +1158,46 @@
       </form>
     </div>
   </div>
+  <!-- Modal Sửa tài khoản -->
+<div id="modalSuaTaiKhoan" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white w-full max-w-lg rounded-xl shadow-lg p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Sửa tài khoản</h2>
+      <button onclick="dongModalSuaTaiKhoan()" class="text-gray-500 hover:text-gray-800 text-xl">&times;</button>
+    </div>
+
+    <form id="formSuaTaiKhoan" class="space-y-4">
+      <input type="hidden" id="edit_tai_khoan_id" />
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Tên đăng nhập</label>
+        <input id="edit_ten_dang_nhap" class="w-full border rounded-lg px-3 py-2" placeholder="VD: ngoc123" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Mật khẩu (để trống nếu không đổi)</label>
+        <input id="edit_mat_khau" type="password" class="w-full border rounded-lg px-3 py-2" placeholder="VD: 123456" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Vai trò ID</label>
+        <input id="edit_vai_tro_id" class="w-full border rounded-lg px-3 py-2" placeholder="VD: 4" />
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="dongModalSuaTaiKhoan()"
+          class="px-4 py-2 rounded-lg border hover:bg-gray-50">
+          Hủy
+        </button>
+        <button type="submit"
+          class="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white">
+          Lưu
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
     <!-- Modal Bậc thành viên -->
     <div id="tierModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">

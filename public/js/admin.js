@@ -134,6 +134,7 @@
         const nv = item.nhan_vien;
         const tk = item.tai_khoan;
         const canDelete = tk?.ten_vai_tro !== "Admin";
+        const canUpdate = tk?.ten_vai_tro !== "Admin";
 
         const row = document.createElement("tr");
         row.classList.add("hover:bg-gray-50");
@@ -146,6 +147,14 @@
           <td class="px-4 py-3">${tk?.ten_dang_nhap || "—"}</td>
           <td class="px-4 py-3 text-center">
             ${
+              canUpdate
+                ? `<button onclick="moModalSuaTaiKhoan(${tk?.tai_khoan_id})"
+                      class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mr-2">
+                      Sửa
+                      </button>`
+                : `<span class="text-gray-400 italic mr-2">Không thể sửa</span>`
+            }
+            ${
               canDelete
                 ? `<button onclick="xoaTaiKhoan(${tk.tai_khoan_id})" 
                      class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
@@ -153,6 +162,7 @@
                    </button>`
                 : `<span class="text-gray-400 italic">Không thể xóa</span>`
             }
+            
           </td>
         `;
         tbody.appendChild(row);
@@ -163,7 +173,95 @@
     }
   }
 
-  // Xóa tài khoản
+function moModalSuaTaiKhoanUI() {
+  const modal = document.getElementById("modalSuaTaiKhoan");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+function dongModalSuaTaiKhoan() {
+  const modal = document.getElementById("modalSuaTaiKhoan");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+async function moModalSuaTaiKhoan(id) {
+  // mở modal
+  moModalSuaTaiKhoanUI();
+
+  // lưu ID vào input hidden
+  document.getElementById("edit_tai_khoan_id").value = id;
+
+  // reset form
+  document.getElementById("edit_ten_dang_nhap").value = "";
+  document.getElementById("edit_mat_khau").value = "";
+  document.getElementById("edit_vai_tro_id").value = "";
+
+  try {
+    const res = await fetch(`http://localhost:3000/taikhoan/${id}`);
+    const data = await res.json();
+
+    // API của bạn trả về trực tiếp taiKhoan
+    document.getElementById("edit_ten_dang_nhap").value =
+      data.ten_dang_nhap || "";
+
+    document.getElementById("edit_vai_tro_id").value =
+      data.vai_tro_id || "";
+  } catch (err) {
+    // console.error("❌ Không lấy được dữ liệu tài khoản:", err);
+    // showToast("❌ Không lấy được dữ liệu tài khoản", "error");
+  }
+}
+document
+  .getElementById("formSuaTaiKhoan")
+  .addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById("edit_tai_khoan_id").value;
+    const ten_dang_nhap = document
+      .getElementById("edit_ten_dang_nhap")
+      .value.trim();
+    const mat_khau = document
+      .getElementById("edit_mat_khau")
+      .value.trim();
+    const vai_tro_id = document
+      .getElementById("edit_vai_tro_id")
+      .value.trim();
+
+    if (!ten_dang_nhap || !vai_tro_id) {
+      showToast("❌ Vui lòng nhập đủ thông tin", "error");
+      return;
+    }
+
+    const payload = {
+      ten_dang_nhap,
+      vai_tro_id,
+    };
+
+    // chỉ gửi mật khẩu nếu có nhập
+    if (mat_khau) payload.mat_khau = mat_khau;
+
+    try {
+      const res = await fetch(
+        `http://localhost:3000/taikhoan/sua/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.thong_bao);
+
+      showToast("✅ Cập nhật tài khoản thành công", "success");
+      dongModalSuaTaiKhoan();
+      loadAccounts(); // reload bảng
+    } catch (err) {
+      console.error("❌ Lỗi sửa:", err);
+      showToast("❌ " + err.message, "error");
+    }
+  });
+
   // Xóa tài khoản (thêm debug)
 async function xoaTaiKhoan(id) {
   console.log("🧩 Đang yêu cầu xóa tài khoản ID:", id);
