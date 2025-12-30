@@ -183,6 +183,7 @@
         </a>
         <ul class="space-y-2 px-4 mt-2 child-list hidden" data-parent-list="thanh-vien">
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="thanh-vien">- Thành viên</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="bac-thanh-vien">- Bậc thành viên</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="khuyen-mai">- Khuyến mãi</a></li>
         </ul>
       </li>
@@ -899,26 +900,117 @@
   <!-- Parent: Quản lý thành viên -->
   <section id="parent-thanh-vien" class="parent-section hidden">
     <!-- Tab: Quản lý thành viên -->
-    <div id="tab-thanh-vien" class="tab-content active">
+    <div id="tab-thanh-vien" class="tab-content hidden">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800">👥 Quản lý thành viên</h2>
+      <p class="text-gray-500 text-sm mt-1">Hệ thống phân bậc: Đồng → Bạc → Vàng → Kim Cương</p>
+    </div>
+    <div class="flex gap-3">
+      <select id="filterMemberTier" onchange="filterMembersByTier(this.value)" 
+              class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-300">
+        <option value="all">Tất cả bậc</option>
+        <option value="Đồng">🥉 Đồng</option>
+        <option value="Bạc">🥈 Bạc</option>
+        <option value="Vàng">🥇 Vàng</option>
+        <option value="Kim Cương">💎 Kim Cương</option>
+      </select>
+      <button id="btnAddMember" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+        + Thêm thành viên
+      </button>
+    </div>
+  </div>
+
+  <!-- Thống kê bậc thành viên -->
+  <div id="memberTierStats" class="mb-6">
+    <!-- Sẽ được render bởi JavaScript -->
+  </div>
+
+  <!-- Bảng quy đổi điểm -->
+  <div class="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-xl mb-6 border border-orange-200">
+    <h3 class="font-semibold text-gray-800 mb-3">📊 Bảng quy đổi điểm & ưu đãi</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="bg-white p-3 rounded-lg border border-amber-300">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">🥉</span>
+          <span class="font-bold text-amber-600">Đồng</span>
+        </div>
+        <p class="text-sm text-gray-600">0 - 119 điểm</p>
+        <p class="text-green-600 font-semibold">Giảm 5%</p>
+      </div>
+      <div class="bg-white p-3 rounded-lg border border-gray-300">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">🥈</span>
+          <span class="font-bold text-gray-500">Bạc</span>
+        </div>
+        <p class="text-sm text-gray-600">120 - 239 điểm</p>
+        <p class="text-green-600 font-semibold">Giảm 10%</p>
+      </div>
+      <div class="bg-white p-3 rounded-lg border border-yellow-300">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">🥇</span>
+          <span class="font-bold text-yellow-500">Vàng</span>
+        </div>
+        <p class="text-sm text-gray-600">240 - 499 điểm</p>
+        <p class="text-green-600 font-semibold">Giảm 15%</p>
+      </div>
+      <div class="bg-white p-3 rounded-lg border border-blue-300">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">💎</span>
+          <span class="font-bold text-blue-500">Kim Cương</span>
+        </div>
+        <p class="text-sm text-gray-600">500+ điểm</p>
+        <p class="text-green-600 font-semibold">Giảm 20%</p>
+      </div>
+    </div>
+    <p class="text-xs text-gray-500 mt-3">💡 Quy đổi: 1.000đ = 1 điểm tích lũy</p>
+  </div>
+
+  <!-- Bảng thành viên -->
+  <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">#</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Họ tên</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">SĐT</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Email</th>
+            <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">Điểm</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Bậc & Tiến trình</th>
+            <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">Tổng chi tiêu</th>
+            <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="memberTable">
+          <!-- Data will be loaded by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+    <!-- Tab: Bậc thành viên -->
+    <div id="tab-bac-thanh-vien" class="tab-content hidden">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold text-gray-700">Quản lý thành viên</h2>
-        <button id="btnAddMember" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-md">
-          + Thêm thành viên
+        <h2 class="text-xl font-semibold text-gray-700">Bậc thành viên</h2>
+        <button id="btnAddTier" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-md">
+          + Thêm bậc thành viên
         </button>
       </div>
+
       <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
         <table class="min-w-full text-left border border-gray-200">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-3 border-b">STT</th>
-              <th class="px-4 py-3 border-b">Họ tên</th>
-              <th class="px-4 py-3 border-b">Số điện thoại</th>
-              <th class="px-4 py-3 border-b">Email</th>
-              <th class="px-4 py-3 border-b">Tổng đơn đã mua</th>
+              <th class="px-4 py-3 border-b">Tên bậc</th>
+              <th class="px-4 py-3 border-b">Điểm tối thiểu</th>
+              <th class="px-4 py-3 border-b">Phần trăm giảm</th>
               <th class="px-4 py-3 border-b text-center">Thao tác</th>
             </tr>
           </thead>
-          <tbody id="memberTable" class="divide-y"></tbody>
+          <tbody id="tierTable" class="divide-y"></tbody>
         </table>
       </div>
     </div>
@@ -1066,6 +1158,58 @@
       </form>
     </div>
   </div>
+
+    <!-- Modal Bậc thành viên -->
+    <div id="tierModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+      <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+        <h3 id="tierModalTitle" class="text-lg font-semibold mb-4">Thêm bậc thành viên</h3>
+        <form id="tierForm" class="space-y-4">
+          <input type="hidden" id="tierId" name="id">
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Tên bậc</label>
+            <input type="text" id="tierName" name="ten_bac"
+                   class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="VD: Vàng" required>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Điểm tối thiểu</label>
+            <input type="number" id="tierMinPoints" name="diem_toi_thieu"
+                   class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="VD: 240" required>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Phần trăm giảm (%)</label>
+            <input type="number" id="tierDiscount" name="phan_tram_giam" step="0.1"
+                   class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="VD: 15" required>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Mã icon (tùy chọn)</label>
+            <input type="text" id="tierIcon" name="ma_icon"
+                   class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="VD: 🥇">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Mã màu (tùy chọn)</label>
+            <input type="text" id="tierColor" name="ma_mau"
+                   class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="VD: bg-yellow-500">
+          </div>
+
+          <div class="flex justify-end space-x-2">
+            <button type="button" id="btnCancelTier"
+                    class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+            <button type="submit"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
    </div>
 
    <!-- Modal thêm sản phẩm -->
@@ -1309,10 +1453,6 @@
       <div>
         <label class="block text-sm font-medium text-gray-700">Email</label>
         <input type="email" id="memberEmail" name="email" class="mt-1 w-full border-gray-300 rounded-lg p-2 border">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Tổng đơn đã mua</label>
-        <input type="number" id="memberTotal" name="tong_don_da_mua" class="mt-1 w-full border-gray-300 rounded-lg p-2 border bg-gray-100" placeholder="Tự động" readonly>
       </div>
 
       <div class="flex justify-end space-x-2">

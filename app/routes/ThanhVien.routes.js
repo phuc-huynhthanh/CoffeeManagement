@@ -5,10 +5,13 @@ const router = express.Router();
 
 router.get("/laytatca", ThanhVienController.layTatCa);
 router.get("/layid/:id", ThanhVienController.timTheoId);
+router.post("/recalc-all", ThanhVienController.recalcAll);
 router.get("/timtheosdt/:sdt", ThanhVienController.timTheoSDT); // <-- API mới
 router.post("/them", ThanhVienController.themMoi);
 router.put("/sua/:id", ThanhVienController.capNhat);
 router.delete("/xoa/:id", ThanhVienController.xoa);
 router.post("/timkiem", ThanhVienController.timTheoDieuKien);
+
+
 
 export default router;

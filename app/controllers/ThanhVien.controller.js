@@ -77,4 +77,13 @@ export const ThanhVienController = {
       res.status(400).json({ error: error.message });
     }
   },
+  async recalcAll(req, res) {
+  try {
+    const n = await ThanhVien.recalcAll();
+    res.json({ message: "Recalc xong", total: n });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
 };

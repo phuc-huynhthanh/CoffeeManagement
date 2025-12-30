@@ -94,17 +94,18 @@ async timTheoMaKhuyenMai(ma_khuyen_mai) {
 },
 // MucGiamGia.model.js
 async kiemTraTheoThanhVien(ma_khuyen_mai, thanh_vien_id) {
+    // Kiểm tra mã khuyến mãi hợp lệ:
+    // 1. Mã chưa hết hạn (ngay_het_han >= CURDATE() hoặc NULL)
+    // 2. Mã chưa được sử dụng (da_su_dung = FALSE)
+    // 3. Mã dành cho thành viên cụ thể (thanh_vien_id khớp) HOẶC dành cho tất cả (thanh_vien_id IS NULL)
     const [rows] = await db.query(`
-        SELECT mg.*, tv.ho_ten AS ten_thanh_vien,
-               mgtv.da_su_dung AS da_su_dung_thanh_vien
+        SELECT mg.*, tv.ho_ten AS ten_thanh_vien
         FROM muc_giam_gia mg
-        JOIN muc_giam_gia_thanh_vien mgtv 
-          ON mg.muc_giam_gia_id = mgtv.muc_giam_gia_id
-        JOIN thanh_vien tv 
-          ON tv.thanh_vien_id = mgtv.thanh_vien_id
+        LEFT JOIN thanh_vien tv ON mg.thanh_vien_id = tv.thanh_vien_id
         WHERE mg.ma_khuyen_mai = ?
-          AND mgtv.thanh_vien_id = ?
-          AND mgtv.da_su_dung = FALSE
+          AND (mg.thanh_vien_id = ? OR mg.thanh_vien_id IS NULL)
+          AND (mg.da_su_dung = FALSE OR mg.da_su_dung IS NULL)
+          AND (mg.ngay_het_han >= CURDATE() OR mg.ngay_het_han IS NULL)
     `, [ma_khuyen_mai, thanh_vien_id]);
 
     return rows[0]; // trả về object hoặc undefined nếu không có
@@ -112,11 +113,12 @@ async kiemTraTheoThanhVien(ma_khuyen_mai, thanh_vien_id) {
 
 // MucGiamGia.model.js
 async capNhatThongTin(id, { thanh_vien_id, da_su_dung }) {
+  // Cập nhật trực tiếp trên bảng muc_giam_gia
   const [result] = await db.query(`
-    UPDATE muc_giam_gia_thanh_vien
-    SET da_su_dung = ?, ngay_su_dung = CURRENT_DATE
-    WHERE muc_giam_gia_id = ? AND thanh_vien_id = ?
-  `, [da_su_dung, id, thanh_vien_id]);
+    UPDATE muc_giam_gia
+    SET da_su_dung = ?
+    WHERE muc_giam_gia_id = ?
+  `, [da_su_dung, id]);
 
   return result.affectedRows;
 }

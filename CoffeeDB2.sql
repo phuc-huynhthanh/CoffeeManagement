@@ -159,7 +159,8 @@ CREATE TABLE IF NOT EXISTS thanh_vien (
     ho_ten VARCHAR(100) NOT NULL,
     sdt CHAR(10) UNIQUE,
     email VARCHAR(100),
-    tong_don_da_mua INT DEFAULT 0
+    tong_don_da_mua INT DEFAULT 0,
+    tong_tien_da_mua DECIMAL(15,0) DEFAULT 0
 );
 
 -- =========================
@@ -262,6 +263,18 @@ CREATE TABLE IF NOT EXISTS chi_tiet_combo (
 );
 
 -- =========================
+-- BẢNG BẬC THÀNH VIÊN
+-- =========================
+CREATE TABLE bac_thanh_vien (
+  bac_id INT PRIMARY KEY AUTO_INCREMENT,
+  ten_bac VARCHAR(50) NOT NULL UNIQUE,
+  diem_toi_thieu INT DEFAULT 0,
+  phan_tram_giam DECIMAL(5,2) DEFAULT 0,
+  ma_icon VARCHAR(30) DEFAULT NULL,
+  ma_mau VARCHAR(30) DEFAULT NULL
+);
+
+-- =========================
 -- DỮ LIỆU MẪU
 -- =========================
 INSERT INTO vai_tro (ten_vai_tro) VALUES
@@ -316,3 +329,26 @@ INSERT INTO ban (ten_ban, trang_thai) VALUES
 ('Bàn 3', 'Trống'),
 ('Bàn 4', 'Trống'),
 ('Bàn 5', 'Trống');
+
+-- Thêm cột thời gian bắt đầu và kết thúc vào bảng lịch làm việc
+ALTER TABLE lich_lam_viec 
+ADD COLUMN thoi_gian_bat_dau TIME NULL AFTER ngay_lam,
+ADD COLUMN thoi_gian_ket_thuc TIME NULL AFTER thoi_gian_bat_dau;
+
+-- Cập nhật dữ liệu cũ: lấy thời gian từ ca_lam nếu có ca_id
+UPDATE lich_lam_viec l
+JOIN ca_lam c ON l.ca_id = c.ca_id
+SET l.thoi_gian_bat_dau = c.thoi_gian_bat_dau,
+    l.thoi_gian_ket_thuc = c.thoi_gian_ket_thuc
+WHERE l.ca_id IS NOT NULL;
+
+-- Cho phép ca_id NULL (để hỗ trợ khung giờ tùy chỉnh không cần ca)
+ALTER TABLE lich_lam_viec 
+MODIFY COLUMN ca_id INT NULL;
+
+ALTER TABLE thanh_vien
+ADD COLUMN bac_id INT NULL AFTER email,
+ADD CONSTRAINT fk_thanhvien_bacthanhvien
+  FOREIGN KEY (bac_id) REFERENCES bac_thanh_vien(bac_id)
+  ON UPDATE CASCADE
+  ON DELETE SET NULL;

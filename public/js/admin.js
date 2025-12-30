@@ -831,32 +831,424 @@ const memberForm = document.getElementById("memberForm");
 const btnAddMember = document.getElementById("btnAddMember");
 const btnCancelMember = document.getElementById("btnCancelMember");
 
-// Load danh sách thành viên
-async function loadMembers() {
-  try {
-    const res = await fetch("/thanhvien/laytatca");
-    const data = await res.json();
-    memberTable.innerHTML = "";
-    data.forEach((m, index) => {
-      memberTable.innerHTML += `
-  <tr>
-    <td class="px-4 py-2 border-b">${index + 1}</td>
-    <td class="px-4 py-2 border-b">${m.ho_ten}</td>
-    <td class="px-4 py-2 border-b">${m.sdt}</td>
-    <td class="px-4 py-2 border-b">${m.email || ""}</td>
-    <td class="px-4 py-2 border-b">${m.tong_don_da_mua}</td> <!-- Read-only -->
-    <td class="px-4 py-2 border-b text-center space-x-2">
-      <button onclick="editMember(${m.thanh_vien_id})" class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">Sửa</button>
-      <button onclick="deleteMember(${m.thanh_vien_id})" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Xóa</button>
-    </td>
-  </tr>
-`;
+// ============================================
+// HỆ THỐNG BẬC THÀNH VIÊN
+// ============================================
 
-    });
-  } catch (err) {
-    console.error(err);
+// Cấu hình bậc thành viên
+// ==========================
+// THÀNH VIÊN - LOAD + BẬC (API)
+// ==========================
+
+let TIER_MAP = new Map(); // bac_id -> tier object
+let TIER_LIST = [];       // tier list sorted by diem_toi_thieu
+
+// icon theo ma_icon từ DB
+function iconFromMaIcon(ma_icon) {
+  switch ((ma_icon || "").toUpperCase()) {
+    case "BRONZE": return "🥉";
+    case "SILVER": return "🥈";
+    case "GOLD": return "🥇";
+    case "DIAMOND": return "💎";
+    default: return "⭐";
   }
 }
+
+// tailwind color theo ma_mau từ DB
+function tailwindFromMaMau(ma_mau) {
+  switch ((ma_mau || "").toUpperCase()) {
+    case "AMBER": return { bg: "bg-amber-600", text: "text-amber-600" };
+    case "GRAY": return { bg: "bg-gray-400", text: "text-gray-500" };
+    case "YELLOW": return { bg: "bg-yellow-500", text: "text-yellow-500" };
+    case "BLUE": return { bg: "bg-blue-500", text: "text-blue-500" };
+    case "PURPLE": return { bg: "bg-purple-500", text: "text-purple-500" };
+    case "GREEN": return { bg: "bg-green-500", text: "text-green-500" };
+    case "RED": return { bg: "bg-red-500", text: "text-red-500" };
+    default: return { bg: "bg-slate-500", text: "text-slate-500" };
+  }
+}
+
+// Load danh sách bậc từ API và build map
+async function loadTierMap() {
+  const res = await fetch("http://localhost:3000/bacthanhvien/laytatca");
+  if (!res.ok) throw new Error("Không thể tải bậc thành viên");
+  const tiers = await res.json();
+
+  TIER_LIST = (tiers || []).sort(
+    (a, b) => (Number(a.diem_toi_thieu ?? 0) - Number(b.diem_toi_thieu ?? 0))
+  );
+
+  TIER_MAP = new Map(TIER_LIST.map(t => [Number(t.bac_id), t]));
+  return TIER_LIST;
+}
+
+function getTierByBacId(bac_id) {
+  if (bac_id === null || bac_id === undefined) return null;
+  return TIER_MAP.get(Number(bac_id)) || null;
+}
+
+// 1000đ = 1 điểm
+function calculatePoints(totalSpent) {
+  return Math.floor(Number(totalSpent || 0) / 1000);
+}
+
+// Tính điểm cần để lên bậc tiếp theo dựa vào tier list từ API
+function getPointsToNextTierByBacId(points, bac_id) {
+  if (!TIER_LIST || TIER_LIST.length === 0) return { needed: 0, nextTier: null, currentTier: null };
+
+  const current = getTierByBacId(bac_id);
+
+  // nếu chưa có bac_id, coi như đang ở bậc thấp nhất
+  if (!current) {
+    const currentTier = TIER_LIST[0];
+    const nextTier = TIER_LIST[1] || null;
+    if (!nextTier) return { needed: 0, nextTier: null, currentTier };
+    return {
+      needed: Math.max(0, Number(nextTier.diem_toi_thieu ?? 0) - points),
+      nextTier,
+      currentTier
+    };
+  }
+
+  const idx = TIER_LIST.findIndex(t => Number(t.bac_id) === Number(current.bac_id));
+  const nextTier = idx >= 0 ? (TIER_LIST[idx + 1] || null) : null;
+
+  if (!nextTier) return { needed: 0, nextTier: null, currentTier: current };
+
+  return {
+    needed: Math.max(0, Number(nextTier.diem_toi_thieu ?? 0) - points),
+    nextTier,
+    currentTier: current
+  };
+}
+
+// ==========================
+// Load danh sách thành viên với bậc từ API
+// ==========================
+async function loadMembers() {
+  try {
+    // load tier trước để render đúng bậc
+    if (!TIER_LIST || TIER_LIST.length === 0) {
+      await loadTierMap();
+    }
+
+    const res = await fetch("/thanhvien/laytatca");
+    const data = await res.json();
+
+    memberTable.innerHTML = "";
+
+    // Thống kê theo tên bậc (từ DB)
+    const tierStatsByName = {};
+    TIER_LIST.forEach(t => { tierStatsByName[t.ten_bac] = 0; });
+
+    data.forEach((m, index) => {
+      // ✅ tổng chi tiêu đúng: tong_tien_da_mua
+      const totalSpent = Number(m.tong_tien_da_mua || 0);
+      const points = calculatePoints(totalSpent);
+
+      const tierRaw = getTierByBacId(m.bac_id);
+      const tierColor = tailwindFromMaMau(tierRaw?.ma_mau);
+      const tier = {
+        name: tierRaw?.ten_bac ?? "Chưa xếp bậc",
+        minPoints: Number(tierRaw?.diem_toi_thieu ?? 0),
+        discount: Number(tierRaw?.phan_tram_giam ?? 0),
+        icon: iconFromMaIcon(tierRaw?.ma_icon),
+        color: tierColor.bg,
+        textColor: tierColor.text
+      };
+
+      if (tierRaw?.ten_bac) {
+        tierStatsByName[tierRaw.ten_bac] = (tierStatsByName[tierRaw.ten_bac] || 0) + 1;
+      }
+
+      const nextTierInfo = getPointsToNextTierByBacId(points, m.bac_id);
+
+      // progress bar
+      let progressPercent = 100;
+      if (nextTierInfo.nextTier && nextTierInfo.currentTier) {
+        const curMin = Number(nextTierInfo.currentTier.diem_toi_thieu ?? 0);
+        const nextMin = Number(nextTierInfo.nextTier.diem_toi_thieu ?? 0);
+        const pointsInTier = points - curMin;
+        const tierRange = nextMin - curMin;
+        progressPercent = tierRange > 0 ? Math.min(100, (pointsInTier / tierRange) * 100) : 100;
+      }
+
+      const nextIcon = iconFromMaIcon(nextTierInfo.nextTier?.ma_icon);
+      const nextColor = tailwindFromMaMau(nextTierInfo.nextTier?.ma_mau);
+
+      memberTable.innerHTML += `
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-4 py-3 border-b text-center">${index + 1}</td>
+          <td class="px-4 py-3 border-b">
+            <div class="font-medium text-gray-800">${m.ho_ten}</div>
+          </td>
+          <td class="px-4 py-3 border-b text-gray-600">${m.sdt}</td>
+          <td class="px-4 py-3 border-b text-gray-600">${m.email || "—"}</td>
+
+          <td class="px-4 py-3 border-b text-center">
+            <span class="font-bold text-orange-600">${points.toLocaleString("vi-VN")}</span>
+          </td>
+
+          <td class="px-4 py-3 border-b">
+            <div class="flex items-center gap-2">
+              <span class="${tier.color} text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                ${tier.icon} ${tier.name}
+              </span>
+              <span class="text-xs text-green-600 font-medium">-${tier.discount}%</span>
+            </div>
+
+            ${nextTierInfo.nextTier ? `
+              <div class="mt-2">
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="${tier.color} h-2 rounded-full transition-all" style="width: ${progressPercent}%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                  Còn <span class="font-semibold text-gray-700">${Number(nextTierInfo.needed).toLocaleString("vi-VN")}</span> điểm để lên 
+                  <span class="${nextColor.text} font-semibold">${nextIcon} ${nextTierInfo.nextTier?.ten_bac}</span>
+                </p>
+              </div>
+            ` : `
+              <p class="text-xs text-blue-500 mt-1 font-medium">✨ Bậc cao nhất!</p>
+            `}
+          </td>
+
+          <td class="px-4 py-3 border-b text-right font-medium text-gray-700">
+            ${totalSpent.toLocaleString("vi-VN")}đ
+          </td>
+
+          <td class="px-4 py-3 border-b text-center space-x-2">
+            <button onclick="viewMemberDetail(${m.thanh_vien_id})" 
+                    class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm" title="Chi tiết">
+              👁️
+            </button>
+            <button onclick="editMember(${m.thanh_vien_id})" 
+                    class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
+              Sửa
+            </button>
+            <button onclick="deleteMember(${m.thanh_vien_id})" 
+                    class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+              Xóa
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    updateMemberTierStatsFromApi(tierStatsByName, data.length);
+
+  } catch (err) {
+    console.error("❌ Lỗi loadMembers:", err);
+    memberTable.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-red-500">Lỗi tải dữ liệu</td></tr>`;
+  }
+}
+
+// ==========================
+// Thống kê bậc (từ API)
+// ==========================
+function updateMemberTierStatsFromApi(statsByName, total) {
+  const statsContainer = document.getElementById("memberTierStats");
+  if (!statsContainer) return;
+
+  const tierCards = (TIER_LIST || []).map(t => {
+    const icon = iconFromMaIcon(t.ma_icon);
+    const c = tailwindFromMaMau(t.ma_mau);
+    const count = statsByName[t.ten_bac] || 0;
+
+    return `
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">${icon}</div>
+          <div>
+            <p class="text-sm text-gray-500">${t.ten_bac}</p>
+            <p class="text-2xl font-bold ${c.text}">${count}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  statsContainer.innerHTML = `
+    <div class="grid grid-cols-2 md:grid-cols-${Math.min(6, 1 + (TIER_LIST?.length || 0))} gap-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">👥</div>
+          <div>
+            <p class="text-sm text-gray-500">Tổng thành viên</p>
+            <p class="text-2xl font-bold text-gray-800">${total}</p>
+          </div>
+        </div>
+      </div>
+      ${tierCards}
+    </div>
+  `;
+}
+
+// ==========================
+// Xem chi tiết thành viên
+// ==========================
+async function viewMemberDetail(thanhVienId) {
+  try {
+    if (!TIER_LIST || TIER_LIST.length === 0) {
+      await loadTierMap();
+    }
+
+    const res = await fetch(`/thanhvien/layid/${thanhVienId}`);
+    const member = await res.json();
+
+    const totalSpent = Number(member.tong_tien_da_mua || 0);
+    const points = calculatePoints(totalSpent);
+
+    const tierRaw = getTierByBacId(member.bac_id);
+    const tierColor = tailwindFromMaMau(tierRaw?.ma_mau);
+    const tier = {
+      name: tierRaw?.ten_bac ?? "Chưa xếp bậc",
+      minPoints: Number(tierRaw?.diem_toi_thieu ?? 0),
+      discount: Number(tierRaw?.phan_tram_giam ?? 0),
+      icon: iconFromMaIcon(tierRaw?.ma_icon),
+      color: tierColor.bg,
+      textColor: tierColor.text
+    };
+
+    const nextTierInfo = getPointsToNextTierByBacId(points, member.bac_id);
+    const nextIcon = iconFromMaIcon(nextTierInfo.nextTier?.ma_icon);
+    const nextColor = tailwindFromMaMau(nextTierInfo.nextTier?.ma_mau);
+
+    const progressPercent = (() => {
+      if (nextTierInfo.nextTier && nextTierInfo.currentTier) {
+        const curMin = Number(nextTierInfo.currentTier.diem_toi_thieu ?? 0);
+        const nextMin = Number(nextTierInfo.nextTier.diem_toi_thieu ?? 0);
+        const pointsInTier = points - curMin;
+        const tierRange = nextMin - curMin;
+        return tierRange > 0 ? Math.min(100, (pointsInTier / tierRange) * 100) : 100;
+      }
+      return 100;
+    })();
+
+    const modalHtml = `
+      <div id="memberDetailModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+          <div class="${tier.color} text-white px-6 py-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-4xl">
+                  ${tier.icon}
+                </div>
+                <div>
+                  <h3 class="text-xl font-bold">${member.ho_ten}</h3>
+                  <p class="text-white/80">Thành viên ${tier.name}</p>
+                </div>
+              </div>
+              <button onclick="closeMemberDetailModal()" class="text-white/80 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-sm text-gray-500">📞 Số điện thoại</p>
+                <p class="font-semibold text-gray-800">${member.sdt}</p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-sm text-gray-500">📧 Email</p>
+                <p class="font-semibold text-gray-800">${member.email || "—"}</p>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-xl mb-6">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-gray-600 font-medium">Điểm tích lũy</span>
+                <span class="text-2xl font-bold text-orange-600">${points.toLocaleString("vi-VN")} điểm</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600 font-medium">Tổng chi tiêu</span>
+                <span class="text-lg font-semibold text-gray-800">${totalSpent.toLocaleString("vi-VN")}đ</span>
+              </div>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-6">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-green-600 text-xl">🎁</span>
+                <span class="font-semibold text-green-700">Ưu đãi hiện tại</span>
+              </div>
+              <p class="text-green-800 text-lg font-bold">Giảm ${tier.discount}% cho mọi đơn hàng</p>
+            </div>
+
+            ${nextTierInfo.nextTier ? `
+              <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-blue-600 text-xl">🚀</span>
+                  <span class="font-semibold text-blue-700">Tiến trình lên bậc ${nextTierInfo.nextTier.ten_bac}</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                  <div class="${nextColor.bg} h-3 rounded-full transition-all"
+                       style="width: ${progressPercent}%"></div>
+                </div>
+                <p class="text-sm text-gray-600">
+                  Đã đạt <span class="font-bold text-orange-600">${points.toLocaleString("vi-VN")}</span>/${Number(nextTierInfo.nextTier.diem_toi_thieu ?? 0).toLocaleString("vi-VN")} điểm.
+                  Còn <span class="font-bold text-blue-600">${Number(nextTierInfo.needed).toLocaleString("vi-VN")}</span> điểm 
+                  (tương đương <span class="font-bold">${(Number(nextTierInfo.needed) * 1000).toLocaleString("vi-VN")}đ</span>) để lên bậc 
+                  <span class="${nextColor.text} font-bold">${nextIcon} ${nextTierInfo.nextTier.ten_bac}</span>
+                </p>
+              </div>
+            ` : `
+              <div class="bg-gradient-to-r from-blue-500 to-purple-500 p-4 rounded-xl text-white text-center">
+                <span class="text-3xl">✨</span>
+                <p class="font-bold text-lg mt-2">Chúc mừng! Bạn đã đạt bậc cao nhất!</p>
+                <p class="text-white/80 text-sm">Tận hưởng ưu đãi tốt nhất cho mọi đơn hàng</p>
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const existingModal = document.getElementById("memberDetailModal");
+    if (existingModal) existingModal.remove();
+
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+  } catch (err) {
+    console.error("❌ Lỗi viewMemberDetail:", err);
+    alert("Không thể tải thông tin thành viên");
+  }
+}
+
+// Đóng modal chi tiết thành viên
+function closeMemberDetailModal() {
+  const modal = document.getElementById("memberDetailModal");
+  if (modal) modal.remove();
+}
+
+// Lọc thành viên theo bậc (theo tên bậc hiển thị)
+function filterMembersByTier(tierName) {
+  const rows = memberTable.querySelectorAll("tr");
+  rows.forEach(row => {
+    if (tierName === "all") {
+      row.style.display = "";
+    } else {
+      const tierCell = row.querySelector("td:nth-child(6)");
+      if (tierCell && tierCell.textContent.includes(tierName)) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    }
+  });
+}
+
+// Export functions
+window.viewMemberDetail = viewMemberDetail;
+window.closeMemberDetailModal = closeMemberDetailModal;
+window.filterMembersByTier = filterMembersByTier;
+window.calculatePoints = calculatePoints;
+
+// ==========================
+// MỞ MODAL THÊM / SỬA THÀNH VIÊN (giữ nguyên)
+// ==========================
 
 // Mở modal thêm
 btnAddMember.addEventListener("click", () => {
@@ -902,8 +1294,6 @@ memberForm.addEventListener("submit", async (e) => {
   }
 });
 
-
-
 // Edit member
 window.editMember = async (id) => {
   const res = await fetch(`/thanhvien/layid/${id}`);
@@ -911,8 +1301,7 @@ window.editMember = async (id) => {
   document.getElementById("memberId").value = data.thanh_vien_id;
   document.getElementById("memberName").value = data.ho_ten;
   document.getElementById("memberPhone").value = data.sdt;
-  document.getElementById("memberEmail").value = data.email;
-  document.getElementById("memberTotal").value = data.tong_don_da_mua || 0;
+  document.getElementById("memberEmail").value = data.email || "";
   memberModal.classList.remove("hidden");
   document.getElementById("memberModalTitle").innerText = "Sửa thành viên";
 };
@@ -925,8 +1314,157 @@ window.deleteMember = async (id) => {
   }
 };
 
-// Load khi trang sẵn sàng
-loadMembers();
+// ✅ Load khi trang sẵn sàng: load tier trước, rồi load member
+(async () => {
+  try {
+    await loadTierMap();
+  } catch (e) {
+    console.error("❌ Không load được bậc thành viên:", e);
+  }
+  loadMembers();
+})();
+
+
+// ==========================
+// BẬC THÀNH VIÊN - CRUD (giữ nguyên phần của bạn)
+// ==========================
+const tierTable = document.getElementById("tierTable");
+const tierModal = document.getElementById("tierModal");
+const tierForm = document.getElementById("tierForm");
+const btnAddTier = document.getElementById("btnAddTier");
+const btnCancelTier = document.getElementById("btnCancelTier");
+
+async function loadBacThanhVien() {
+  if (!tierTable) return;
+  try {
+    const res = await fetch("http://localhost:3000/bacthanhvien/laytatca");
+    if (!res.ok) throw new Error("Không thể tải bậc thành viên");
+    const data = await res.json();
+    renderTierTable(data);
+  } catch (err) {
+    console.error("Lỗi loadBacThanhVien:", err);
+    tierTable.innerHTML = `<tr><td colspan=5 class='text-center py-4 text-red-500'>Lỗi tải dữ liệu</td></tr>`;
+  }
+}
+
+function renderTierTable(tiers) {
+  if (!tierTable) return;
+  tierTable.innerHTML = "";
+  if (!tiers || tiers.length === 0) {
+    tierTable.innerHTML = `<tr><td colspan=5 class='text-center py-6 text-gray-500'>Chưa có bậc thành viên nào.</td></tr>`;
+    return;
+  }
+
+  tiers.forEach((t, idx) => {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-gray-50";
+    tr.innerHTML = `
+      <td class="px-4 py-3 border-b">${idx + 1}</td>
+      <td class="px-4 py-3 border-b font-medium">${t.ten_bac}</td>
+      <td class="px-4 py-3 border-b">${(t.diem_toi_thieu ?? 0).toLocaleString("vi-VN")}</td>
+      <td class="px-4 py-3 border-b">${(t.phan_tram_giam ?? 0)}%</td>
+      <td class="px-4 py-3 border-b text-center space-x-2">
+        <button onclick="editTier(${t.bac_id})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">Sửa</button>
+        <button onclick="deleteTier(${t.bac_id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">Xóa</button>
+      </td>
+    `;
+    tierTable.appendChild(tr);
+  });
+}
+
+// Mở modal thêm
+btnAddTier?.addEventListener("click", () => {
+  if (!tierModal) return;
+  document.getElementById("tierModalTitle").innerText = "Thêm bậc thành viên";
+  tierForm.reset();
+  document.getElementById("tierId").value = "";
+  tierModal.classList.remove("hidden");
+});
+
+// Hủy modal
+btnCancelTier?.addEventListener("click", () => {
+  tierModal?.classList.add("hidden");
+});
+
+// Submit form thêm/sửa
+tierForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("tierId").value;
+  const payload = {
+    ten_bac: document.getElementById("tierName").value,
+    diem_toi_thieu: document.getElementById("tierMinPoints").value,
+    phan_tram_giam: document.getElementById("tierDiscount").value,
+    ma_icon: document.getElementById("tierIcon").value || null,
+    ma_mau: document.getElementById("tierColor").value || null
+  };
+
+  try {
+    const url = id ? `http://localhost:3000/bacthanhvien/sua/${id}` : "http://localhost:3000/bacthanhvien/them";
+    const method = id ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || result.message || "Lỗi server");
+    tierModal.classList.add("hidden");
+    loadBacThanhVien();
+
+    // sau khi chỉnh tier, refresh map + reload member để áp màu/discount mới
+    await loadTierMap();
+    loadMembers();
+
+    showToast(result.message || "Thao tác thành công", "success");
+  } catch (err) {
+    console.error("Lỗi khi lưu bậc:", err);
+    showToast("❌ Lỗi: " + (err.message || err), "error");
+  }
+});
+
+// Edit và Delete (toàn cục để gọi từ onclick)
+window.editTier = async (id) => {
+  try {
+    const res = await fetch(`http://localhost:3000/bacthanhvien/${id}`);
+    if (!res.ok) throw new Error("Không tìm thấy bậc");
+    const data = await res.json();
+    document.getElementById("tierId").value = data.bac_id;
+    document.getElementById("tierName").value = data.ten_bac || "";
+    document.getElementById("tierMinPoints").value = data.diem_toi_thieu ?? 0;
+    document.getElementById("tierDiscount").value = data.phan_tram_giam ?? 0;
+    document.getElementById("tierIcon").value = data.ma_icon || "";
+    document.getElementById("tierColor").value = data.ma_mau || "";
+    document.getElementById("tierModalTitle").innerText = "Sửa bậc thành viên";
+    tierModal.classList.remove("hidden");
+  } catch (err) {
+    console.error("Lỗi editTier:", err);
+    showToast("❌ Lỗi khi lấy dữ liệu bậc", "error");
+  }
+};
+
+window.deleteTier = async (id) => {
+  if (!confirm("Bạn có chắc muốn xóa bậc này?")) return;
+  try {
+    const res = await fetch(`http://localhost:3000/bacthanhvien/xoa/${id}`, { method: "DELETE" });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || result.message || "Không thể xóa");
+
+    showToast(result.message || "Xóa thành công", "success");
+    loadBacThanhVien();
+
+    // sau khi xóa tier, refresh map + reload member
+    await loadTierMap();
+    loadMembers();
+
+  } catch (err) {
+    console.error("Lỗi deleteTier:", err);
+    showToast("❌ Lỗi: " + (err.message || err), "error");
+  }
+};
+
+// load tier crud table nếu có
+loadBacThanhVien();
+
 
 
 // ============================================
@@ -1708,6 +2246,9 @@ window.addEventListener('childTabChanged', (e) => {
       break;
     case 'thuong-phat':
         loadThuongPhat();
+      break;
+    case 'bac-thanh-vien':
+      loadBacThanhVien();
       break;
   }
 });
@@ -5255,3 +5796,5 @@ function taoNoiDungEmailLuong(luong) {
   </div>
   `;
 }
+
+
