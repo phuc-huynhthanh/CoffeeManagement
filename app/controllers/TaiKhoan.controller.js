@@ -171,15 +171,57 @@ export const TaiKhoanController = {
   async xoa(req, res, next) {
     try {
       const { id } = req.params;
-      const soDong = await TaiKhoanModel.xoa(id);
-      if (!soDong)
-        return res
-          .status(404)
-          .json({ thong_bao: "Không tìm thấy tài khoản để xóa" });
+      
+      // Kiểm tra tài khoản có tồn tại không
+      const taiKhoan = await TaiKhoanModel.timTheoId(id);
+      if (!taiKhoan) {
+        return res.status(404).json({ 
+          success: false,
+          thong_bao: "Không tìm thấy tài khoản để xóa" 
+        });
+      }
 
-      res.json({ thong_bao: "Xóa tài khoản thành công" });
+      // Kiểm tra xem có nhân viên liên kết không
+      const nhanVien = await NhanVienModel.timTheoTaiKhoanId(id);
+      
+      if (nhanVien) {
+        // Xóa lương của nhân viên trước
+        await db.query('DELETE FROM luong WHERE nhan_vien_id = ?', [nhanVien.nhan_vien_id]);
+        
+        // Xóa lịch làm việc
+        await db.query('DELETE FROM lich_lam_viec WHERE nhan_vien_id = ?', [nhanVien.nhan_vien_id]);
+        
+        // Xóa chi tiết thưởng phạt nếu có
+        await db.query(`
+          DELETE FROM chi_tiet_thuong_phat 
+          WHERE luong_id IN (SELECT luong_id FROM luong WHERE nhan_vien_id = ?)
+        `, [nhanVien.nhan_vien_id]);
+        
+        // Xóa nhân viên
+        await NhanVienModel.xoa(nhanVien.nhan_vien_id);
+      }
+      
+      // Cuối cùng xóa tài khoản
+      const soDong = await TaiKhoanModel.xoa(id);
+      
+      if (!soDong) {
+        return res.status(400).json({ 
+          success: false,
+          thong_bao: "Không thể xóa tài khoản" 
+        });
+      }
+
+      res.json({ 
+        success: true,
+        thong_bao: "Xóa tài khoản thành công" 
+      });
     } catch (loi) {
-      next(loi);
+      console.error("❌ Lỗi khi xóa tài khoản:", loi);
+      res.status(500).json({ 
+        success: false,
+        thong_bao: "Lỗi server", 
+        error: loi.message 
+      });
     }
   },
 
