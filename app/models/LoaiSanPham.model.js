@@ -47,6 +47,15 @@ export const LoaiSanPhamModel = {
     return result.affectedRows;
   },
 
+  // 📊 Đếm số sản phẩm theo loại
+  async demSanPhamTheoLoai(id) {
+    const [rows] = await db.query(
+      `SELECT COUNT(*) as total FROM san_pham WHERE loai_id = ?`,
+      [id]
+    );
+    return rows[0].total;
+  },
+
   // ❌ Xóa loại sản phẩm
   async xoa(id) {
     const [result] = await db.query(

@@ -68,6 +68,17 @@ export const LoaiSanPhamController = {
   async xoa(req, res) {
     try {
       const id = req.params.id;
+      
+      // Kiểm tra xem loại sản phẩm có sản phẩm nào không
+      const soLuongSanPham = await LoaiSanPhamModel.demSanPhamTheoLoai(id);
+      
+      if (soLuongSanPham > 0) {
+        return res.status(400).json({ 
+          message: `Không thể xóa loại sản phẩm này vì đã có ${soLuongSanPham} sản phẩm trong danh mục`,
+          error: "CONSTRAINT_VIOLATION"
+        });
+      }
+      
       const soDong = await LoaiSanPhamModel.xoa(id);
 
       if (soDong === 0) return res.status(404).json({ message: "Không tìm thấy loại sản phẩm để xóa" });

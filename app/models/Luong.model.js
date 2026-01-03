@@ -4,12 +4,12 @@ import { db } from "../config/db.conf.js";
 const LUONG_MAC_DINH = 200000;
 
 export const LuongModel = {
-
   // ======================================================
   // 🔢 ĐẾM SỐ CA LÀM
   // ======================================================
   async demSoCa(nhan_vien_id, thang, nam) {
-    const [[row]] = await db.query(`
+    const [[row]] = await db.query(
+      `
       SELECT COUNT(*) AS so_ca
       FROM lich_lam_viec
       WHERE nhan_vien_id = ?
@@ -23,7 +23,9 @@ export const LuongModel = {
             AND thoi_gian_ket_thuc <= CURTIME()
           )
         )
-    `, [nhan_vien_id, thang, nam]);
+    `,
+      [nhan_vien_id, thang, nam]
+    );
 
     return Number(row?.so_ca || 0);
   },
@@ -32,17 +34,20 @@ export const LuongModel = {
   // 💰 TÍNH TỔNG THƯỞNG / PHẠT TỪ CHI TIẾT
   // ======================================================
   async tinhThuongPhat(luong_id) {
-    const [[row]] = await db.query(`
+    const [[row]] = await db.query(
+      `
       SELECT
         SUM(CASE WHEN loai = 'Thuong' THEN so_tien ELSE 0 END) AS tong_thuong,
         SUM(CASE WHEN loai = 'Phat' THEN so_tien ELSE 0 END) AS tong_phat
       FROM chi_tiet_thuong_phat
       WHERE luong_id = ?
-    `, [luong_id]);
+    `,
+      [luong_id]
+    );
 
     return {
       tong_thuong: Number(row?.tong_thuong || 0),
-      tong_phat: Number(row?.tong_phat || 0)
+      tong_phat: Number(row?.tong_phat || 0),
     };
   },
 
@@ -50,11 +55,61 @@ export const LuongModel = {
   // 🔄 ĐẢM BẢO LƯƠNG CƠ BẢN = 200.000
   // ======================================================
   async damBaoLuongCoBan(luong_id) {
-    await db.query(`
+    await db.query(
+      `
       UPDATE luong
       SET luong_co_ban = ?
       WHERE luong_id = ? AND luong_co_ban = 0
-    `, [LUONG_MAC_DINH, luong_id]);
+    `,
+      [LUONG_MAC_DINH, luong_id]
+    );
+  },
+
+  // ======================================================
+  // ✅ TẠO / CẬP NHẬT LƯƠNG CHO 1 NHÂN VIÊN (THÁNG/NĂM)
+  // ======================================================
+  async taoLuongChoNhanVien({ nhan_vien_id, thang, nam, luong_co_ban }) {
+    const _luong =
+      luong_co_ban === undefined || luong_co_ban === null || luong_co_ban === ""
+        ? LUONG_MAC_DINH
+        : Number(luong_co_ban);
+
+    // nếu lương nhập sai -> fallback
+    const luongHopLe = Number.isFinite(_luong) && _luong > 0 ? _luong : LUONG_MAC_DINH;
+
+    // kiểm tra record lương đã tồn tại chưa
+    const [[exists]] = await db.query(
+      `
+      SELECT luong_id
+      FROM luong
+      WHERE nhan_vien_id = ? AND thang = ? AND nam = ?
+      LIMIT 1
+    `,
+      [nhan_vien_id, thang, nam]
+    );
+
+    if (!exists) {
+      const [result] = await db.query(
+        `
+        INSERT INTO luong (nhan_vien_id, thang, nam, luong_co_ban)
+        VALUES (?, ?, ?, ?)
+      `,
+        [nhan_vien_id, thang, nam, luongHopLe]
+      );
+      return result.insertId;
+    }
+
+    // đã có -> update luôn lương cơ bản theo input (để đúng yêu cầu "thêm được lương cơ bản")
+    await db.query(
+      `
+      UPDATE luong
+      SET luong_co_ban = ?
+      WHERE nhan_vien_id = ? AND thang = ? AND nam = ?
+    `,
+      [luongHopLe, nhan_vien_id, thang, nam]
+    );
+
+    return exists.luong_id;
   },
 
   // ======================================================
@@ -67,7 +122,8 @@ export const LuongModel = {
 
     await this.taoLuongThangNam(thang, nam);
 
-    const [rows] = await db.query(`
+    const [rows] = await db.query(
+      `
       SELECT
         l.luong_id,
         l.nhan_vien_id,
@@ -82,7 +138,9 @@ export const LuongModel = {
       JOIN nhan_vien nv ON nv.nhan_vien_id = l.nhan_vien_id
       WHERE l.thang = ? AND l.nam = ?
       ORDER BY nv.ho_ten
-    `, [thang, nam]);
+    `,
+      [thang, nam]
+    );
 
     for (const l of rows) {
       // fix lương CB
@@ -94,24 +152,16 @@ export const LuongModel = {
       }
 
       // số ca
-      l.so_ca_lam = await this.demSoCa(
-        l.nhan_vien_id,
-        l.thang,
-        l.nam
-      );
+      l.so_ca_lam = await this.demSoCa(l.nhan_vien_id, l.thang, l.nam);
 
       // thưởng / phạt
-      const { tong_thuong, tong_phat } =
-        await this.tinhThuongPhat(l.luong_id);
+      const { tong_thuong, tong_phat } = await this.tinhThuongPhat(l.luong_id);
 
       l.tong_thuong = tong_thuong;
       l.tong_phat = tong_phat;
 
       // tổng lương
-      l.tong_luong =
-        l.so_ca_lam * l.luong_co_ban +
-        tong_thuong -
-        tong_phat;
+      l.tong_luong = l.so_ca_lam * l.luong_co_ban + tong_thuong - tong_phat;
     }
 
     return rows;
@@ -121,7 +171,8 @@ export const LuongModel = {
   // 🔎 TÌM THEO ID
   // ======================================================
   async timTheoId(luong_id) {
-    const [[l]] = await db.query(`
+    const [[l]] = await db.query(
+      `
       SELECT
         l.luong_id,
         l.nhan_vien_id,
@@ -134,7 +185,9 @@ export const LuongModel = {
       FROM luong l
       JOIN nhan_vien nv ON nv.nhan_vien_id = l.nhan_vien_id
       WHERE l.luong_id = ?
-    `, [luong_id]);
+    `,
+      [luong_id]
+    );
 
     if (!l) return null;
 
@@ -145,22 +198,14 @@ export const LuongModel = {
       l.luong_co_ban = Number(l.luong_co_ban);
     }
 
-    l.so_ca_lam = await this.demSoCa(
-      l.nhan_vien_id,
-      l.thang,
-      l.nam
-    );
+    l.so_ca_lam = await this.demSoCa(l.nhan_vien_id, l.thang, l.nam);
 
-    const { tong_thuong, tong_phat } =
-      await this.tinhThuongPhat(luong_id);
+    const { tong_thuong, tong_phat } = await this.tinhThuongPhat(luong_id);
 
     l.tong_thuong = tong_thuong;
     l.tong_phat = tong_phat;
 
-    l.tong_luong =
-      l.so_ca_lam * l.luong_co_ban +
-      tong_thuong -
-      tong_phat;
+    l.tong_luong = l.so_ca_lam * l.luong_co_ban + tong_thuong - tong_phat;
 
     return l;
   },
@@ -172,12 +217,15 @@ export const LuongModel = {
     const luong = await this.timTheoId(luong_id);
     if (!luong) throw new Error("Không tìm thấy bảng lương");
 
-    await db.query(`
+    await db.query(
+      `
       UPDATE luong SET
         tong_luong = ?,
         ngay_tinh_luong = NOW()
       WHERE luong_id = ?
-    `, [luong.tong_luong, luong_id]);
+    `,
+      [luong.tong_luong, luong_id]
+    );
 
     return luong;
   },
@@ -191,23 +239,24 @@ export const LuongModel = {
     `);
 
     for (const nv of nhanVienList) {
-      const [[exists]] = await db.query(`
+      const [[exists]] = await db.query(
+        `
         SELECT 1 FROM luong
         WHERE nhan_vien_id = ? AND thang = ? AND nam = ?
-      `, [nv.nhan_vien_id, thang, nam]);
+      `,
+        [nv.nhan_vien_id, thang, nam]
+      );
 
       if (!exists) {
-        await db.query(`
+        await db.query(
+          `
           INSERT INTO luong
           (nhan_vien_id, thang, nam, luong_co_ban)
           VALUES (?, ?, ?, ?)
-        `, [
-          nv.nhan_vien_id,
-          thang,
-          nam,
-          LUONG_MAC_DINH
-        ]);
+        `,
+          [nv.nhan_vien_id, thang, nam, LUONG_MAC_DINH]
+        );
       }
     }
-  }
+  },
 };

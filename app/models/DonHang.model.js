@@ -1,9 +1,14 @@
+// models/DonHang.model.js
 import { db } from "../config/db.conf.js";
+import {
+  getDonHangSnapshot,
+  applyDoanhThuChange,
+} from "../services/DoanhThuCa.service.js";
 
 export const DonHangModel = {
-  // 📋 Lấy tất cả đơn hàng kèm chi tiết
-  async layTatCa() {
-    const [rows] = await db.query(`
+  // ✅ Lấy tất cả (giữ nguyên logic của bạn, chỉ thêm IFNULL để tránh chi_tiet bị [null])
+  async layTatCa(conn = db) {
+    const [rows] = await conn.query(`
       SELECT 
         dh.don_hang_id,
         dh.ngay_dat,
@@ -35,19 +40,23 @@ export const DonHangModel = {
           'email', ANY_VALUE(nv.email)
         ) AS nhan_vien_tao_don,
 
-        -- Chi tiết đơn hàng
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'chi_tiet_id', ctdh.chi_tiet_id,
-            'san_pham_id', sp.san_pham_id,
-            'ten_san_pham', sp.ten_san_pham,
-            'kich_co_id', kc.kich_co_id,
-            'ten_kich_co', kc.ten_kich_co,
-            'topping_id', tp.topping_id,
-            'ten_topping', tp.ten_topping,
-            'so_luong', ctdh.so_luong,
-            'don_gia', ctdh.don_gia
-          )
+        IFNULL(
+          JSON_ARRAYAGG(
+            IF(ctdh.chi_tiet_id IS NULL, NULL,
+              JSON_OBJECT(
+                'chi_tiet_id', ctdh.chi_tiet_id,
+                'san_pham_id', sp.san_pham_id,
+                'ten_san_pham', sp.ten_san_pham,
+                'kich_co_id', kc.kich_co_id,
+                'ten_kich_co', kc.ten_kich_co,
+                'topping_id', tp.topping_id,
+                'ten_topping', tp.ten_topping,
+                'so_luong', ctdh.so_luong,
+                'don_gia', ctdh.don_gia
+              )
+            )
+          ),
+          JSON_ARRAY()
         ) AS chi_tiet
 
       FROM don_hang dh
@@ -63,12 +72,14 @@ export const DonHangModel = {
       GROUP BY dh.don_hang_id
       ORDER BY dh.don_hang_id DESC
     `);
+
     return rows;
   },
 
-  // 🔎 Tìm đơn hàng theo ID kèm chi tiết
-  async timTheoId(id) {
-    const [rows] = await db.query(`
+  // ✅ Tìm theo id (giữ nguyên logic, thêm IFNULL tương tự)
+  async timTheoId(id, conn = db) {
+    const [rows] = await conn.query(
+      `
       SELECT 
         dh.don_hang_id,
         dh.ngay_dat,
@@ -100,18 +111,23 @@ export const DonHangModel = {
           'email', ANY_VALUE(nv.email)
         ) AS nhan_vien_tao_don,
 
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'chi_tiet_id', ctdh.chi_tiet_id,
-            'san_pham_id', sp.san_pham_id,
-            'ten_san_pham', sp.ten_san_pham,
-            'kich_co_id', kc.kich_co_id,
-            'ten_kich_co', kc.ten_kich_co,
-            'topping_id', tp.topping_id,
-            'ten_topping', tp.ten_topping,
-            'so_luong', ctdh.so_luong,
-            'don_gia', ctdh.don_gia
-          )
+        IFNULL(
+          JSON_ARRAYAGG(
+            IF(ctdh.chi_tiet_id IS NULL, NULL,
+              JSON_OBJECT(
+                'chi_tiet_id', ctdh.chi_tiet_id,
+                'san_pham_id', sp.san_pham_id,
+                'ten_san_pham', sp.ten_san_pham,
+                'kich_co_id', kc.kich_co_id,
+                'ten_kich_co', kc.ten_kich_co,
+                'topping_id', tp.topping_id,
+                'ten_topping', tp.ten_topping,
+                'so_luong', ctdh.so_luong,
+                'don_gia', ctdh.don_gia
+              )
+            )
+          ),
+          JSON_ARRAY()
         ) AS chi_tiet
 
       FROM don_hang dh
@@ -126,60 +142,253 @@ export const DonHangModel = {
 
       WHERE dh.don_hang_id = ?
       GROUP BY dh.don_hang_id
-    `, [id]);
-    return rows[0];
+      `,
+      [id]
+    );
+
+    return rows[0] || null;
   },
 
-  // ➕ Thêm đơn hàng kèm chi tiết
-  async them({ thanh_vien_id, ban_id, tai_khoan_id, tong_tien, tien_sau_giam, muc_giam_gia_id, trang_thai, chi_tiet = [] }) {
+  // ✅ (OPTION) Tính lại tổng tiền từ chi_tiet_don_hang
+  // Nếu bạn đã tính tổng tiền ở phía client rồi thì có thể bỏ và chỉ update tong_tien/tien_sau_giam theo payload
+  async tinhTongTienTuChiTiet(don_hang_id, conn = db) {
+    const [rows] = await conn.query(
+      `
+      SELECT 
+        COALESCE(SUM(so_luong * don_gia), 0) AS tong
+      FROM chi_tiet_don_hang
+      WHERE don_hang_id = ?
+      `,
+      [don_hang_id]
+    );
+
+    return Number(rows?.[0]?.tong ?? 0);
+  },
+
+  // ➕ Thêm đơn hàng + ✅ tự cập nhật doanh_thu_ca
+  async them({
+    thanh_vien_id,
+    ban_id,
+    tai_khoan_id,
+    tong_tien,
+    tien_sau_giam,
+    muc_giam_gia_id,
+    trang_thai,
+    chi_tiet = [],
+  }) {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
 
-      // 1️⃣ Thêm đơn hàng
-      const [resultDonHang] = await conn.query(`
+      const [rsDH] = await conn.query(
+        `
         INSERT INTO don_hang (thanh_vien_id, ban_id, tai_khoan_id, tong_tien, tien_sau_giam, muc_giam_gia_id, trang_thai)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [thanh_vien_id, ban_id, tai_khoan_id, tong_tien, tien_sau_giam, muc_giam_gia_id, trang_thai]);
+        `,
+        [
+          thanh_vien_id ?? null,
+          ban_id ?? null,
+          tai_khoan_id ?? null,
+          tong_tien ?? 0,
+          tien_sau_giam ?? null,
+          muc_giam_gia_id ?? null,
+          trang_thai ?? null,
+        ]
+      );
 
-      const don_hang_id = resultDonHang.insertId;
+      const don_hang_id = rsDH.insertId;
 
-      // 2️⃣ Thêm chi tiết đơn hàng
-      for (const item of chi_tiet) {
-        const { san_pham_id, kich_co_id, topping_id, so_luong, don_gia } = item;
-        await conn.query(`
-          INSERT INTO chi_tiet_don_hang (don_hang_id, san_pham_id, kich_co_id, topping_id, so_luong, don_gia)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `, [don_hang_id, san_pham_id, kich_co_id, topping_id, so_luong, don_gia]);
+      // insert chi tiết
+      if (Array.isArray(chi_tiet) && chi_tiet.length > 0) {
+        for (const item of chi_tiet) {
+          const { san_pham_id, kich_co_id, topping_id, so_luong, don_gia } = item;
+          await conn.query(
+            `
+            INSERT INTO chi_tiet_don_hang (don_hang_id, san_pham_id, kich_co_id, topping_id, so_luong, don_gia)
+            VALUES (?, ?, ?, ?, ?, ?)
+            `,
+            [
+              don_hang_id,
+              san_pham_id ?? null,
+              kich_co_id ?? null,
+              topping_id ?? null,
+              so_luong ?? 0,
+              don_gia ?? 0,
+            ]
+          );
+        }
       }
+
+      // (tuỳ bạn) nếu muốn tổng tiền luôn đúng theo chi tiết:
+      // const tong = await this.tinhTongTienTuChiTiet(don_hang_id, conn);
+      // await conn.query("UPDATE don_hang SET tong_tien=? WHERE don_hang_id=?", [tong, don_hang_id]);
+
+      // ✅ cập nhật doanh thu ca (new snapshot)
+      const newDH = await getDonHangSnapshot(don_hang_id, conn);
+      await applyDoanhThuChange(null, newDH, conn);
 
       await conn.commit();
       return don_hang_id;
-
-    } catch (error) {
+    } catch (e) {
       await conn.rollback();
-      throw error;
+      throw e;
     } finally {
       conn.release();
     }
   },
 
-  // ✏️ Cập nhật đơn hàng
-  async capNhat(id, { thanh_vien_id, ban_id, tai_khoan_id, tong_tien, tien_sau_giam, muc_giam_gia_id, trang_thai }) {
-    const [result] = await db.query(`
-      UPDATE don_hang 
-      SET thanh_vien_id = ?, ban_id = ?, tai_khoan_id = ?, tong_tien = ?, tien_sau_giam = ?, muc_giam_gia_id = ?, trang_thai = ?
-      WHERE don_hang_id = ?
-    `, [thanh_vien_id, ban_id, tai_khoan_id, tong_tien, tien_sau_giam, muc_giam_gia_id, trang_thai, id]);
-    return result.affectedRows;
+  // ✏️ Cập nhật đơn hàng (tiền/ngày/trạng thái...) + ✅ tự cập nhật doanh_thu_ca
+  async capNhat(id, payload) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const oldDH = await getDonHangSnapshot(id, conn);
+      if (!oldDH) throw new Error("Không tìm thấy đơn hàng");
+
+      // ⚠️ Chỉ update những field được gửi lên (tránh ghi đè null/undefined)
+      const fields = [];
+      const params = [];
+
+      const allowed = [
+        "thanh_vien_id",
+        "ban_id",
+        "tai_khoan_id",
+        "tong_tien",
+        "tien_sau_giam",
+        "muc_giam_gia_id",
+        "trang_thai",
+        "ngay_dat", // nếu bạn muốn cho phép đổi ngày đặt
+      ];
+
+      for (const k of allowed) {
+        if (payload[k] !== undefined) {
+          fields.push(`${k} = ?`);
+          params.push(payload[k]);
+        }
+      }
+
+      if (fields.length === 0) {
+        // không đổi gì thì thôi
+        await conn.rollback();
+        return 0;
+      }
+
+      params.push(id);
+
+      const [rs] = await conn.query(
+        `
+        UPDATE don_hang 
+        SET ${fields.join(", ")}
+        WHERE don_hang_id = ?
+        `,
+        params
+      );
+
+      const newDH = await getDonHangSnapshot(id, conn);
+
+      // ✅ trừ cũ + cộng mới (đổi trạng thái / đổi tiền / đổi ngày đều đúng)
+      await applyDoanhThuChange(oldDH, newDH, conn);
+
+      await conn.commit();
+      return rs.affectedRows || 0;
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
   },
 
-  // ❌ Xóa đơn hàng
+  // ✅ Update trạng thái nhanh (chỉ đổi trạng thái)
+  async capNhatTrangThai(id, trang_thai) {
+    return this.capNhat(id, { trang_thai });
+  },
+
+  // ✅ Cập nhật chi tiết đơn hàng + ✅ tự cập nhật doanh_thu_ca
+  // Dùng khi bạn có màn hình sửa món / số lượng.
+  async capNhatChiTiet(don_hang_id, chi_tiet_moi = []) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const oldDH = await getDonHangSnapshot(don_hang_id, conn);
+      if (!oldDH) throw new Error("Không tìm thấy đơn hàng");
+
+      // 1) reset chi tiết
+      await conn.query("DELETE FROM chi_tiet_don_hang WHERE don_hang_id = ?", [
+        don_hang_id,
+      ]);
+
+      // 2) insert lại
+      if (Array.isArray(chi_tiet_moi) && chi_tiet_moi.length > 0) {
+        for (const item of chi_tiet_moi) {
+          const { san_pham_id, kich_co_id, topping_id, so_luong, don_gia } = item;
+          await conn.query(
+            `
+            INSERT INTO chi_tiet_don_hang (don_hang_id, san_pham_id, kich_co_id, topping_id, so_luong, don_gia)
+            VALUES (?, ?, ?, ?, ?, ?)
+            `,
+            [
+              don_hang_id,
+              san_pham_id ?? null,
+              kich_co_id ?? null,
+              topping_id ?? null,
+              so_luong ?? 0,
+              don_gia ?? 0,
+            ]
+          );
+        }
+      }
+
+      // 3) (khuyên dùng) tính lại tong_tien theo chi tiết để doanh thu luôn đúng
+      const tong = await this.tinhTongTienTuChiTiet(don_hang_id, conn);
+      await conn.query("UPDATE don_hang SET tong_tien = ? WHERE don_hang_id = ?", [
+        tong,
+        don_hang_id,
+      ]);
+
+      const newDH = await getDonHangSnapshot(don_hang_id, conn);
+
+      // ✅ cập nhật doanh thu
+      await applyDoanhThuChange(oldDH, newDH, conn);
+
+      await conn.commit();
+      return true;
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
+  },
+
+  // ❌ Xóa đơn hàng + ✅ tự trừ doanh_thu_ca nếu đã thanh toán
   async xoa(id) {
-    const [result] = await db.query(
-      `DELETE FROM don_hang WHERE don_hang_id = ?`,
-      [id]
-    );
-    return result.affectedRows;
-  }
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const oldDH = await getDonHangSnapshot(id, conn);
+      if (!oldDH) throw new Error("Không tìm thấy đơn hàng");
+
+      // ✅ nếu có FK chi_tiet_don_hang -> phải xóa trước
+      await conn.query("DELETE FROM chi_tiet_don_hang WHERE don_hang_id = ?", [id]);
+
+      const [rs] = await conn.query("DELETE FROM don_hang WHERE don_hang_id = ?", [
+        id,
+      ]);
+
+      // ✅ trừ doanh thu (old -> null)
+      await applyDoanhThuChange(oldDH, null, conn);
+
+      await conn.commit();
+      return rs.affectedRows || 0;
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
+  },
 };

@@ -27,152 +27,189 @@
   `;
   document.head.appendChild(style);
 
-  // Hiển thị tên người dùng
-  const user = JSON.parse(localStorage.getItem("user"));
-  const usernameElement = document.getElementById("username");
+  // ===========================
+// HIỂN THỊ TÊN NGƯỜI DÙNG
+// ===========================
+const user = JSON.parse(localStorage.getItem("user"));
+const usernameElement = document.getElementById("username");
 
-  if (!user || !user.tai_khoan_id) {
-    window.location.href = "/taikhoan/dangnhap";
-  } else {
-    fetch(`http://localhost:3000/nhanvien/taikhoan/${user.tai_khoan_id}`)
-      .then(res => res.json())
-      .then(data => {
-        usernameElement.textContent = data.ho_ten ? `👤 ${data.ho_ten}` : "👤 Không rõ tên";
-        if (data.ten_vai_tro !== "Admin") {
-          window.location.href = "/view/pos";
-        }
-      })
-      .catch(err => {
-        console.error("❌ Lỗi khi lấy thông tin nhân viên:", err);
-        usernameElement.textContent = "❌ Lỗi tải tên người dùng";
-      });
+if (!user || !user.tai_khoan_id) {
+  window.location.href = "/taikhoan/dangnhap";
+} else {
+  fetch(`http://localhost:3000/nhanvien/taikhoan/${user.tai_khoan_id}`)
+    .then((res) => res.json())
+    .then((data) => {
+      usernameElement.textContent = data.ho_ten ? `👤 ${data.ho_ten}` : "👤 Không rõ tên";
+      if (data.ten_vai_tro !== "Admin") {
+        window.location.href = "/view/pos";
+      }
+    })
+    .catch((err) => {
+      console.error("❌ Lỗi khi lấy thông tin nhân viên:", err);
+      usernameElement.textContent = "❌ Lỗi tải tên người dùng";
+    });
+}
+
+// ===========================
+// THÊM NHÂN VIÊN (ĐÚNG API DANGKY + FORM MỚI)
+// ===========================
+document.getElementById("employeeForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  // ✅ id theo form mới
+  const ten_dang_nhap = document.getElementById("usernameInput").value.trim();
+  const mat_khau = document.getElementById("passwordInput").value.trim();
+  const ho_ten = document.getElementById("nameInput").value.trim();
+  const so_dien_thoai = document.getElementById("phoneInput").value.trim();
+  const email = document.getElementById("emailInput").value.trim();
+  const vai_tro_id = Number(document.getElementById("roleSelect").value);
+  const luong_co_ban = Number(document.getElementById("baseSalaryInput").value);
+
+  if (!ten_dang_nhap || !mat_khau || !ho_ten || !so_dien_thoai || !vai_tro_id) {
+    showToast("⚠️ Vui lòng nhập đầy đủ thông tin!", "error");
+    return;
   }
 
-  // Thêm nhân viên
-  document.getElementById("employeeForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  if (!Number.isFinite(luong_co_ban) || luong_co_ban <= 0) {
+    showToast("⚠️ Lương cơ bản không hợp lệ!", "error");
+    return;
+  }
 
-    const username = document.getElementById("usernameInput").value.trim();
-    const password = document.getElementById("passwordInput").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const roleId = parseInt(document.getElementById("role").value);
+  // ✅ payload đúng với controller dangKy mới
+  const payload = {
+    tai_khoan: {
+      ten_dang_nhap,
+      mat_khau,
+      vai_tro_id,
+    },
+    nhan_vien: {
+      ho_ten,
+      so_dien_thoai,
+      email: email || null,
+      luong_co_ban,
+    },
+  };
 
-    if (!username || !password || !name || !phone || !roleId) {
-      showToast("⚠️ Vui lòng nhập đầy đủ thông tin!", "error");
+  try {
+    const response = await fetch("http://localhost:3000/taikhoan/dangky", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result?.thong_bao || "Không thể thêm nhân viên");
+    }
+
+    showToast("✅ Thêm tài khoản nhân viên thành công!", "success");
+    document.getElementById("employeeModal").classList.add("hidden");
+    e.target.reset();
+    document.getElementById("baseSalaryInput").value = 200000; // reset về mặc định
+    loadAccounts();
+  } catch (error) {
+    console.error("❌ Lỗi khi thêm nhân viên:", error);
+    showToast("❌ Đã xảy ra lỗi: " + error.message, "error");
+  }
+});
+
+// ===========================
+// HỦY FORM
+// ===========================
+document.getElementById("btnCancel").addEventListener("click", () => {
+  document.getElementById("employeeModal").classList.add("hidden");
+  document.getElementById("employeeForm").reset();
+  const salaryEl = document.getElementById("baseSalaryInput");
+  if (salaryEl) salaryEl.value = 200000;
+});
+
+// ===========================
+// HIỂN THỊ FORM THÊM NHÂN VIÊN
+// ===========================
+document.getElementById("btnAdd").addEventListener("click", () => {
+  document.getElementById("modalTitle").textContent = "Thêm tài khoản nhân viên";
+  document.getElementById("employeeForm").reset();
+  document.getElementById("baseSalaryInput").value = 200000;
+  document.getElementById("employeeModal").classList.remove("hidden");
+});
+
+// ===========================
+// ĐĂNG XUẤT
+// ===========================
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.href = "/taikhoan/dangnhap";
+});
+
+// ===========================
+// LOAD DANH SÁCH TÀI KHOẢN
+// ===========================
+async function loadAccounts() {
+  try {
+    // Bạn đang dùng /taikhoan/chitiet -> ok
+    // (nếu bạn muốn lương theo tháng/năm, có thể thêm ?thang=&nam=)
+    const res = await fetch("http://localhost:3000/taikhoan/chitiet");
+    const data = await res.json();
+
+    const tbody = document.getElementById("accountTable");
+    tbody.innerHTML = "";
+
+    if (!data.du_lieu || data.du_lieu.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Chưa có tài khoản nào.</td></tr>`;
       return;
     }
 
-    const payload = {
-      tai_khoan: { ten_dang_nhap: username, mat_khau: password, vai_tro_id: roleId },
-      nhan_vien: {
-        ho_ten: name,
-        gioi_tinh: "Nam",
-        ngay_sinh: "2000-05-14",
-        so_dien_thoai: phone,
-        email: email || "",
-        dia_chi: "Chưa cập nhật",
-        ngay_vao_lam: new Date().toISOString().split("T")[0],
-        luong: 8500000
-      }
-    };
+    data.du_lieu.forEach((item, index) => {
+      const nv = item.nhan_vien;
+      const tk = item.tai_khoan;
 
-    try {
-      const response = await fetch("http://localhost:3000/taikhoan/dangky", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+      const canDelete = tk?.ten_vai_tro !== "Admin";
+      const canUpdate = tk?.ten_vai_tro !== "Admin";
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Không thể thêm nhân viên");
+      const row = document.createElement("tr");
+      row.classList.add("hover:bg-gray-50");
 
-      showToast("✅ Thêm tài khoản nhân viên thành công!", "success");
-      document.getElementById("employeeModal").classList.add("hidden");
-      e.target.reset();
-      loadAccounts();
-    } catch (error) {
-      console.error("❌ Lỗi khi thêm nhân viên:", error);
-      showToast("❌ Đã xảy ra lỗi: " + error.message, "error");
-    }
-  });
+      row.innerHTML = `
+        <td class="px-4 py-3">${index + 1}</td>
+        <td class="px-4 py-3">${nv?.ho_ten || "—"}</td>
+        <td class="px-4 py-3">${nv?.sdt || "—"}</td>
+        <td class="px-4 py-3">${nv?.email || "—"}</td>
+        <td class="px-4 py-3">${(nv?.luong_co_ban ?? "—")}</td>
+        <td class="px-4 py-3">${tk?.ten_vai_tro || "—"}</td>
+        <td class="px-4 py-3">${tk?.ten_dang_nhap || "—"}</td>
+        <td class="px-4 py-3 text-center">
+          ${
+            canUpdate
+              ? `<button onclick="moModalSuaTaiKhoan(${tk?.tai_khoan_id})"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mr-2">
+                    Sửa
+                 </button>`
+              : `<span class="text-gray-400 italic mr-2">Không thể sửa</span>`
+          }
+          ${
+            canDelete
+              ? `<button onclick="xoaTaiKhoan(${tk.tai_khoan_id})" 
+                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+                    Xóa
+                 </button>`
+              : `<span class="text-gray-400 italic">Không thể xóa</span>`
+          }
+        </td>
+      `;
 
-  // Hủy form
-  document.getElementById("btnCancel").addEventListener("click", () => {
-    document.getElementById("employeeModal").classList.add("hidden");
-    document.getElementById("employeeForm").reset();
-  });
-
-  // Hiển thị form thêm nhân viên
-  document.getElementById("btnAdd").addEventListener("click", () => {
-    document.getElementById("modalTitle").textContent = "Thêm tài khoản nhân viên";
-    document.getElementById("employeeForm").reset();
-    document.getElementById("employeeModal").classList.remove("hidden");
-  });
-
-  // Đăng xuất
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.clear();
-    window.location.href = "/taikhoan/dangnhap";
-  });
-
-  // Load danh sách tài khoản
-  async function loadAccounts() {
-    try {
-      const res = await fetch("http://localhost:3000/taikhoan/chitiet");
-      const data = await res.json();
-      const tbody = document.getElementById("accountTable");
-      tbody.innerHTML = "";
-
-      if (!data.du_lieu || data.du_lieu.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">Chưa có tài khoản nào.</td></tr>`;
-        return;
-      }
-
-      data.du_lieu.forEach((item, index) => {
-        const nv = item.nhan_vien;
-        const tk = item.tai_khoan;
-        const canDelete = tk?.ten_vai_tro !== "Admin";
-        const canUpdate = tk?.ten_vai_tro !== "Admin";
-
-        const row = document.createElement("tr");
-        row.classList.add("hover:bg-gray-50");
-        row.innerHTML = `
-          <td class="px-4 py-3">${index + 1}</td>
-          <td class="px-4 py-3">${nv?.ho_ten || "—"}</td>
-          <td class="px-4 py-3">${nv?.sdt || "—"}</td>
-          <td class="px-4 py-3">${nv?.email || "—"}</td>
-          <td class="px-4 py-3">${tk?.ten_vai_tro || "—"}</td>
-          <td class="px-4 py-3">${tk?.ten_dang_nhap || "—"}</td>
-          <td class="px-4 py-3 text-center">
-            ${
-              canUpdate
-                ? `<button onclick="moModalSuaTaiKhoan(${tk?.tai_khoan_id})"
-                      class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mr-2">
-                      Sửa
-                      </button>`
-                : `<span class="text-gray-400 italic mr-2">Không thể sửa</span>`
-            }
-            ${
-              canDelete
-                ? `<button onclick="xoaTaiKhoan(${tk.tai_khoan_id})" 
-                     class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
-                     Xóa
-                   </button>`
-                : `<span class="text-gray-400 italic">Không thể xóa</span>`
-            }
-            
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-    } catch (err) {
-      console.error("❌ Lỗi khi tải danh sách tài khoản:", err);
-      document.getElementById("accountTable").innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-500">Lỗi khi tải dữ liệu</td></tr>`;
-    }
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi tải danh sách tài khoản:", err);
+    document.getElementById("accountTable").innerHTML =
+      `<tr><td colspan="8" class="text-center py-4 text-red-500">Lỗi khi tải dữ liệu</td></tr>`;
   }
+}
 
+// ===========================
+// MODAL SỬA TÀI KHOẢN (GIỮ NGUYÊN LOGIC CŨ)
+// ===========================
 function moModalSuaTaiKhoanUI() {
   const modal = document.getElementById("modalSuaTaiKhoan");
   modal.classList.remove("hidden");
@@ -184,89 +221,72 @@ function dongModalSuaTaiKhoan() {
   modal.classList.add("hidden");
   modal.classList.remove("flex");
 }
+
 async function moModalSuaTaiKhoan(id) {
-  // mở modal
   moModalSuaTaiKhoanUI();
 
-  // lưu ID vào input hidden
   document.getElementById("edit_tai_khoan_id").value = id;
 
-  // reset form
   document.getElementById("edit_ten_dang_nhap").value = "";
   document.getElementById("edit_mat_khau").value = "";
   document.getElementById("edit_vai_tro_id").value = "";
+  document.getElementById("edit_luong").value = "";
 
   try {
     const res = await fetch(`http://localhost:3000/taikhoan/${id}`);
     const data = await res.json();
 
-    // API của bạn trả về trực tiếp taiKhoan
-    document.getElementById("edit_ten_dang_nhap").value =
-      data.ten_dang_nhap || "";
-
-    document.getElementById("edit_vai_tro_id").value =
-      data.vai_tro_id || "";
+    document.getElementById("edit_ten_dang_nhap").value = data.ten_dang_nhap || "";
+    document.getElementById("edit_vai_tro_id").value = data.vai_tro_id || "";
+    document.getElementById("edit_luong").value = data.luong_co_ban || "200000";
   } catch (err) {
-    // console.error("❌ Không lấy được dữ liệu tài khoản:", err);
-    // showToast("❌ Không lấy được dữ liệu tài khoản", "error");
+    // optional toast
   }
 }
-document
-  .getElementById("formSuaTaiKhoan")
-  .addEventListener("submit", async (e) => {
-    e.preventDefault();
 
-    const id = document.getElementById("edit_tai_khoan_id").value;
-    const ten_dang_nhap = document
-      .getElementById("edit_ten_dang_nhap")
-      .value.trim();
-    const mat_khau = document
-      .getElementById("edit_mat_khau")
-      .value.trim();
-    const vai_tro_id = document
-      .getElementById("edit_vai_tro_id")
-      .value.trim();
+document.getElementById("formSuaTaiKhoan").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-    if (!ten_dang_nhap || !vai_tro_id) {
-      showToast("❌ Vui lòng nhập đủ thông tin", "error");
-      return;
-    }
+  const id = document.getElementById("edit_tai_khoan_id").value;
+  const ten_dang_nhap = document.getElementById("edit_ten_dang_nhap").value.trim();
+  const mat_khau = document.getElementById("edit_mat_khau").value.trim();
+  const vai_tro_id = document.getElementById("edit_vai_tro_id").value.trim();
+  const luong = document.getElementById("edit_luong").value.trim();
 
-    const payload = {
-      ten_dang_nhap,
-      vai_tro_id,
-    };
+  if (!ten_dang_nhap || !vai_tro_id) {
+    showToast("❌ Vui lòng nhập đủ thông tin", "error");
+    return;
+  }
 
-    // chỉ gửi mật khẩu nếu có nhập
-    if (mat_khau) payload.mat_khau = mat_khau;
+  const payload = { ten_dang_nhap, vai_tro_id };
+  if (mat_khau) payload.mat_khau = mat_khau;
+  if (luong) payload.luong = Number(luong);
 
-    try {
-      const res = await fetch(
-        `http://localhost:3000/taikhoan/sua/${id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+  try {
+    const res = await fetch(`http://localhost:3000/taikhoan/sua/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.thong_bao);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.thong_bao);
 
-      showToast("✅ Cập nhật tài khoản thành công", "success");
-      dongModalSuaTaiKhoan();
-      loadAccounts(); // reload bảng
-    } catch (err) {
-      console.error("❌ Lỗi sửa:", err);
-      showToast("❌ " + err.message, "error");
-    }
-  });
+    showToast("✅ Cập nhật tài khoản thành công", "success");
+    dongModalSuaTaiKhoan();
+    loadAccounts();
+  } catch (err) {
+    console.error("❌ Lỗi sửa:", err);
+    showToast("❌ " + err.message, "error");
+  }
+});
 
-  // Xóa tài khoản (thêm debug)
+// ===========================
+// XÓA TÀI KHOẢN
+// ===========================
 async function xoaTaiKhoan(id) {
   console.log("🧩 Đang yêu cầu xóa tài khoản ID:", id);
 
-  // Lấy toàn bộ thông tin tài khoản trước khi xóa
   try {
     const infoRes = await fetch(`http://localhost:3000/taikhoan/${id}`);
     const infoData = await infoRes.json();
@@ -282,7 +302,7 @@ async function xoaTaiKhoan(id) {
       method: "DELETE",
     });
 
-    const resultText = await res.text(); // đọc text để xem có lỗi gì
+    const resultText = await res.text();
     console.log("📦 Kết quả phản hồi thô từ server:", resultText);
 
     let result;
@@ -302,26 +322,30 @@ async function xoaTaiKhoan(id) {
   }
 }
 
+// ===========================
+// INIT
+// ===========================
+window.addEventListener("DOMContentLoaded", loadAccounts);
 
-  window.addEventListener("DOMContentLoaded", loadAccounts);
+// ===========================
+// TAB
+// ===========================
+const tabLinks = document.querySelectorAll(".tab-link");
+const tabContents = document.querySelectorAll(".tab-content");
 
-  const tabLinks = document.querySelectorAll(".tab-link");
-  const tabContents = document.querySelectorAll(".tab-content");
+tabLinks.forEach((link) => {
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
 
-  tabLinks.forEach(link => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
+    tabLinks.forEach((l) => l.classList.remove("active"));
+    tabContents.forEach((c) => c.classList.add("hidden"));
 
-      // Xóa active cũ
-      tabLinks.forEach(l => l.classList.remove("active"));
-      tabContents.forEach(c => c.classList.add("hidden"));
-
-      // Kích hoạt tab mới
-      link.classList.add("active");
-      const tabId = "tab-" + link.dataset.tab;
-      document.getElementById(tabId).classList.remove("hidden");
-    });
+    link.classList.add("active");
+    const tabId = "tab-" + link.dataset.tab;
+    document.getElementById(tabId).classList.remove("hidden");
   });
+});
+
 
   // Khi load trang, tab tài khoản là mặc định
   document.getElementById("tab-tai-khoan").classList.remove("hidden");
@@ -1563,6 +1587,121 @@ window.deleteTier = async (id) => {
 // load tier crud table nếu có
 loadBacThanhVien();
 
+// ============================================
+// QUẢN LÝ LOẠI SẢN PHẨM
+// ============================================
+const productTypeTable = document.getElementById("productTypeTable");
+const productTypeModal = document.getElementById("productTypeModal");
+const productTypeForm = document.getElementById("productTypeForm");
+const btnAddProductType = document.getElementById("btnAddProductType");
+const btnCancelProductType = document.getElementById("btnCancelProductType");
+
+async function loadProductTypes() {
+  if (!productTypeTable) return;
+  try {
+    const res = await fetch("http://localhost:3000/loaisanpham/laytatca");
+    if (!res.ok) throw new Error("Không thể tải loại sản phẩm");
+    const data = await res.json();
+    renderProductTypeTable(data);
+  } catch (err) {
+    console.error("Lỗi loadProductTypes:", err);
+    productTypeTable.innerHTML = `<tr><td colspan=3 class='text-center py-4 text-red-500'>Lỗi tải dữ liệu</td></tr>`;
+  }
+}
+
+function renderProductTypeTable(types) {
+  if (!productTypeTable) return;
+  productTypeTable.innerHTML = "";
+  if (!types || types.length === 0) {
+    productTypeTable.innerHTML = `<tr><td colspan=3 class='text-center py-6 text-gray-500'>Chưa có loại sản phẩm nào.</td></tr>`;
+    return;
+  }
+
+  types.forEach((t, idx) => {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-gray-50";
+    tr.innerHTML = `
+      <td class="px-4 py-3 border-b">${idx + 1}</td>
+      <td class="px-4 py-3 border-b font-medium">${t.ten_loai}</td>
+      <td class="px-4 py-3 border-b text-center space-x-2">
+        <button onclick="editProductType(${t.loai_id})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">Sửa</button>
+        <button onclick="deleteProductType(${t.loai_id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">Xóa</button>
+      </td>
+    `;
+    productTypeTable.appendChild(tr);
+  });
+}
+
+// Mở modal thêm
+btnAddProductType?.addEventListener("click", () => {
+  if (!productTypeModal) return;
+  document.getElementById("productTypeModalTitle").innerText = "Thêm loại sản phẩm";
+  productTypeForm.reset();
+  document.getElementById("productTypeId").value = "";
+  productTypeModal.classList.remove("hidden");
+});
+
+// Hủy modal
+btnCancelProductType?.addEventListener("click", () => {
+  productTypeModal?.classList.add("hidden");
+});
+
+// Submit form thêm/sửa
+productTypeForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("productTypeId").value;
+  const payload = {
+    ten_loai: document.getElementById("productTypeName").value
+  };
+
+  try {
+    const url = id ? `http://localhost:3000/loaisanpham/sua/${id}` : "http://localhost:3000/loaisanpham/them";
+    const method = id ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || result.message || "Lỗi server");
+    productTypeModal.classList.add("hidden");
+    loadProductTypes();
+    showToast(result.message || "Thao tác thành công", "success");
+  } catch (err) {
+    console.error("Lỗi khi lưu loại sản phẩm:", err);
+    showToast("❌ Lỗi: " + (err.message || err), "error");
+  }
+});
+
+// Edit và Delete (toàn cục để gọi từ onclick)
+window.editProductType = async (id) => {
+  try {
+    const res = await fetch(`http://localhost:3000/loaisanpham/layid/${id}`);
+    if (!res.ok) throw new Error("Không tìm thấy loại sản phẩm");
+    const data = await res.json();
+    document.getElementById("productTypeId").value = data.loai_id;
+    document.getElementById("productTypeName").value = data.ten_loai || "";
+    document.getElementById("productTypeModalTitle").innerText = "Sửa loại sản phẩm";
+    productTypeModal.classList.remove("hidden");
+  } catch (err) {
+    console.error("Lỗi editProductType:", err);
+    showToast("❌ Lỗi khi lấy dữ liệu loại sản phẩm", "error");
+  }
+};
+
+window.deleteProductType = async (id) => {
+  if (!confirm("Bạn có chắc muốn xóa loại sản phẩm này?")) return;
+  try {
+    const res = await fetch(`http://localhost:3000/loaisanpham/xoa/${id}`, { method: "DELETE" });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || result.message || "Không thể xóa");
+    showToast(result.message || "Xóa thành công", "success");
+    loadProductTypes();
+  } catch (err) {
+    console.error("Lỗi deleteProductType:", err);
+    showToast("❌  Không thể xóa loại sản phẩm do đã có sản phẩm");
+  }
+};
 
 
 // ============================================
@@ -2311,6 +2450,9 @@ window.addEventListener('childTabChanged', (e) => {
   switch (tab) {
     case 'san-pham':
       // loadProducts();
+      break;
+    case 'loai-san-pham':
+      loadProductTypes();
       break;
     case 'combo':
       // loadCombos();
@@ -3088,7 +3230,6 @@ async function checkShiftAvailability() {
     }
 }
 
-// Submit form thêm lịch làm
 // Submit form thêm lịch làm
 document.addEventListener('DOMContentLoaded', function() {
     const scheduleForm = document.getElementById('scheduleForm');
@@ -5894,5 +6035,48 @@ function taoNoiDungEmailLuong(luong) {
   </div>
   `;
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadProducts(); // load ngay khi mở trang
+  loadCategories();
+  loadTables();
+  loadOrders();
+  loadMembersForDiscount();
+  loadDiscounts();
+  loadTierMap();
+  loadMembers();
+  loadBacThanhVien();
+  loadProductTypes();
+  loadCombos();
+  loadProductsForCombo();
+  loadSizes();
+  loadToppings();
+  loadThuongPhat();
+  loadLuongForSelect();
+  loadLuong();
+  loadEmployeesForLuong();
+
+  setInterval(() => {
+    loadProducts();
+    loadCategories();
+    loadTables();
+    loadOrders();
+    loadMembersForDiscount();
+    loadDiscounts();
+    loadTierMap();
+    loadMembers();
+    loadBacThanhVien();
+    loadProductTypes();
+    loadCombos();
+    loadProductsForCombo();
+    loadSizes();
+    loadToppings();
+    loadThuongPhat();
+    loadLuongForSelect();
+    loadLuong();
+    loadEmployeesForLuong(); // tự động load lại
+  }, 2000); // 2 giây
+});
+
 
 

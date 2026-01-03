@@ -352,3 +352,10 @@ ADD CONSTRAINT fk_thanhvien_bacthanhvien
   FOREIGN KEY (bac_id) REFERENCES bac_thanh_vien(bac_id)
   ON UPDATE CASCADE
   ON DELETE SET NULL;
+
+
+ALTER TABLE doanh_thu_ca
+ADD UNIQUE KEY uq_ca_ngay (ca_id, ngay);
+
+ALTER TABLE luong
+ADD UNIQUE KEY uq_luong_nv_thang_nam (nhan_vien_id, thang, nam);

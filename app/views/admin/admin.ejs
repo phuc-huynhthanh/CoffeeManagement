@@ -155,6 +155,7 @@
         </a>
         <ul class="space-y-2 px-4 mt-2 child-list" data-parent-list="san-pham">
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab active" data-tab="san-pham">- Sản phẩm</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="loai-san-pham">- Loại sản phẩm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="combo">- Combo</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="ban">- Bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="kich-co">- Kích cỡ</a></li>
@@ -221,6 +222,28 @@
             </tr>
           </thead>
           <tbody id="productTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý Loại sản phẩm -->
+    <div id="tab-loai-san-pham" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý Loại sản phẩm</h2>
+        <button id="btnAddProductType" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-md">
+          + Thêm loại sản phẩm
+        </button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Tên loại sản phẩm</th>
+              <th class="px-4 py-3 border-b text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="productTypeTable" class="divide-y"></tbody>
         </table>
       </div>
     </div>
@@ -333,6 +356,7 @@
               <th class="px-4 py-3 border-b">Họ tên</th>
               <th class="px-4 py-3 border-b">Số điện thoại</th>
               <th class="px-4 py-3 border-b">Email</th>
+              <th class="px-4 py-3 border-b">Lương CB</th>
               <th class="px-4 py-3 border-b">Vai trò</th>
               <th class="px-4 py-3 border-b">Tên đăng nhập</th>
               <th class="px-4 py-3 border-b">Thao tác</th>
@@ -1096,68 +1120,79 @@
   </section>
 </main>
 
-  <!-- Modal Tài khoản nhân viên -->
-  <div id="employeeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
-    <div class="bg-white rounded-lg shadow-lg w-96 p-6">
-      <h3 id="modalTitle" class="text-lg font-semibold mb-4">Thêm tài khoản</h3>
-      <form id="employeeForm" class="space-y-4">
-        <input type="hidden" id="empId" name="id">
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
-          <input type="text" id="usernameInput" name="ten_dang_nhap"
-                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-                placeholder="Nhập tên đăng nhập" required>
-        </div>
+<!-- Modal Tài khoản nhân viên -->
+<div id="employeeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-[1000]">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 id="modalTitle" class="text-lg font-semibold mb-4">Thêm tài khoản</h3>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
-          <input type="password" id="passwordInput" name="mat_khau"
-                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-                placeholder="Nhập mật khẩu" required>
-        </div>
+    <form id="employeeForm" class="space-y-4">
+      <input type="hidden" id="empId" name="id">
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Tên nhân viên</label>
-          <input type="text" id="name" name="ho_ten"
-                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-                placeholder="VD: Nguyễn Văn A" required>
-        </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
+        <input type="text" id="usernameInput"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="Nhập tên đăng nhập" required>
+      </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-          <input type="text" id="phone" name="sdt"
-                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-                placeholder="VD: 0901234567" required>
-        </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+        <input type="password" id="passwordInput"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="Nhập mật khẩu" required>
+        <p class="text-xs text-gray-500 mt-1">Khi sửa: nếu không đổi mật khẩu thì để trống.</p>
+      </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Email</label>
-          <input type="email" id="email" name="email"
-                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" 
-                placeholder="VD: example@gmail.com">
-        </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tên nhân viên</label>
+        <input type="text" id="nameInput"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="VD: Nguyễn Văn A" required>
+      </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Vai trò</label>
-          <select id="role" name="vai_tro_id"
-                  class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" required>
-            <option value="">-- Chọn vai trò --</option>
-            <option value="2">Thu ngân</option>
-            <option value="3">Pha chế</option>
-            <option value="4">Phục vụ</option>
-          </select>
-        </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+        <!-- API dangKy nhận so_dien_thoai -->
+        <input type="text" id="phoneInput"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="VD: 0901234567" required>
+      </div>
 
-        <div class="flex justify-end space-x-2">
-          <button type="button" id="btnCancel"
-                  class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
-          <button type="submit"
-                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Lưu</button>
-        </div>
-      </form>
-    </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="emailInput"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="VD: example@gmail.com">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Lương cơ bản</label>
+        <input type="number" id="baseSalaryInput" min="0" step="1000"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="VD: 200000" value="200000" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Vai trò</label>
+        <select id="roleSelect"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500" required>
+          <option value="">-- Chọn vai trò --</option>
+          <option value="2">Thu ngân</option>
+          <option value="3">Phục vụ</option>
+          <option value="4">Pha chế</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancel"
+                class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Lưu</button>
+      </div>
+    </form>
   </div>
+</div>
+
   <!-- Modal Sửa tài khoản -->
 <div id="modalSuaTaiKhoan" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
   <div class="bg-white w-full max-w-lg rounded-xl shadow-lg p-6">
@@ -1182,6 +1217,11 @@
       <div>
         <label class="block text-sm font-medium mb-1">Vai trò ID</label>
         <input id="edit_vai_tro_id" class="w-full border rounded-lg px-3 py-2" placeholder="VD: 4" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Lương</label>
+        <input id="edit_luong" type="number" min="0" step="1000" class="w-full border rounded-lg px-3 py-2" placeholder="VD: 8500000" />
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
@@ -1302,6 +1342,30 @@
                 class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
         <button type="submit" 
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal thêm/sửa loại sản phẩm -->
+<div id="productTypeModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6">
+    <h3 id="productTypeModalTitle" class="text-lg font-semibold mb-4">Thêm loại sản phẩm</h3>
+    <form id="productTypeForm" class="space-y-4">
+      <input type="hidden" id="productTypeId" name="id">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tên loại sản phẩm</label>
+        <input type="text" id="productTypeName" name="ten_loai" 
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-blue-500 focus:border-blue-500"
+               placeholder="VD: Đồ uống" required>
+      </div>
+
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancelProductType" 
+                class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit" 
+                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Lưu</button>
       </div>
     </form>
   </div>
@@ -2039,21 +2103,24 @@ window.Toast = {
 <script src="/js/admin.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Kiểm tra xem scope đã tồn tại chưa
-  if (typeof window.revenueModule === 'undefined') {
+  if (typeof window.revenueModule === "undefined") {
     window.revenueModule = {
       revenueChart: null,
-      allOrders: [],
 
-      // Hàm format tiền
+      allRevenues: [], // từ doanhthuca
+      allOrders: [],   // từ donhang
+
+      // Đổi mapping này theo DB ca_lam của bạn
+      // Ví dụ: ca_id=1 sáng, ca_id=2 tối
+      SHIFT_MAP: { 1: "morning", 2: "evening" },
+
       formatCurrency(amount) {
-        return new Intl.NumberFormat('vi-VN', {
-          style: 'currency',
-          currency: 'VND'
+        return new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
         }).format(amount);
       },
 
-      // Hàm lấy ngày đầu tuần
       getWeekStart(date) {
         const d = new Date(date);
         const day = d.getDay();
@@ -2061,22 +2128,22 @@ window.Toast = {
         return new Date(d.setDate(diff));
       },
 
-      // Hàm lấy khoảng ngày theo filter
       getDateRange(filterType) {
         const today = new Date();
-        let startDate, endDate = new Date(today);
+        let startDate,
+          endDate = new Date(today);
 
-        switch(filterType) {
-          case 'day':
+        switch (filterType) {
+          case "day":
             startDate = new Date(today);
             break;
-          case 'week': 
+          case "week":
             startDate = this.getWeekStart(today);
             break;
-          case 'month':
+          case "month":
             startDate = new Date(today.getFullYear(), today.getMonth(), 1);
             break;
-          case 'year':
+          case "year":
             startDate = new Date(today.getFullYear(), 0, 1);
             break;
           default:
@@ -2085,253 +2152,378 @@ window.Toast = {
 
         return {
           startDate: new Date(startDate.setHours(0, 0, 0, 0)),
-          endDate: new Date(endDate. setHours(23, 59, 59, 999))
+          endDate: new Date(endDate.setHours(23, 59, 59, 999)),
         };
       },
 
-      // Hàm xác định ca làm việc
-      getShift(date) {
-        const hour = new Date(date).getHours();
-        if (hour >= 8 && hour < 14) {
-          return 'morning';
-        } else if (hour >= 14 && hour < 20) {
-          return 'evening';
-        }
-        return 'outside'; // Ngoài giờ làm việc
+      // ===== SHIFT helpers =====
+      getShiftFromCaId(ca_id) {
+        return this.SHIFT_MAP[Number(ca_id)] || "outside";
       },
 
-      // Hàm lấy tên ca làm việc
+      // Donhang thường không có ca_id, nên suy ra ca theo giờ của ngay_dat
+      getShiftFromOrderDate(dateStr) {
+        const hour = new Date(dateStr).getHours();
+        if (hour >= 8 && hour < 14) return "morning";
+        if (hour >= 14 && hour < 20) return "evening";
+        return "outside";
+      },
+
       getShiftLabel(shift) {
         const labels = {
-          'morning':  'Ca sáng',
-          'evening': 'Ca tối',
-          'outside': 'Ngoài giờ'
+          morning: "Ca sáng",
+          evening: "Ca tối",
+          outside: "Ngoài giờ",
         };
         return labels[shift] || shift;
       },
 
-      // Hàm lọc dữ liệu
-      filterOrders(orders, startDate, endDate, shift = 'all') {
-        return orders.filter(order => {
-          const orderDate = new Date(order.ngay_dat);
-          const dateInRange = orderDate >= startDate && orderDate <= endDate;
+      // ===== Filter data =====
+      filterRevenues(revenues, startDate, endDate, shift = "all") {
+        return revenues.filter((row) => {
+          const rowDate = new Date(row.ngay);
+          const dateInRange = rowDate >= startDate && rowDate <= endDate;
 
-          if (shift === 'all') {
-            return dateInRange;
-          }
+          if (shift === "all") return dateInRange;
 
-          const orderShift = this.getShift(order.ngay_dat);
+          const rowShift = this.getShiftFromCaId(row.ca_id);
+          return dateInRange && rowShift === shift;
+        });
+      },
+
+      filterOrders(orders, startDate, endDate, shift = "all") {
+        return orders.filter((order) => {
+          const d = new Date(order.ngay_dat);
+          const dateInRange = d >= startDate && d <= endDate;
+
+          if (shift === "all") return dateInRange;
+
+          const orderShift = this.getShiftFromOrderDate(order.ngay_dat);
           return dateInRange && orderShift === shift;
         });
       },
 
-      // Hàm nhóm dữ liệu theo ngày
-      groupByDate(orders) {
-        const grouped = {};
-        orders.forEach(order => {
-          const date = new Date(order.ngay_dat).toLocaleDateString('vi-VN');
-          if (!grouped[date]) {
-            grouped[date] = { date, count: 0, revenue: 0, paid: 0 };
-          }
-          grouped[date].count++;
-          grouped[date].revenue += parseInt(order.tien_sau_giam);
-          if (order.trang_thai === 'Đã thanh toán') {
-            grouped[date].paid++;
-          }
-        });
-        return Object.values(grouped).sort((a, b) => new Date(a.date) - new Date(b.date));
+      // ===== Group by date (join doanhthu + order count) =====
+      // key theo yyyy-mm-dd để join chắc chắn (không phụ thuộc locale)
+      toDateKey(dateObj) {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const d = String(dateObj.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
       },
 
-      // Hàm cập nhật biểu đồ
-      updateChart(orders, filterType) {
-        const grouped = this.groupByDate(orders);
-        const labels = grouped.map(g => g.date);
-        const revenues = grouped.map(g => g. revenue);
+      // Nhóm doanh thu theo ngày
+      groupRevenueByDate(revenues) {
+        const map = {}; // {dateKey: { revenue, byShift }}
+        revenues.forEach((row) => {
+          const d = new Date(row.ngay);
+          const key = this.toDateKey(d);
 
-        const ctx = document.getElementById('revenue-chart');
-        if (! ctx) return;
+          if (!map[key]) {
+            map[key] = {
+              dateKey: key,
+              label: d.toLocaleDateString("vi-VN"),
+              revenue: 0,
+              byShiftRevenue: { morning: 0, evening: 0, outside: 0 },
+            };
+          }
 
-        const chartContext = ctx.getContext('2d');
+          const value = parseInt(row.tong_doanh_thu || "0", 10);
+          map[key].revenue += value;
 
-        if (this.revenueChart) {
-          this.revenueChart. destroy();
-        }
+          const shift = this.getShiftFromCaId(row.ca_id);
+          map[key].byShiftRevenue[shift] =
+            (map[key].byShiftRevenue[shift] || 0) + value;
+        });
+        return map;
+      },
+
+      // Nhóm đơn hàng theo ngày: đếm số đơn + đếm đã thanh toán + tổng tiền (nếu có)
+      groupOrdersByDate(orders) {
+        const map = {}; // {dateKey: { count, paid, totalValue, byShiftCount }}
+        orders.forEach((o) => {
+          const d = new Date(o.ngay_dat);
+          const key = this.toDateKey(d);
+
+          if (!map[key]) {
+            map[key] = {
+              dateKey: key,
+              label: d.toLocaleDateString("vi-VN"),
+              count: 0,
+              paid: 0,
+              totalValue: 0,
+              byShiftCount: { morning: 0, evening: 0, outside: 0 },
+            };
+          }
+
+          map[key].count += 1;
+
+          // paid (nếu có trường trang_thai như code cũ)
+          if (o.trang_thai === "Đã thanh toán") map[key].paid += 1;
+
+          // tổng tiền đơn (nếu API có tien_sau_giam)
+          const val = parseInt(o.tien_sau_giam || "0", 10);
+          map[key].totalValue += Number.isFinite(val) ? val : 0;
+
+          const shift = this.getShiftFromOrderDate(o.ngay_dat);
+          map[key].byShiftCount[shift] =
+            (map[key].byShiftCount[shift] || 0) + 1;
+        });
+        return map;
+      },
+
+      // Join theo ngày: ưu tiên lấy label từ revenue nếu có, không thì từ orders
+      buildDailyRows(filteredRevenues, filteredOrders) {
+        const revMap = this.groupRevenueByDate(filteredRevenues);
+        const ordMap = this.groupOrdersByDate(filteredOrders);
+
+        const allKeys = new Set([
+          ...Object.keys(revMap),
+          ...Object.keys(ordMap),
+        ]);
+
+        const rows = Array.from(allKeys).map((key) => {
+          const r = revMap[key];
+          const o = ordMap[key];
+
+          return {
+            dateKey: key,
+            label: r?.label || o?.label || key,
+            revenue: r?.revenue || 0,
+            ordersCount: o?.count || 0,
+            paidCount: o?.paid || 0,
+            byShiftRevenue: r?.byShiftRevenue || {
+              morning: 0,
+              evening: 0,
+              outside: 0,
+            },
+            byShiftCount: o?.byShiftCount || {
+              morning: 0,
+              evening: 0,
+              outside: 0,
+            },
+          };
+        });
+
+        // sort theo dateKey yyyy-mm-dd
+        rows.sort((a, b) => new Date(a.dateKey) - new Date(b.dateKey));
+        return rows;
+      },
+
+      // ===== UI updates =====
+      updateChart(dailyRows) {
+        const labels = dailyRows.map((x) => x.label);
+        const values = dailyRows.map((x) => x.revenue);
+
+        const ctx = document.getElementById("revenue-chart");
+        if (!ctx) return;
+        const chartContext = ctx.getContext("2d");
+
+        if (this.revenueChart) this.revenueChart.destroy();
 
         this.revenueChart = new Chart(chartContext, {
-          type: 'bar',
+          type: "bar",
           data: {
-            labels: labels,
-            datasets:  [
+            labels,
+            datasets: [
               {
-                label: 'Doanh thu (đ)',
-                data: revenues,
-                backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                borderColor: 'rgba(59, 130, 246, 1)',
+                label: "Doanh thu (đ)",
+                data: values,
+                backgroundColor: "rgba(59, 130, 246, 0.7)",
+                borderColor: "rgba(59, 130, 246, 1)",
                 borderWidth: 1,
-                borderRadius: 4
-              }
-            ]
+                borderRadius: 4,
+              },
+            ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              legend:  {
-                display: true,
-                position: 'top'
-              }
+              legend: { display: true, position: "top" },
             },
             scales: {
               y: {
                 beginAtZero: true,
                 ticks: {
-                  callback: (value) => {
-                    return value. toLocaleString('vi-VN') + ' đ';
-                  }
-                }
-              }
-            }
-          }
+                  callback: (value) => value.toLocaleString("vi-VN") + " đ",
+                },
+              },
+            },
+          },
         });
       },
 
-      // Hàm cập nhật thống kê
-      updateStats(orders) {
-        const totalRevenue = orders.reduce((sum, order) => sum + parseInt(order.tien_sau_giam), 0);
-        const totalOrders = orders. length;
-        const avgRevenue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
-        const paidOrders = orders.filter(o => o.trang_thai === 'Đã thanh toán').length;
+      updateStats(filteredOrders, dailyRows) {
+        const totalRevenue = dailyRows.reduce((s, x) => s + x.revenue, 0);
+        const totalOrders = filteredOrders.length;
 
-        const totalRevenueEl = document.getElementById('total-revenue');
-        const totalOrdersEl = document.getElementById('total-orders');
-        const avgRevenueEl = document.getElementById('avg-revenue');
-        const paidOrdersEl = document.getElementById('paid-orders');
+        // Nếu muốn avg theo doanh thu/đơn (dùng doanhthu / số đơn)
+        const avgRevenue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+        const paidOrders = filteredOrders.filter((o) => o.trang_thai === "Đã thanh toán").length;
+
+        const totalRevenueEl = document.getElementById("total-revenue");
+        const totalOrdersEl = document.getElementById("total-orders");
+        const avgRevenueEl = document.getElementById("avg-revenue");
+        const paidOrdersEl = document.getElementById("paid-orders");
 
         if (totalRevenueEl) totalRevenueEl.textContent = this.formatCurrency(totalRevenue);
         if (totalOrdersEl) totalOrdersEl.textContent = totalOrders;
+
+        // Nếu donhang không có trang_thai/paid thì sẽ ra 0 (không lỗi)
         if (avgRevenueEl) avgRevenueEl.textContent = this.formatCurrency(avgRevenue);
         if (paidOrdersEl) paidOrdersEl.textContent = paidOrders;
       },
 
-      // Hàm cập nhật bảng
-      updateTable(orders) {
-        const grouped = this.groupByDate(orders);
-        const tbody = document.getElementById('revenue-table-body');
+      updateTable(dailyRows) {
+        const tbody = document.getElementById("revenue-table-body");
+        if (!tbody) return;
 
-        if (! tbody) return;
-
-        tbody. innerHTML = grouped.map(g => {
-          const shiftsInDay = {};
-          orders
-            .filter(o => new Date(o.ngay_dat).toLocaleDateString('vi-VN') === g.date)
-            .forEach(o => {
-              const shift = this.getShift(o.ngay_dat);
-              if (!shiftsInDay[shift]) shiftsInDay[shift] = 0;
-              shiftsInDay[shift]++;
-            });
-
-          const shiftInfo = Object.entries(shiftsInDay)
-            .map(([shift, count]) => `${this.getShiftLabel(shift)}: ${count}`)
-            .join(' | ');
-
-          return `
-            <tr class="border-b hover:bg-gray-50">
-              <td class="px-4 py-2">${g. date}</td>
-              <td class="px-4 py-2">${g.count}</td>
-              <td class="px-4 py-2 font-semibold text-green-600">${this. formatCurrency(g.revenue)}</td>
-              <td class="px-4 py-2 text-xs">${shiftInfo}</td>
-              <td class="px-4 py-2">
-                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">${g.paid}/${g.count}</span>
-              </td>
+        if (dailyRows.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="px-4 py-2 text-center text-gray-500">Không có dữ liệu</td>
             </tr>
           `;
-        }).join('');
+          return;
+        }
+
+        tbody.innerHTML = dailyRows
+          .map((g) => {
+            // Thông tin ca: nếu đang filter theo 1 ca, rows đã lọc theo ca rồi,
+            // nhưng mình vẫn show breakdown để dễ nhìn
+            const shiftInfo = [
+              ["morning", "Ca sáng"],
+              ["evening", "Ca tối"],
+              ["outside", "Ngoài giờ"],
+            ]
+              .map(([k, label]) => {
+                const c = g.byShiftCount?.[k] || 0;
+                const rev = g.byShiftRevenue?.[k] || 0;
+                if (c === 0 && rev === 0) return null;
+                return `${label}: ${c} đơn / ${this.formatCurrency(rev)}`;
+              })
+              .filter(Boolean)
+              .join(" | ");
+
+            return `
+              <tr class="border-b hover:bg-gray-50">
+                <td class="px-4 py-2">${g.label}</td>
+                <td class="px-4 py-2">${g.ordersCount}</td>
+                <td class="px-4 py-2 font-semibold text-green-600">${this.formatCurrency(g.revenue)}</td>
+                <td class="px-4 py-2 text-xs">${shiftInfo || "—"}</td>
+              </tr>
+            `;
+          })
+          .join("");
       },
 
-      // Hàm lọc và cập nhật
+      // ===== Apply filter (2 nguồn) =====
       applyFilter() {
-        const filterType = document.getElementById('filter-type').value;
-        const shift = document. getElementById('filter-shift').value;
-        let filteredOrders = [];
+        const filterType = document.getElementById("filter-type").value;
+        const shift = document.getElementById("filter-shift").value;
 
-        if (filterType === 'custom') {
-          const startDate = document.getElementById('start-date').value;
-          const endDate = document.getElementById('end-date').value;
+        let startDate, endDate;
 
-          if (! startDate || !endDate) {
-            alert('Vui lòng chọn khoảng ngày');
+        if (filterType === "custom") {
+          const s = document.getElementById("start-date").value;
+          const e = document.getElementById("end-date").value;
+
+          if (!s || !e) {
+            alert("Vui lòng chọn khoảng ngày");
             return;
           }
 
-          filteredOrders = this.filterOrders(this.allOrders,
-            new Date(startDate),
-            new Date(endDate + 'T23:59:59'),
-            shift
-          );
+          startDate = new Date(s + "T00:00:00");
+          endDate = new Date(e + "T23:59:59");
         } else {
           const range = this.getDateRange(filterType);
-          filteredOrders = this.filterOrders(this.allOrders, range.startDate, range.endDate, shift);
+          startDate = range.startDate;
+          endDate = range.endDate;
         }
 
-        this.updateStats(filteredOrders);
-        this.updateChart(filteredOrders, filterType);
-        this.updateTable(filteredOrders);
+        const filteredRevenues = this.filterRevenues(
+          this.allRevenues,
+          startDate,
+          endDate,
+          shift
+        );
+
+        const filteredOrders = this.filterOrders(
+          this.allOrders,
+          startDate,
+          endDate,
+          shift
+        );
+
+        const dailyRows = this.buildDailyRows(filteredRevenues, filteredOrders);
+
+        this.updateStats(filteredOrders, dailyRows);
+        this.updateChart(dailyRows);
+        this.updateTable(dailyRows);
       },
 
-      // Load dữ liệu từ API
-      async loadOrders() {
+      // ===== Load BOTH APIs =====
+      async loadData() {
         try {
-          const response = await fetch('http://localhost:3000/donhang/laytatca');
-          const data = await response.json();
-          this.allOrders = data || [];
-          this.applyFilter(); // Mặc định lọc theo tháng này
-        } catch (error) {
-          console.error('Lỗi tải dữ liệu:', error);
+          const [revRes, orderRes] = await Promise.all([
+            fetch("http://localhost:3000/doanhthuca/laytatca"),
+            fetch("http://localhost:3000/donhang/laytatca"),
+          ]);
+
+          const revJson = await revRes.json();
+          const orderJson = await orderRes.json();
+
+          // doanhthuca trả { thanh_cong, du_lieu }
+          this.allRevenues = Array.isArray(revJson?.du_lieu) ? revJson.du_lieu : [];
+
+          // donhang: bạn đang dùng dạng nào mình support 2 kiểu:
+          // 1) { thanh_cong, du_lieu: [...] }
+          // 2) trả thẳng mảng [...]
+          if (Array.isArray(orderJson?.du_lieu)) this.allOrders = orderJson.du_lieu;
+          else if (Array.isArray(orderJson)) this.allOrders = orderJson;
+          else this.allOrders = [];
+
+          this.applyFilter();
+        } catch (err) {
+          console.error("Lỗi tải dữ liệu:", err);
         }
       },
 
-      // Khởi tạo event listeners
       init() {
-        const filterTypeEl = document.getElementById('filter-type');
-        const filterShiftEl = document.getElementById('filter-shift');
-        const btnFilterEl = document.getElementById('btn-filter');
-        const customDateRange = document.getElementById('custom-date-range');
+        const filterTypeEl = document.getElementById("filter-type");
+        const filterShiftEl = document.getElementById("filter-shift");
+        const btnFilterEl = document.getElementById("btn-filter");
+        const customDateRange = document.getElementById("custom-date-range");
 
         if (filterTypeEl) {
-          filterTypeEl.addEventListener('change', () => {
-            if (filterTypeEl. value === 'custom') {
-              customDateRange?. classList.remove('hidden');
+          filterTypeEl.addEventListener("change", () => {
+            if (filterTypeEl.value === "custom") {
+              customDateRange?.classList.remove("hidden");
             } else {
-              customDateRange?.classList.add('hidden');
+              customDateRange?.classList.add("hidden");
               this.applyFilter();
             }
           });
         }
 
-        if (filterShiftEl) {
-          filterShiftEl. addEventListener('change', () => this.applyFilter());
-        }
+        if (filterShiftEl) filterShiftEl.addEventListener("change", () => this.applyFilter());
+        if (btnFilterEl) btnFilterEl.addEventListener("click", () => this.applyFilter());
 
-        if (btnFilterEl) {
-          btnFilterEl.addEventListener('click', () => this.applyFilter());
-        }
-
-        this.loadOrders();
-      }
+        this.loadData();
+      },
     };
 
-    // Khởi tạo sau khi DOM sẵn sàng
-    if (document. readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        window.revenueModule.init();
-      });
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => window.revenueModule.init());
     } else {
       window.revenueModule.init();
     }
   }
-
-  
 </script>
+
+
 
 
 </body>
