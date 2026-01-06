@@ -810,6 +810,9 @@
       // ============================================
       let bill = [];
       let billContainer, totalEl, emptyEl, kichCoList, toppingList;
+      let hoaDonTheoBan = {};
+      let banList = [];
+      let selectedBanId = null;
 
       function renderBill() {
         if (!billContainer) return;
@@ -1090,9 +1093,6 @@
         const chooseTableBtn = document.getElementById("chooseTableBtn");
         const completeBtn = document.getElementById("completeBtn");
         const banContainerEl = document.getElementById("banContainer");
-        let banList = [],
-          hoaDonTheoBan = {},
-          selectedBanId = null;
 
         fetch("http://localhost:3000/ban/laytatca")
           .then((res) => res.json())
@@ -1229,7 +1229,7 @@
                 if (item.is_combo) li.textContent = `🎁 ${item.ten_combo} x${item.so_luong}`;
                 else
                   li.textContent = `${item.ten_san_pham} ${item.kich_co ? "(" + item.kich_co + ")" : ""} ${
-                    item.toppings.length ? "+ " + item.toppings.map((t) => t.ten_topping).join(", ") : ""
+                    item.toppings && item.toppings.length ? "+ " + item.toppings.map((t) => t.ten_topping).join(", ") : ""
                   } x${item.so_luong}`;
                 ul.appendChild(li);
               });

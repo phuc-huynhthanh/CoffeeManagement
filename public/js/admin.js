@@ -339,35 +339,6 @@ async function loadOrders() {
   }
 }
 
-// Hàm render danh sách đơn hàng
-function renderOrders(orders) {
-  const tbody = document.getElementById("orderTable");
-  tbody.innerHTML = "";
-
-  if (!orders || orders.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-500">Chưa có đơn hàng nào.</td></tr>`;
-    return;
-  }
-
-  orders.forEach((item, index) => {
-    const ngayDat = new Date(item.ngay_dat).toLocaleString("vi-VN");
-
-    const row = document.createElement("tr");
-    row.classList.add("hover:bg-gray-50");
-    row.innerHTML = `
-      <td class="px-4 py-3">${index + 1}</td>
-      <td class="px-4 py-3">${ngayDat}</td>
-      <td class="px-4 py-3">${item.tong_tien}</td>
-      <td class="px-4 py-3">${item.tien_sau_giam}</td>
-      <td class="px-4 py-3">${item.trang_thai}</td>
-      <td class="px-4 py-3">${item.ban?.ten_ban || "—"}</td>
-      <td class="px-4 py-3">${item.thanh_vien?.ho_ten || "Khách vãng lai"}</td>
-      <td class="px-4 py-3">${item.nhan_vien_tao_don?.ho_ten || "—"}</td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
 // Xử lý lọc
 document.getElementById("btnFilterOrders").addEventListener("click", () => {
   const startDateStr = document.getElementById("filterStartDate").value;
@@ -428,10 +399,10 @@ window.addEventListener("DOMContentLoaded", () => {
   async function viewOrderDetail(order) {
     try {
       // Hiển thị thông tin đơn hàng
-      document.getElementById('orderDate').textContent = new Date(order.ngay_dat).toLocaleString('vi-VN');
-      document.getElementById('orderCustomer').textContent = order.thanh_vien?.ho_ten || 'Khách vãng lai';
-      document.getElementById('orderTable').textContent = order.ban?.ten_ban || 'N/A';
-      document.getElementById('orderStaff').textContent = order.nhan_vien_tao_don?.ho_ten || 'N/A';
+      document.getElementById('orderDetailDate').textContent = new Date(order.ngay_dat).toLocaleString('vi-VN');
+      document.getElementById('orderDetailCustomer').textContent = order.thanh_vien?.ho_ten || 'Khách vãng lai';
+      document.getElementById('orderDetailTableName').textContent = order.ban?.ten_ban || 'N/A';
+      document.getElementById('orderDetailStaff').textContent = order.nhan_vien_tao_don?.ho_ten || 'N/A';
 
       // Load danh sách kích cỡ, topping và sản phẩm từ API để lấy giá gốc
       const [sizeRes, toppingRes, productRes] = await Promise.all([
