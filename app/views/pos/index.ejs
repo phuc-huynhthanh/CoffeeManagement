@@ -785,6 +785,29 @@
       }
 
       function addComboToBill(combo) {
+        if (!currentServingTable) {
+          Toast.warning("Vui lòng chọn bàn trước khi chọn món!");
+          document.getElementById("banContainer").classList.remove("hidden");
+          const banListEl = document.getElementById("banList");
+          banListEl.innerHTML = "";
+          hoaDonTheoBan = JSON.parse(localStorage.getItem("hoaDonTheoBan")) || {};
+          banList.forEach((ban) => {
+            let trangThai = ban.trang_thai;
+            if (hoaDonTheoBan[ban.ban_id] && hoaDonTheoBan[ban.ban_id].length > 0 && ban.trang_thai !== "Đã thanh toán") {
+              trangThai = "Đang sử dụng";
+            }
+            const div = document.createElement("div");
+            div.className = `p-3 rounded-lg text-center font-semibold cursor-pointer transition
+              ${trangThai === "Trống" ? "bg-green-200 hover:bg-green-300" : ""}
+              ${trangThai === "Đang sử dụng" ? "bg-yellow-200 hover:bg-yellow-300" : ""}
+              ${trangThai === "Đã thanh toán" ? "bg-gray-300 cursor-not-allowed" : ""}`;
+            div.textContent = `${ban.ten_ban} — ${trangThai}`;
+            if (trangThai !== "Đã thanh toán") div.addEventListener("click", () => selectBan(ban.ban_id));
+            banListEl.appendChild(div);
+          });
+          return;
+        }
+        
         const existingCombo = bill.find((item) => item.combo_id === combo.combo_id && item.is_combo);
 
         if (existingCombo) {
@@ -813,6 +836,7 @@
       let hoaDonTheoBan = {};
       let banList = [];
       let selectedBanId = null;
+      let currentServingTable = null; // Bàn đang phục vụ
 
       function renderBill() {
         if (!billContainer) return;
@@ -962,6 +986,12 @@
         });
 
         function addToBill(sp) {
+          if (!currentServingTable) {
+            Toast.warning("Vui lòng chọn bàn trước khi chọn món!");
+            banContainerEl.classList.remove("hidden");
+            renderBan();
+            return;
+          }
           const existing = bill.find((i) => i.san_pham_id === sp.san_pham_id && !i.kich_co && !i.is_combo);
           if (existing) existing.so_luong++;
           else bill.push({ ...sp, so_luong: 1 });
@@ -1105,17 +1135,6 @@
         if (storedHoaDon) hoaDonTheoBan = JSON.parse(storedHoaDon);
 
         chooseTableBtn.addEventListener("click", () => {
-          if (bill.length === 0) {
-            Toast.warning("Vui lòng chọn món trước khi chọn bàn!");
-            return;
-          }
-
-          const spChuaChonKichCo = bill.find((item) => !item.is_combo && !item.kich_co);
-          if (spChuaChonKichCo) {
-            Toast.warning("Vui lòng chọn kích cỡ cho tất cả sản phẩm!");
-            return;
-          }
-
           banContainerEl.classList.remove("hidden");
           renderBan();
         });
@@ -1146,11 +1165,18 @@
 
         function selectBan(ban_id) {
           selectedBanId = ban_id;
+          currentServingTable = ban_id;
           banContainerEl.classList.add("hidden");
           const tenBan = banList.find((b) => b.ban_id === ban_id).ten_ban;
-          Toast.success(`Đã chọn ${tenBan}, nhấn Hoàn tất để lưu sản phẩm`);
+          
+          // Load món từ bàn nếu có
+          const savedBill = hoaDonTheoBan[ban_id] || [];
+          bill = savedBill.map(item => ({...item}));
+          renderBill();
+          
+          Toast.success(`Đang phục vụ ${tenBan}`);
           completeBtn.classList.remove("hidden");
-          chooseTableBtn.classList.add("hidden");
+          chooseTableBtn.textContent = `🪑 ${tenBan} - Đổi bàn`;
         }
 
         completeBtn.addEventListener("click", () => {
@@ -1158,14 +1184,24 @@
             Toast.warning("Vui lòng chọn bàn!");
             return;
           }
-          if (!hoaDonTheoBan[selectedBanId]) hoaDonTheoBan[selectedBanId] = [];
-          hoaDonTheoBan[selectedBanId].push(...bill.map((item) => ({ ...item })));
+          
+          // Kiểm tra món chưa chọn kích cỡ
+          const spChuaChonKichCo = bill.find((item) => !item.is_combo && !item.kich_co);
+          if (spChuaChonKichCo) {
+            Toast.warning("Vui lòng chọn kích cỡ cho tất cả sản phẩm!");
+            return;
+          }
+          
+          // Lưu món vào bàn
+          hoaDonTheoBan[selectedBanId] = bill.map((item) => ({ ...item }));
           localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
           bill.length = 0;
           renderBill();
           completeBtn.classList.add("hidden");
           chooseTableBtn.classList.remove("hidden");
+          chooseTableBtn.textContent = "Chọn bàn";
           selectedBanId = null;
+          currentServingTable = null;
           renderBan();
           Toast.success("Đã lưu sản phẩm vào bàn");
         });
