@@ -1,4 +1,4 @@
-
+//********************* TOAST FUNCTION *************************/
   // Toast function
   function showToast(message, type = "success", duration = 3000) {
     const container = document.getElementById("toastContainer");
@@ -26,8 +26,18 @@
     .animate-slide-in { animation: slide-in 0.5s ease-out; }
   `;
   document.head.appendChild(style);
+  // **************** end Toast Notification end***********************
 
-  // *****************************Danh sach san pham******************************
+  // Helper function format currency
+  function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount || 0);
+  }
+
+  // *****************************Quan ly san pham******************************
+  // Load danh sách sản phẩm
 async function loadProducts() {
   try {
     const res = await fetch("http://localhost:3000/sanpham/laytatca");
@@ -174,7 +184,7 @@ async function editProduct(id) {
     showToast("❌ Lỗi khi tải dữ liệu sản phẩm", "error");
   }
 }
-
+// Sửa sản phẩm từ dòng bảng
 async function editProductFromRow(button, productId) {
   const row = button.closest("tr"); // Lấy hàng <tr> của nút Sửa
   const cells = row.children;
@@ -204,7 +214,11 @@ async function editProductFromRow(button, productId) {
   document.getElementById("productDesc").value = ""; // Nếu muốn, có thể thêm cột mô tả vào bảng
   document.getElementById("productModal").classList.remove("hidden");
 }
+//**********end Quan ly san pham end ***************
 
+
+
+// **********Quan ly ban*****************
 // Hiển thị modal thêm bàn
 document.getElementById("btnAddTable").addEventListener("click", () => {
   document.getElementById("tableModalTitle").textContent = "Thêm bàn";
@@ -217,6 +231,8 @@ document.getElementById("btnCancelTable").addEventListener("click", () => {
   document.getElementById("tableModal").classList.add("hidden");
   document.getElementById("tableForm").reset();
 });
+
+
 
 // Load danh sách bàn
 async function loadTables() {
@@ -301,7 +317,11 @@ window.addEventListener("DOMContentLoaded", () => {
   loadTables();
 });
 
+// **********end Quan ly ban end ***************
   
+
+
+// **********Quan ly don hang ***************
 // Load danh sách đơn hàng
 let allOrders = []; // Lưu tất cả đơn hàng để lọc
 
@@ -404,35 +424,161 @@ window.addEventListener("DOMContentLoaded", () => {
   loadOrders();
 });
 
-// Mở modal và điền dữ liệu
-  function viewOrderDetail(order) {
-    const tbody = document.getElementById("orderDetailTable");
-    tbody.innerHTML = "";
+// Xem chi tiết đơn hàng
+  async function viewOrderDetail(order) {
+    try {
+      // Hiển thị thông tin đơn hàng
+      document.getElementById('orderDate').textContent = new Date(order.ngay_dat).toLocaleString('vi-VN');
+      document.getElementById('orderCustomer').textContent = order.thanh_vien?.ho_ten || 'Khách vãng lai';
+      document.getElementById('orderTable').textContent = order.ban?.ten_ban || 'N/A';
+      document.getElementById('orderStaff').textContent = order.nhan_vien_tao_don?.ho_ten || 'N/A';
 
-    if (!order.chi_tiet || order.chi_tiet.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Chưa có chi tiết nào.</td></tr>`;
-    } else {
-      order.chi_tiet.forEach((item, index) => {
-        const row = document.createElement("tr");
-        row.classList.add("hover:bg-gray-50");
-        row.innerHTML = `
-          <td class="px-4 py-2">${index + 1}</td>
-          <td class="px-4 py-2">${item.ten_san_pham || "—"}</td>
-          <td class="px-4 py-2">${item.ten_kich_co || "—"}</td>
-          <td class="px-4 py-2">${item.ten_topping || "—"}</td>
-          <td class="px-4 py-2">${item.don_gia}</td>
-          <td class="px-4 py-2">${item.so_luong}</td>
-        `;
-        tbody.appendChild(row);
-      });
+      // Load danh sách kích cỡ, topping và sản phẩm từ API để lấy giá gốc
+      const [sizeRes, toppingRes, productRes] = await Promise.all([
+        fetch('http://localhost:3000/kichco/laytatca'),
+        fetch('http://localhost:3000/topping/laytatca'),
+        fetch('http://localhost:3000/sanpham/laytatca')
+      ]);
+      const allSizes = await sizeRes.json();
+      const allToppings = await toppingRes.json();
+      const allProducts = await productRes.json();
+
+      // Tạo map để tra giá nhanh
+      const sizeMap = {};
+      const toppingMap = {};
+      const productMap = {};
+      allSizes.forEach(s => sizeMap[s.kich_co_id] = s.gia_them);
+      allToppings.forEach(t => toppingMap[t.topping_id] = t.gia_them);
+      allProducts.forEach(p => productMap[p.san_pham_id] = p.gia_co_ban);
+
+      // Nhóm chi tiết theo loại
+      const products = [];
+      const sizes = [];
+      const toppings = [];
+
+      if (order.chi_tiet && order.chi_tiet.length > 0) {
+        order.chi_tiet.forEach(item => {
+          // Sản phẩm
+          if (item.ten_san_pham && item.san_pham_id) {
+            const existingProduct = products.find(p => p.san_pham_id === item.san_pham_id);
+            if (existingProduct) {
+              existingProduct.so_luong += item.so_luong || 1;
+            } else {
+              products.push({
+                san_pham_id: item.san_pham_id,
+                ten_san_pham: item.ten_san_pham,
+                don_gia: productMap[item.san_pham_id] || 0, // Lấy giá gốc từ bảng sản phẩm
+                so_luong: item.so_luong || 1
+              });
+            }
+          }
+
+          // Kích cỡ
+          if (item.ten_kich_co && item.kich_co_id) {
+            const existingSize = sizes.find(s => s.ten_kich_co === item.ten_kich_co);
+            if (existingSize) {
+              existingSize.so_luong += item.so_luong || 1;
+            } else {
+              sizes.push({
+                ten_kich_co: item.ten_kich_co,
+                gia_them: sizeMap[item.kich_co_id] || 0,
+                so_luong: item.so_luong || 1
+              });
+            }
+          }
+
+          // Topping
+          if (item.ten_topping && item.topping_id) {
+            const existingTopping = toppings.find(t => t.ten_topping === item.ten_topping);
+            if (existingTopping) {
+              existingTopping.so_luong += item.so_luong || 1;
+            } else {
+              toppings.push({
+                ten_topping: item.ten_topping,
+                gia_them: toppingMap[item.topping_id] || 0,
+                so_luong: item.so_luong || 1
+              });
+            }
+          }
+        });
+      }
+
+      // Render danh sách sản phẩm
+      const productList = document.getElementById('productList');
+      if (products.length > 0) {
+        productList.innerHTML = products.map((item, index) => `
+          <div class="border-b border-gray-200 py-2">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <span class="text-gray-800">${index + 1}. ${item.ten_san_pham}</span>
+              </div>
+              <div class="text-right text-sm">
+                <span class="text-gray-600">${formatCurrency(item.don_gia)}</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        productList.innerHTML = '<p class="text-gray-400 text-sm py-2">Không có sản phẩm</p>';
+      }
+
+      // Render danh sách kích cỡ
+      const sizeList = document.getElementById('sizeList');
+      if (sizes.length > 0) {
+        sizeList.innerHTML = sizes.map((item, index) => `
+          <div class="border-b border-gray-200 py-2">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <span class="text-gray-800">${index + 1}. ${item.ten_kich_co}</span>
+              </div>
+              <div class="text-right text-sm">
+                <span class="text-gray-600">${formatCurrency(item.gia_them)}</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        sizeList.innerHTML = '<p class="text-gray-400 text-sm py-2">Không có kích cỡ</p>';
+      }
+
+      // Render danh sách topping
+      const toppingList = document.getElementById('toppingList');
+      if (toppings.length > 0) {
+        toppingList.innerHTML = toppings.map((item, index) => `
+          <div class="border-b border-gray-200 py-2">
+            <div class="flex justify-between items-center">
+              <div class="flex-1">
+                <span class="text-gray-800">${index + 1}. ${item.ten_topping}</span>
+              </div>
+              <div class="text-right text-sm">
+                <span class="text-gray-600">${formatCurrency(item.gia_them)}</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        toppingList.innerHTML = '<p class="text-gray-400 text-sm py-2">Không có topping</p>';
+      }
+
+      // Hiển thị tổng tiền
+      document.getElementById('orderTotalAmount').textContent = formatCurrency(order.tong_tien || 0);
+      const discount = (order.tong_tien || 0) - (order.tien_sau_giam || 0);
+      document.getElementById('orderDiscount').textContent = discount > 0 ? '- ' + formatCurrency(discount) : formatCurrency(0);
+      document.getElementById('orderFinalAmount').textContent = formatCurrency(order.tien_sau_giam || 0);
+
+      // Hiển thị modal
+      document.getElementById("orderDetailModal").classList.remove("hidden");
+    } catch (error) {
+      console.error('Lỗi:', error);
+      showToast('Có lỗi xảy ra khi hiển thị chi tiết đơn hàng', 'error');
     }
-
-    document.getElementById("orderDetailModal").classList.remove("hidden");
   }
 
   function closeOrderDetailModal() {
     document.getElementById("orderDetailModal").classList.add("hidden");
   }
+
+  // ********** end Quan ly don hang end ***************
 
   // Sửa renderOrders để thêm nút xem chi tiết
   function renderOrders(orders) {
@@ -468,8 +614,9 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-// HIỂN THỊ TÊN NGƯỜI DÙNG
-// ===========================
+
+
+// ******** HIỂN THỊ TÊN NGƯỜI DÙNG *********
 const user = JSON.parse(localStorage.getItem("user"));
 const usernameElement = document.getElementById("username");
 
@@ -489,10 +636,11 @@ if (!user || !user.tai_khoan_id) {
       usernameElement.textContent = "❌ Lỗi tải tên người dùng";
     });
 }
+// ******** end HIỂN THỊ TÊN NGƯỜI DÙNG end *********
 
-// ===========================
+
+// ******** Quản lý tài khoản nhân viên ********
 // THÊM NHÂN VIÊN (ĐÚNG API DANGKY + FORM MỚI)
-// ===========================
 document.getElementById("employeeForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -648,7 +796,7 @@ async function loadAccounts() {
 }
 
 // ===========================
-// MODAL SỬA TÀI KHOẢN (GIỮ NGUYÊN LOGIC CŨ)
+// MODAL SỬA TÀI KHOẢN 
 // ===========================
 function moModalSuaTaiKhoanUI() {
   const modal = document.getElementById("modalSuaTaiKhoan");
@@ -762,14 +910,13 @@ async function xoaTaiKhoan(id) {
   }
 }
 
-// ===========================
 // INIT
-// ===========================
 window.addEventListener("DOMContentLoaded", loadAccounts);
+// ******** end Quản lý tài khoản nhân viên end ********
+
 
 // ===========================
-// TAB
-// ===========================
+// ******** TAB Navigation ********
 const tabLinks = document.querySelectorAll(".tab-link");
 const tabContents = document.querySelectorAll(".tab-content");
 
@@ -787,10 +934,13 @@ tabLinks.forEach((link) => {
 });
 
   // Khi load trang, tab tài khoản là mặc định
-  document.getElementById("tab-tai-khoan").classList.remove("hidden");
+document.getElementById("tab-tai-khoan").classList.remove("hidden");
+// ******** end TAB Navigation end ********
 
 
- const discountModal = document.getElementById("discountModal");
+
+// ******** Quản lý khuyến mãi *********
+const discountModal = document.getElementById("discountModal");
 const btnAddDiscount = document.getElementById("btnAddDiscount");
 const btnCancelDiscount = document.getElementById("btnCancelDiscount");
 const discountForm = document.getElementById("discountForm");
@@ -946,8 +1096,10 @@ window.deleteDiscount = async function (id) {
 
 // Load khi mở tab
 document.querySelector('[data-tab="khuyen-mai"]')?.addEventListener("click", loadDiscounts);
+// ******** end Quản lý khuyến mãi end *********
 
 
+// ******** Quản lý bậc thành viên *********
 // Elements
 const memberTable = document.getElementById("memberTable");
 const memberModal = document.getElementById("memberModal");
@@ -962,8 +1114,6 @@ const btnCancelMember = document.getElementById("btnCancelMember");
 // Cấu hình bậc thành viên
 // ==========================
 // THÀNH VIÊN - LOAD + BẬC (API)
-// ==========================
-
 let TIER_MAP = new Map(); // bac_id -> tier object
 let TIER_LIST = [];       // tier list sorted by diem_toi_thieu
 
@@ -1371,7 +1521,7 @@ window.filterMembersByTier = filterMembersByTier;
 window.calculatePoints = calculatePoints;
 
 // ==========================
-// MỞ MODAL THÊM / SỬA THÀNH VIÊN (giữ nguyên)
+// MỞ MODAL THÊM / SỬA THÀNH VIÊN 
 // ==========================
 
 // Mở modal thêm
@@ -1447,8 +1597,12 @@ window.deleteMember = async (id) => {
   }
   loadMembers();
 })();
+// ******** end Quản lý thành viên end *********
 
 
+
+
+// ******** Quản lý bậc thành viên *********
 // ==========================
 // BẬC THÀNH VIÊN - CRUD (giữ nguyên phần của bạn)
 // ==========================
@@ -1566,6 +1720,7 @@ window.editTier = async (id) => {
   }
 };
 
+// Xóa bậc thành viên
 window.deleteTier = async (id) => {
   if (!confirm("Bạn có chắc muốn xóa bậc này?")) return;
   try {
@@ -1588,8 +1743,10 @@ window.deleteTier = async (id) => {
 
 // load tier crud table nếu có
 loadBacThanhVien();
+// ******** end Quản lý bậc thành viên end *********
 
-// ============================================
+
+// ******** Quản lý loại sản phẩm *********
 // QUẢN LÝ LOẠI SẢN PHẨM
 // ============================================
 const productTypeTable = document.getElementById("productTypeTable");
@@ -1598,6 +1755,7 @@ const productTypeForm = document.getElementById("productTypeForm");
 const btnAddProductType = document.getElementById("btnAddProductType");
 const btnCancelProductType = document.getElementById("btnCancelProductType");
 
+// Load danh sách loại sản phẩm
 async function loadProductTypes() {
   if (!productTypeTable) return;
   try {
@@ -1611,6 +1769,7 @@ async function loadProductTypes() {
   }
 }
 
+//Render bảng loại sản phẩm
 function renderProductTypeTable(types) {
   if (!productTypeTable) return;
   productTypeTable.innerHTML = "";
@@ -1691,6 +1850,7 @@ window.editProductType = async (id) => {
   }
 };
 
+//Xóa loại sản phẩm
 window.deleteProductType = async (id) => {
   if (!confirm("Bạn có chắc muốn xóa loại sản phẩm này?")) return;
   try {
@@ -1704,10 +1864,12 @@ window.deleteProductType = async (id) => {
     showToast("❌  Không thể xóa loại sản phẩm do đã có sản phẩm");
   }
 };
+// ******** end Quản lý loại sản phẩm end *********
 
 
-// ============================================
-// QUẢN LÝ COMBO (ĐÃ SỬA LỖI)
+
+// ******** Quản lý combo *********
+// QUẢN LÝ COMBO 
 // ============================================
 let allProducts = []; // Lưu danh sách sản phẩm
 
@@ -1717,6 +1879,7 @@ document.querySelector('[data-tab="combo"]')?.addEventListener('click', () => {
   loadProductsForCombo();
 });
 
+//Load danh sách combo
 async function loadCombos() {
   try {
     const res = await fetch('http://localhost:3000/combo/laytatca');
@@ -1735,6 +1898,7 @@ async function loadCombos() {
   }
 }
 
+//Load sản phẩm cho combo
 async function loadProductsForCombo() {
   try {
     const res = await fetch('http://localhost:3000/sanpham/laytatca');
@@ -1746,6 +1910,7 @@ async function loadProductsForCombo() {
   }
 }
 
+// Render bảng combo
 function renderComboTable(combos) {
   const tbody = document.getElementById('comboTable');
   tbody.innerHTML = '';
@@ -1801,7 +1966,7 @@ function renderComboTable(combos) {
         </button>
       </td>
     `;
-    tbody. appendChild(row);
+    tbody.appendChild(row);
   });
 }
 
@@ -1817,7 +1982,7 @@ document.getElementById('btnAddCombo')?.addEventListener('click', async () => {
   }
   
   renderProductSelection([]);
-  document. getElementById('comboModal').classList. remove('hidden');
+  document.getElementById('comboModal').classList. remove('hidden');
 });
 
 // Đóng modal
@@ -2023,8 +2188,11 @@ window.deleteCombo = async (id) => {
     showToast('Không thể xóa combo: ' + error.message, 'error');
   }
 };
+// ******** end Quản lý combo end *********
 
-// ========== MỚI: QUẢN LÝ KÍCH CỠ ==========
+
+// ******** Quản lý kích cỡ *********
+// ==========QUẢN LÝ KÍCH CỠ ==========
 const sizeTable = document.getElementById("sizeTable");
 const sizeModal = document.getElementById("sizeModal");
 const sizeForm = document.getElementById("sizeForm");
@@ -2222,8 +2390,11 @@ window.deleteSize = async (id) => {
 window.addEventListener("DOMContentLoaded", () => {
   // console.log("[DOMContentLoaded] Auto call loadSizes()");
   loadSizes();
-})
+});
+// ******** end Quản lý kích cỡ end *********
 
+
+// ******** Quản lý topping *********
 /* Elements */
 const toppingTable = document.getElementById("toppingTable");
 const toppingModal = document.getElementById("toppingModal");
@@ -2370,8 +2541,9 @@ document.querySelector('[data-tab="topping"]')?.addEventListener("click", loadTo
 window.addEventListener("DOMContentLoaded", () => {
   loadToppings();
 });
+// ******** end Quản lý topping end *********
 
-// Điều hướng Parent/Child tabs trong sidebar
+// ***************** Điều hướng Parent/Child tabs trong sidebar *****************
   document.addEventListener('DOMContentLoaded', () => {
     const parentTabs = document.querySelectorAll('.parent-tab');
     const parentSections = {
@@ -2622,8 +2794,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Khởi tạo mặc định
     activateParent('san-pham');
   });
+// ***************** End Điều hướng Parent/Child tabs trong sidebar *****************
 
-  // QUẢN LÝ LỊCH LÀM VIỆC
+
+
+//  ******** QUẢN LÝ LỊCH LÀM VIỆC *********
 // ============================================
 
 const MIN_EMPLOYEES_PER_SHIFT = 3;
@@ -3387,7 +3562,7 @@ async function deleteSchedule(lichId) {
 
 // Duyệt nhiều lịch làm cùng lúc
 async function approveSelectedSchedules() {
-  const checkboxes = document.querySelectorAll(". pendingCheckbox:checked");
+  const checkboxes = document.querySelectorAll(".pendingCheckbox:checked");
   
   if (checkboxes.length === 0) {
     showNotification("⚠️ Vui lòng chọn ít nhất 1 lịch để duyệt", "warning");
@@ -4677,8 +4852,12 @@ function showNotification(message, type = "info") {
     notification.remove();
   }, 3000);
 }
+// ********* end Quản lý lịch làm việc *********
 
-// ============================================= Gửi lịch làm qua email =============================================
+
+
+//********* Send mail Lương *********
+// ================== Gửi lịch làm qua email ==========
 // Mở modal gửi email
 function sendScheduleByEmail() {
     document.getElementById('sendEmailModal').classList.remove('hidden');
@@ -5066,11 +5245,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// ********* end Send mail Lương *********
 
 
 
 
-//============================================== Lương =============================================
+
+// ******* Quản lý Thưởng Phạt *********
 // QUẢN LÝ THƯỞNG PHẠT
 // ============================================
 
@@ -5428,14 +5609,11 @@ window.deleteThuongPhat = deleteThuongPhat;
 window.filterThuongPhat = filterThuongPhat;
 window.resetThuongPhatFilter = resetThuongPhatFilter;
 window.loadThuongPhat = loadThuongPhat;
+// ********* end Quản lý Thưởng Phạt *********
 
-//=========================Quan ly luong =============================
-// ...existing code...
 
-// ============================================
-// QUẢN LÝ LƯƠNG
-// ============================================
 
+// ******* Quản lý Lương *********
 const LUONG_API = "/luong";
 
 let allLuong = [];
@@ -5949,7 +6127,7 @@ window.loadLuong = loadLuong;
 // window.updateLuongPreview = updateLuongPreview;
 
 
-//=========================Send mail Luong =============================
+//====================Send mail Luong ===================
 async function guiBangLuongToanBo() {
   if (!confirm("Bạn có chắc muốn gửi bảng lương cho toàn bộ nhân viên?")) return;
 
@@ -6037,7 +6215,11 @@ function taoNoiDungEmailLuong(luong) {
   </div>
   `;
 }
+// ******** end Quản lý Lương end*********
 
+
+
+//********** DOMContentLoaded - Auto load và refresh **********
 document.addEventListener("DOMContentLoaded", () => {
   loadProducts(); // load ngay khi mở trang
   loadCategories();
@@ -6079,6 +6261,6 @@ document.addEventListener("DOMContentLoaded", () => {
     loadEmployeesForLuong(); // tự động load lại
   }, 300000); // 5 phut 
 });
-
+// ******** end DOMContentLoaded - Auto load và refresh **********
 
 
