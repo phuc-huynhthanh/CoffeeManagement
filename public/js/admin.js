@@ -318,6 +318,256 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // **********end Quan ly ban end ***************
+
+// **********Quan ly dat ban***************
+let currentReservationId = null;
+
+// Load danh sách bàn vào select trong modal đặt bàn
+async function loadTablesForReservation() {
+  try {
+    const res = await fetch("http://localhost:3000/ban/laytatca");
+    const data = await res.json();
+    const select = document.getElementById("reservationTableId");
+    select.innerHTML = '<option value="">-- Chọn bàn --</option>';
+
+    if (data && data.length > 0) {
+      data.forEach(table => {
+        select.innerHTML += `<option value="${table.ban_id}">${table.ten_ban}</option>`;
+      });
+    }
+  } catch (err) {
+    console.error("❌ Lỗi khi tải danh sách bàn:", err);
+  }
+}
+
+// Load danh sách đặt bàn
+async function loadReservations() {
+  try {
+    const res = await fetch("http://localhost:3000/datban/laytatca");
+    const data = await res.json();
+    const tbody = document.getElementById("reservationTable");
+    tbody.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-500">Chưa có đặt bàn nào.</td></tr>`;
+      return;
+    }
+
+    data.forEach((item, index) => {
+      let statusClass = '';
+      let statusBgClass = '';
+      switch(item.trang_thai) {
+        case 'Đã đặt':
+          statusClass = 'text-blue-700';
+          statusBgClass = 'bg-blue-100';
+          break;
+        case 'Đã đến':
+          statusClass = 'text-green-700';
+          statusBgClass = 'bg-green-100';
+          break;
+        case 'Đã hủy':
+          statusClass = 'text-red-700';
+          statusBgClass = 'bg-red-100';
+          break;
+        case 'Quá hạn':
+          statusClass = 'text-gray-700';
+          statusBgClass = 'bg-gray-100';
+          break;
+      }
+
+      const row = document.createElement("tr");
+      row.classList.add("hover:bg-gray-50");
+      row.innerHTML = `
+        <td class="px-4 py-3">${index + 1}</td>
+        <td class="px-4 py-3">${item.ten_ban || 'N/A'}</td>
+        <td class="px-4 py-3">${item.ten_khach_hang}</td>
+        <td class="px-4 py-3">${item.so_dien_thoai}</td>
+        <td class="px-4 py-3">${item.email || '-'}</td>
+        <td class="px-4 py-3">${new Date(item.ngay_dat).toLocaleDateString('vi-VN')}</td>
+        <td class="px-4 py-3">${item.gio_bat_dau} - ${item.gio_ket_thuc}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded-full text-xs font-medium ${statusBgClass} ${statusClass}">
+            ${item.trang_thai}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-center">
+          ${item.trang_thai === 'Đã đặt' ? `
+            <button onclick="updateReservationStatus(${item.dat_ban_id}, 'Đã đến')" 
+                    class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs mr-1">
+              Đã đến
+            </button>
+            <button onclick="cancelReservation(${item.dat_ban_id})" 
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs mr-1">
+              Hủy
+            </button>
+          ` : ''}
+          <button onclick="deleteReservation(${item.dat_ban_id})" 
+                  class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
+            Xóa
+          </button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi tải danh sách đặt bàn:", err);
+  }
+}
+
+// Hiển thị modal thêm đặt bàn
+document.getElementById("btnAddReservation").addEventListener("click", () => {
+  currentReservationId = null;
+  document.getElementById("reservationModalTitle").textContent = "Thêm đặt bàn";
+  document.getElementById("reservationForm").reset();
+  
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById("reservationDate").value = today;
+  document.getElementById("reservationDate").min = today;
+  
+  loadTablesForReservation();
+  document.getElementById("reservationModal").classList.remove("hidden");
+});
+
+// Hủy form đặt bàn
+document.getElementById("btnCancelReservation").addEventListener("click", () => {
+  document.getElementById("reservationModal").classList.add("hidden");
+  document.getElementById("reservationForm").reset();
+  currentReservationId = null;
+});
+
+// Submit form đặt bàn
+document.getElementById("reservationForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const formData = {
+    ban_id: document.getElementById("reservationTableId").value,
+    ten_khach_hang: document.getElementById("reservationCustomerName").value.trim(),
+    so_dien_thoai: document.getElementById("reservationPhone").value.trim(),
+    email: document.getElementById("reservationEmail").value.trim() || null,
+    ngay_dat: document.getElementById("reservationDate").value,
+    gio_bat_dau: document.getElementById("reservationStartTime").value,
+    gio_ket_thuc: document.getElementById("reservationEndTime").value,
+    ghi_chu: document.getElementById("reservationNote").value.trim() || null
+  };
+
+  if (!formData.ban_id || !formData.ten_khach_hang || !formData.so_dien_thoai || 
+      !formData.ngay_dat || !formData.gio_bat_dau || !formData.gio_ket_thuc) {
+    alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
+    return;
+  }
+
+  if (formData.gio_ket_thuc <= formData.gio_bat_dau) {
+    alert("Giờ kết thúc phải sau giờ bắt đầu!");
+    return;
+  }
+
+  try {
+    const url = currentReservationId 
+      ? `http://localhost:3000/datban/capnhat/${currentReservationId}`
+      : "http://localhost:3000/datban/them";
+    
+    const method = currentReservationId ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Không thể lưu đặt bàn");
+
+    alert(result.message || "Lưu đặt bàn thành công!");
+    document.getElementById("reservationModal").classList.add("hidden");
+    document.getElementById("reservationForm").reset();
+    currentReservationId = null;
+    loadReservations();
+  } catch (err) {
+    console.error("❌ Lỗi khi lưu đặt bàn:", err);
+    alert("Lỗi: " + err.message);
+  }
+});
+
+// Cập nhật trạng thái đặt bàn
+async function updateReservationStatus(id, status) {
+  try {
+    const res = await fetch(`http://localhost:3000/datban/capnhat-trangthai/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trang_thai: status })
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Không thể cập nhật trạng thái");
+
+    alert(result.message || "Cập nhật trạng thái thành công!");
+    loadReservations();
+  } catch (err) {
+    console.error("❌ Lỗi khi cập nhật trạng thái:", err);
+    alert("Lỗi: " + err.message);
+  }
+}
+
+// Hủy đặt bàn
+async function cancelReservation(id) {
+  if (!confirm("Bạn có chắc chắn muốn hủy đặt bàn này không?")) return;
+  
+  try {
+    const res = await fetch(`http://localhost:3000/datban/huy/${id}`, { 
+      method: "PUT" 
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Không thể hủy đặt bàn");
+
+    alert(result.message || "Hủy đặt bàn thành công!");
+    loadReservations();
+  } catch (err) {
+    console.error("❌ Lỗi khi hủy đặt bàn:", err);
+    alert("Lỗi: " + err.message);
+  }
+}
+
+// Xóa đặt bàn
+async function deleteReservation(id) {
+  if (!confirm("Bạn có chắc chắn muốn xóa đặt bàn này không?")) return;
+  
+  try {
+    const res = await fetch(`http://localhost:3000/datban/xoa/${id}`, { 
+      method: "DELETE" 
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || "Không thể xóa đặt bàn");
+
+    alert(result.message || "Xóa đặt bàn thành công!");
+    loadReservations();
+  } catch (err) {
+    console.error("❌ Lỗi khi xóa đặt bàn:", err);
+    alert("Lỗi: " + err.message);
+  }
+}
+
+// Tự động cập nhật trạng thái quá hạn
+async function autoUpdateExpiredReservations() {
+  try {
+    await fetch("http://localhost:3000/datban/capnuat-quahan", { method: "POST" });
+    console.log("✅ Đã cập nhật trạng thái đặt bàn quá hạn");
+  } catch (err) {
+    console.error("❌ Lỗi khi cập nhật trạng thái quá hạn:", err);
+  }
+}
+
+// Chạy auto-update mỗi 5 phút
+setInterval(autoUpdateExpiredReservations, 5 * 60 * 1000);
+
+// Load khi vào tab đặt bàn
+window.addEventListener("DOMContentLoaded", () => {
+  loadReservations();
+  autoUpdateExpiredReservations();
+});
+
+// **********end Quan ly dat ban end***************
   
 
 
@@ -2604,6 +2854,9 @@ window.addEventListener('childTabChanged', (e) => {
       break;
     case 'ban':
       // loadTables();
+      break;
+    case 'dat-ban':
+      loadReservations();
       break;
     case 'kich-co':
       // loadSizes();

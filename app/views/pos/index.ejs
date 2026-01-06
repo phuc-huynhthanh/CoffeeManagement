@@ -1124,6 +1124,18 @@
         const completeBtn = document.getElementById("completeBtn");
         const banContainerEl = document.getElementById("banContainer");
 
+        // Hàm reload danh sách bàn từ server
+        async function reloadBanList() {
+          try {
+            const res = await fetch("http://localhost:3000/ban/laytatca");
+            const data = await res.json();
+            banList = data;
+            renderBan();
+          } catch (err) {
+            console.error("Lỗi khi tải danh sách bàn:", err);
+          }
+        }
+
         fetch("http://localhost:3000/ban/laytatca")
           .then((res) => res.json())
           .then((data) => {
@@ -1154,6 +1166,7 @@
             div.className = `p-3 rounded-lg text-center font-semibold cursor-pointer transition
               ${trangThai === "Trống" ? "bg-green-200 hover:bg-green-300" : ""}
               ${trangThai === "Đang sử dụng" ? "bg-yellow-200 hover:bg-yellow-300" : ""}
+              ${trangThai === "Đã đặt" ? "bg-blue-200 hover:bg-blue-300" : ""}
               ${trangThai === "Đã thanh toán" ? "bg-gray-300 cursor-not-allowed" : ""}`;
             div.textContent = `${ban.ten_ban} — ${trangThai}`;
 
@@ -1496,6 +1509,36 @@
 
                       delete hoaDonTheoBan[ban.ban_id];
                       localStorage.setItem("hoaDonTheoBan", JSON.stringify(hoaDonTheoBan));
+                      
+                      // ✅ Cập nhật trạng thái bàn về "Trống"
+                      try {
+                        await fetch(`http://localhost:3000/ban/capnhat/${ban.ban_id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ trang_thai: "Trống" })
+                        });
+                        
+                        // ✅ Cập nhật đặt bàn thành "Đã hoàn thành" nếu có
+                        const resReservations = await fetch(`http://localhost:3000/datban/laytatca`);
+                        const reservations = await resReservations.json();
+                        const activeReservation = reservations.find(r => 
+                          r.ban_id === ban.ban_id && r.trang_thai === 'Đã đến'
+                        );
+                        
+                        if (activeReservation) {
+                          await fetch(`http://localhost:3000/datban/capnhat-trangthai/${activeReservation.dat_ban_id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ trang_thai: "Đã hủy" })
+                          });
+                        }
+                      } catch (err) {
+                        console.error("Lỗi khi cập nhật trạng thái bàn:", err);
+                      }
+                      
+                      // ✅ Reload danh sách bàn từ server để cập nhật trạng thái
+                      await reloadBanList();
+                      
                       renderViewBan();
                       renderBan();
                       loadSanPhamBanChay();

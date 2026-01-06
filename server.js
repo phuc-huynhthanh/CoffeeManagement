@@ -28,6 +28,7 @@ import CaLamRoutes from "./app/routes/CaLam.routes.js";
 import LuongRoutes from "./app/routes/Luong.routes.js";
 import ChiTietThuongPhatRoutes from "./app/routes/ChiTietThuongPhat.routes.js";
 import BacThanhVienRoutes from "./app/routes/BacThanhVien.routes.js";
+import DatBanRoutes from "./app/routes/DatBan.routes.js";
 
 // Import payment controllers
 import paymentController from "./app/controllers/payment-controller.js";
@@ -78,6 +79,7 @@ app.use("/calam", CaLamRoutes);
 app.use("/luong", LuongRoutes);
 app.use("/chitietthuongphat", ChiTietThuongPhatRoutes);
 app.use("/bacthanhvien", BacThanhVienRoutes);
+app.use("/datban", DatBanRoutes);
 
 // Test route
 app.get("/test-payos", async (req, res) => {

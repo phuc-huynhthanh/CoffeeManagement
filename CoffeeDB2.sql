@@ -113,6 +113,27 @@ CREATE TABLE IF NOT EXISTS ban (
 );
 
 -- =========================
+-- BẢNG ĐẶT BÀN
+-- =========================
+CREATE TABLE IF NOT EXISTS dat_ban (
+    dat_ban_id INT PRIMARY KEY AUTO_INCREMENT,
+    ban_id INT NOT NULL,
+    ten_khach_hang VARCHAR(100) NOT NULL,
+    so_dien_thoai VARCHAR(15) NOT NULL,
+    email VARCHAR(100),
+    ngay_dat DATE NOT NULL,
+    gio_bat_dau TIME NOT NULL,
+    gio_ket_thuc TIME NOT NULL,
+    ghi_chu TEXT,
+    trang_thai ENUM('Đã đặt', 'Đã đến', 'Đã hủy', 'Quá hạn') DEFAULT 'Đã đặt',
+    ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (ban_id) REFERENCES ban(ban_id) ON DELETE CASCADE,
+    INDEX idx_ngay_gio (ngay_dat, gio_bat_dau, gio_ket_thuc),
+    INDEX idx_ban_trangthai (ban_id, trang_thai)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =========================
 -- BẢNG LOẠI SẢN PHẨM
 -- =========================
 CREATE TABLE IF NOT EXISTS loai_san_pham (
@@ -329,6 +350,28 @@ INSERT INTO ban (ten_ban, trang_thai) VALUES
 ('Bàn 3', 'Trống'),
 ('Bàn 4', 'Trống'),
 ('Bàn 5', 'Trống');
+
+
+-- =========================
+-- BẢNG ĐẶT BÀN
+-- =========================
+CREATE TABLE IF NOT EXISTS dat_ban (
+    dat_ban_id INT PRIMARY KEY AUTO_INCREMENT,
+    ban_id INT NOT NULL,
+    ten_khach_hang VARCHAR(100) NOT NULL,
+    so_dien_thoai VARCHAR(15) NOT NULL,
+    email VARCHAR(100),
+    ngay_dat DATE NOT NULL,
+    gio_bat_dau TIME NOT NULL,
+    gio_ket_thuc TIME NOT NULL,
+    ghi_chu TEXT,
+    trang_thai ENUM('Đã đặt', 'Đã đến', 'Đã hủy', 'Quá hạn') DEFAULT 'Đã đặt',
+    ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (ban_id) REFERENCES ban(ban_id) ON DELETE CASCADE,
+    INDEX idx_ngay_gio (ngay_dat, gio_bat_dau, gio_ket_thuc),
+    INDEX idx_ban_trangthai (ban_id, trang_thai)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Thêm cột thời gian bắt đầu và kết thúc vào bảng lịch làm việc
 ALTER TABLE lich_lam_viec 

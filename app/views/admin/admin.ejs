@@ -158,6 +158,7 @@
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="loai-san-pham">- Loại sản phẩm</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="combo">- Combo</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="ban">- Bàn</a></li>
+          <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="dat-ban">- Đặt bàn</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="kich-co">- Kích cỡ</a></li>
           <li><a href="#" class="block py-2 px-3 rounded hover:bg-blue-500 child-tab" data-tab="topping">- Topping</a></li>
         </ul>
@@ -291,6 +292,32 @@
             </tr>
           </thead>
           <tbody id="tableTable" class="divide-y"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Quản lý đặt bàn -->
+    <div id="tab-dat-ban" class="tab-content hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-700">Quản lý đặt bàn</h2>
+        <button id="btnAddReservation" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-md">+ Thêm đặt bàn</button>
+      </div>
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px] bg-white rounded-lg shadow-md">
+        <table class="min-w-full text-left border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 border-b">STT</th>
+              <th class="px-4 py-3 border-b">Bàn</th>
+              <th class="px-4 py-3 border-b">Tên khách</th>
+              <th class="px-4 py-3 border-b">SĐT</th>
+              <th class="px-4 py-3 border-b">Email</th>
+              <th class="px-4 py-3 border-b">Ngày đặt</th>
+              <th class="px-4 py-3 border-b">Giờ</th>
+              <th class="px-4 py-3 border-b">Trạng thái</th>
+              <th class="px-4 py-3 border-b text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="reservationTable" class="divide-y"></tbody>
         </table>
       </div>
     </div>
@@ -1459,6 +1486,67 @@
       <div class="flex justify-end space-x-2">
         <button type="button" id="btnCancelTable" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
         <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Thêm/Sửa Đặt Bàn -->
+<div id="reservationModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-96 p-6 max-h-[90vh] overflow-y-auto">
+    <h3 id="reservationModalTitle" class="text-lg font-semibold mb-4">Thêm đặt bàn</h3>
+    <form id="reservationForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Bàn <span class="text-red-500">*</span></label>
+        <select id="reservationTableId" name="ban_id"
+                class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500" required>
+          <option value="">-- Chọn bàn --</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tên khách hàng <span class="text-red-500">*</span></label>
+        <input type="text" id="reservationCustomerName" name="ten_khach_hang"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500"
+               placeholder="Nguyễn Văn A" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Số điện thoại <span class="text-red-500">*</span></label>
+        <input type="tel" id="reservationPhone" name="so_dien_thoai"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500"
+               placeholder="0123456789" pattern="[0-9]{10,11}" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="reservationEmail" name="email"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500"
+               placeholder="email@example.com">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Ngày đặt <span class="text-red-500">*</span></label>
+        <input type="date" id="reservationDate" name="ngay_dat"
+               class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500" required>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Giờ bắt đầu <span class="text-red-500">*</span></label>
+          <input type="time" id="reservationStartTime" name="gio_bat_dau"
+                 class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Giờ kết thúc <span class="text-red-500">*</span></label>
+          <input type="time" id="reservationEndTime" name="gio_ket_thuc"
+                 class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500" required>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Ghi chú</label>
+        <textarea id="reservationNote" name="ghi_chu" rows="3"
+                  class="mt-1 w-full border-gray-300 rounded-lg p-2 border focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Ghi chú đặc biệt..."></textarea>
+      </div>
+      <div class="flex justify-end space-x-2">
+        <button type="button" id="btnCancelReservation" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">Hủy</button>
+        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Lưu</button>
       </div>
     </form>
   </div>
