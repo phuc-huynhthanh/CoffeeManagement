@@ -299,17 +299,22 @@ document.getElementById("tableForm").addEventListener("submit", async (e) => {
 
 // Xóa bàn
 async function deleteTable(id) {
-  if (!confirm("Bạn có chắc chắn muốn xóa bàn này không?")) return;
-  try {
-    const res = await fetch(`http://localhost:3000/ban/xoa/${id}`, { method: "DELETE" });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Không thể xóa bàn");
+  showConfirmModal(
+    "Xác nhận xóa bàn",
+    "Bạn có chắc chắn muốn xóa bàn này không?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/ban/xoa/${id}`, { method: "DELETE" });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || "Không thể xóa bàn");
 
-    loadTables();
-  } catch (err) {
-    console.error("❌ Lỗi khi xóa bàn:", err);
-    alert("Lỗi: " + err.message);
-  }
+        loadTables();
+      } catch (err) {
+        console.error("❌ Lỗi khi xóa bàn:", err);
+        alert("Lỗi: " + err.message);
+      }
+    }
+  );
 }
 
 // Gọi khi load trang
@@ -529,42 +534,50 @@ async function updateReservationStatus(id, status) {
 
 // Hủy đặt bàn
 async function cancelReservation(id) {
-  if (!confirm("Bạn có chắc chắn muốn hủy đặt bàn này không?")) return;
-  
-  try {
-    const res = await fetch(`http://localhost:3000/datban/huy/${id}`, { 
-      method: "PUT" 
-    });
+  showConfirmModal(
+    "Xác nhận hủy đặt bàn",
+    "Bạn có chắc chắn muốn hủy đặt bàn này không?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/datban/huy/${id}`, { 
+          method: "PUT" 
+        });
     
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Không thể hủy đặt bàn");
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || "Không thể hủy đặt bàn");
 
-    alert(result.message || "Hủy đặt bàn thành công!");
-    loadReservations();
-  } catch (err) {
-    console.error("❌ Lỗi khi hủy đặt bàn:", err);
-    alert("Lỗi: " + err.message);
-  }
+        alert(result.message || "Hủy đặt bàn thành công!");
+        loadReservations();
+      } catch (err) {
+        console.error("❌ Lỗi khi hủy đặt bàn:", err);
+        alert("Lỗi: " + err.message);
+      }
+    }
+  );
 }
 
 // Xóa đặt bàn
 async function deleteReservation(id) {
-  if (!confirm("Bạn có chắc chắn muốn xóa đặt bàn này không?")) return;
-  
-  try {
-    const res = await fetch(`http://localhost:3000/datban/xoa/${id}`, { 
-      method: "DELETE" 
-    });
-    
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Không thể xóa đặt bàn");
+  showConfirmModal(
+    "Xác nhận xóa đặt bàn",
+    "Bạn có chắc chắn muốn xóa đặt bàn này không?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/datban/xoa/${id}`, { 
+          method: "DELETE" 
+        });
+        
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || "Không thể xóa đặt bàn");
 
-    alert(result.message || "Xóa đặt bàn thành công!");
-    loadReservations();
-  } catch (err) {
-    console.error("❌ Lỗi khi xóa đặt bàn:", err);
-    alert("Lỗi: " + err.message);
-  }
+        alert(result.message || "Xóa đặt bàn thành công!");
+        loadReservations();
+      } catch (err) {
+        console.error("❌ Lỗi khi xóa đặt bàn:", err);
+        alert("Lỗi: " + err.message);
+      }
+    }
+  );
 }
 
 // Tự động cập nhật trạng thái quá hạn
@@ -1123,31 +1136,35 @@ async function xoaTaiKhoan(id) {
     console.warn("⚠️ Không thể lấy thông tin tài khoản trước khi xóa:", err);
   }
 
-  if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này không?")) return;
+  showConfirmModal(
+    "Xác nhận xóa tài khoản",
+    "Bạn có chắc chắn muốn xóa tài khoản này không?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/taikhoan/xoa/${id}`, {
+          method: "DELETE",
+        });
 
-  try {
-    const res = await fetch(`http://localhost:3000/taikhoan/xoa/${id}`, {
-      method: "DELETE",
-    });
+        const resultText = await res.text();
+        console.log("📦 Kết quả phản hồi thô từ server:", resultText);
 
-    const resultText = await res.text();
-    console.log("📦 Kết quả phản hồi thô từ server:", resultText);
+        let result;
+        try {
+          result = JSON.parse(resultText);
+        } catch {
+          result = { message: resultText };
+        }
 
-    let result;
-    try {
-      result = JSON.parse(resultText);
-    } catch {
-      result = { message: resultText };
+        if (!res.ok) throw new Error(result.message || "Không thể xóa tài khoản");
+
+        showToast("✅ Xóa tài khoản thành công!", "success");
+        loadAccounts();
+      } catch (err) {
+        console.error("❌ Lỗi khi xóa tài khoản:", err);
+        showToast("❌ Đã xảy ra lỗi: " + err.message, "error");
+      }
     }
-
-    if (!res.ok) throw new Error(result.message || "Không thể xóa tài khoản");
-
-    showToast("✅ Xóa tài khoản thành công!", "success");
-    loadAccounts();
-  } catch (err) {
-    console.error("❌ Lỗi khi xóa tài khoản:", err);
-    showToast("❌ Đã xảy ra lỗi: " + err.message, "error");
-  }
+  );
 }
 
 // INIT
@@ -1315,23 +1332,27 @@ window.editDiscount = async function (id) {
 
 // Xóa
 window.deleteDiscount = async function (id) {
-  if (!confirm("Bạn có chắc muốn xóa khuyến mãi này?")) return;
-  
-  try {
-    const res = await fetch(`http://localhost:3000/mucgiamgia/xoa/${id}`, { 
-      method: "DELETE" 
-    });
+  showConfirmModal(
+    "Xác nhận xóa khuyến mãi",
+    "Bạn có chắc muốn xóa khuyến mãi này?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/mucgiamgia/xoa/${id}`, { 
+          method: "DELETE" 
+        });
     
-    const result = await res.json();
-    
-    if (!res.ok) throw new Error(result.message || "Không thể xóa khuyến mãi");
-    
-    showToast("✅ Xóa khuyến mãi thành công!", "success");
-    loadDiscounts();
-  } catch (err) {
-    console.error("Lỗi deleteDiscount:", err);
-    showToast("❌ Lỗi: " + err.message, "error");
-  }
+        const result = await res.json();
+        
+        if (!res.ok) throw new Error(result.message || "Không thể xóa khuyến mãi");
+        
+        showToast("✅ Xóa khuyến mãi thành công!", "success");
+        loadDiscounts();
+      } catch (err) {
+        console.error("❌ Lỗi khi xóa khuyến mãi:", err);
+        showToast("❌ " + err.message, "error");
+      }
+    }
+  );
 };
 
 // Load khi mở tab
@@ -1822,10 +1843,24 @@ window.editMember = async (id) => {
 
 // Delete member
 window.deleteMember = async (id) => {
-  if (confirm("Bạn có chắc muốn xóa thành viên này?")) {
-    await fetch(`/thanhvien/xoa/${id}`, { method: "DELETE" });
-    loadMembers();
-  }
+  showConfirmModal(
+    "Xác nhận xóa thành viên",
+    "Bạn có chắc muốn xóa thành viên này?",
+    async () => {
+      try {
+        const res = await fetch(`/thanhvien/xoa/${id}`, { method: "DELETE" });
+        const result = await res.json();
+        
+        if (!res.ok) throw new Error(result.message || "Không thể xóa thành viên");
+        
+        showToast("✅ Xóa thành viên thành công!", "success");
+        loadMembers();
+      } catch (err) {
+        console.error("❌ Lỗi deleteMember:", err);
+        showToast("❌ " + err.message, "error");
+      }
+    }
+  );
 };
 
 // ✅ Load khi trang sẵn sàng: load tier trước, rồi load member
@@ -1962,23 +1997,27 @@ window.editTier = async (id) => {
 
 // Xóa bậc thành viên
 window.deleteTier = async (id) => {
-  if (!confirm("Bạn có chắc muốn xóa bậc này?")) return;
-  try {
-    const res = await fetch(`http://localhost:3000/bacthanhvien/xoa/${id}`, { method: "DELETE" });
+  showConfirmModal(
+    "Xác nhận xóa bậc thành viên",
+    "Bạn có chắc muốn xóa bậc này?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/bacthanhvien/xoa/${id}`, { method: "DELETE" });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || result.message || "Không thể xóa");
 
-    showToast(result.message || "Xóa thành công", "success");
-    loadBacThanhVien();
+        showToast(result.message || "Xóa thành công", "success");
+        loadBacThanhVien();
 
-    // sau khi xóa tier, refresh map + reload member
-    await loadTierMap();
-    loadMembers();
-
-  } catch (err) {
-    console.error("Lỗi deleteTier:", err);
-    showToast("❌ Lỗi: " + (err.message || err), "error");
-  }
+        // sau khi xóa tier, refresh map + reload member
+        await loadTierMap();
+        loadMembers();
+      } catch (err) {
+        console.error("Lỗi deleteTier:", err);
+        showToast("❌ " + err.message, "error");
+      }
+    }
+  );
 };
 
 // load tier crud table nếu có
@@ -2092,17 +2131,22 @@ window.editProductType = async (id) => {
 
 //Xóa loại sản phẩm
 window.deleteProductType = async (id) => {
-  if (!confirm("Bạn có chắc muốn xóa loại sản phẩm này?")) return;
-  try {
-    const res = await fetch(`http://localhost:3000/loaisanpham/xoa/${id}`, { method: "DELETE" });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || result.message || "Không thể xóa");
-    showToast(result.message || "Xóa thành công", "success");
-    loadProductTypes();
-  } catch (err) {
-    console.error("Lỗi deleteProductType:", err);
-    showToast("❌  Không thể xóa loại sản phẩm do đã có sản phẩm");
-  }
+  showConfirmModal(
+    "Xác nhận xóa loại sản phẩm",
+    "Bạn có chắc muốn xóa loại sản phẩm này?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/loaisanpham/xoa/${id}`, { method: "DELETE" });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || result.message || "Không thể xóa");
+        showToast(result.message || "Xóa thành công", "success");
+        loadProductTypes();
+      } catch (err) {
+        console.error("Lỗi deleteProductType:", err);
+        showToast("❌  Không thể xóa loại sản phẩm do đã có sản phẩm");
+      }
+    }
+  );
 };
 // ******** end Quản lý loại sản phẩm end *********
 
@@ -2407,26 +2451,29 @@ window.editCombo = async (id) => {
 
 // Xóa combo
 window.deleteCombo = async (id) => {
-  if (!confirm('Bạn có chắc muốn xóa combo này? ')) return;
-
-  try {
-    const res = await fetch(`http://localhost:3000/combo/xoa/${id}`, { 
-      method: 'DELETE' 
-    });
+  showConfirmModal(
+    "Xác nhận xóa combo",
+    "Bạn có chắc muốn xóa combo này?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/combo/xoa/${id}`, { 
+          method: 'DELETE' 
+        });
     
     const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data. message || 'Không thể xóa combo');
-    }
+        if (!res.ok) {
+          throw new Error(data.message || data.error || 'Không thể xóa combo');
+        }
 
-    showToast(data.message || 'Xóa combo thành công!', 'success');
-    loadCombos();
-    
-  } catch (error) {
-    console.error('❌ Lỗi:', error);
-    showToast('Không thể xóa combo: ' + error.message, 'error');
-  }
+        showToast('✅ Xóa combo thành công!', 'success');
+        loadCombos();
+      } catch (err) {
+        console.error('❌ Lỗi deleteCombo:', err);
+        showToast('❌ ' + err.message, 'error');
+      }
+    }
+  );
 };
 // ******** end Quản lý combo end *********
 
@@ -2600,9 +2647,12 @@ window.editSize = async (id) => {
 // Xóa kích cỡ
 window.deleteSize = async (id) => {
   // console.log("🗑️ [Sizes] deleteSize id =", id);
-  if (!confirm("Bạn có chắc muốn xóa kích cỡ này?")) return;
-  try {
-    const res = await fetch(`http://localhost:3000/kichco/xoa/${id}`, { method: "DELETE" });
+  showConfirmModal(
+    "Xác nhận xóa kích cỡ",
+    "Bạn có chắc muốn xóa kích cỡ này?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/kichco/xoa/${id}`, { method: "DELETE" });
     const contentType = res.headers.get("content-type");
     // console.log("📡 [Sizes] delete status:", res.status, res.statusText, "CT:", contentType);
 
@@ -2615,16 +2665,18 @@ window.deleteSize = async (id) => {
       result = { message: text };
     }
 
-    // console.log("✅ [Sizes] Kết quả delete:", result);
+        // console.log("✅ [Sizes] Kết quả delete:", result);
 
-    if (!res.ok) throw new Error(result.message || result.error || "Không thể xóa kích cỡ");
-    showToast("✅ Xóa kích cỡ thành công!", "success");
-    // console.log("🔁 [Sizes] Gọi lại loadSizes()");
-    await loadSizes();
-  } catch (err) {
-    // console.error("❌ [Sizes] Lỗi deleteSize:", err);
-    showToast("❌ Lỗi: " + err.message, "error");
-  }
+        if (!res.ok) throw new Error(result.message || result.error || "Không thể xóa kích cỡ");
+
+        showToast("✅ Xóa kích cỡ thành công!", "success");
+        loadSizes();
+      } catch (err) {
+        console.error("❌ Lỗi deleteSize:", err);
+        showToast("❌ " + err.message, "error");
+      }
+    }
+  );
 };
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -2754,9 +2806,12 @@ window.editTopping = async (id) => {
 
 /* Xóa topping */
 window.deleteTopping = async (id) => {
-  if (!confirm("Bạn có chắc muốn xóa topping này?")) return;
-  try {
-    const res = await fetch(`http://localhost:3000/topping/xoa/${id}`, { method: "DELETE" });
+  showConfirmModal(
+    "Xác nhận xóa topping",
+    "Bạn có chắc muốn xóa topping này?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/topping/xoa/${id}`, { method: "DELETE" });
     const contentType = res.headers.get("content-type");
     let result;
     if (contentType && contentType.includes("application/json")) {
@@ -2765,13 +2820,15 @@ window.deleteTopping = async (id) => {
       const text = await res.text();
       result = { message: text };
     }
-    if (!res.ok) throw new Error(result.message || result.error || "Không thể xóa topping");
-    Toast?.success ? Toast.success("✅ Xóa topping thành công!") : showToast("✅ Xóa topping thành công!", "success");
-    await loadToppings();
-  } catch (err) {
-    console.error("❌ Lỗi deleteTopping:", err);
-    Toast?.error ? Toast.error("❌ Lỗi: " + err.message) : showToast("❌ Lỗi: " + err.message, "error");
-  }
+        if (!res.ok) throw new Error(result.message || result.error || "Không thể xóa topping");
+        Toast?.success ? Toast.success("✅ Xóa topping thành công!") : showToast("✅ Xóa topping thành công!", "success");
+        loadToppings();
+      } catch (err) {
+        console.error("❌ Lỗi deleteTopping:", err);
+        Toast?.error ? Toast.error("❌ " + err.message) : showToast("❌ " + err.message, "error");
+      }
+    }
+  );
 };
 
 /* Tự load khi mở tab topping */
@@ -3784,23 +3841,27 @@ async function rejectSchedule(lichId) {
 
 // Xóa lịch làm
 async function deleteSchedule(lichId) {
-    if (!confirm('Bạn có chắc muốn xóa lịch làm này?')) return;
+    showConfirmModal(
+        "Xác nhận xóa lịch làm",
+        "Bạn có chắc muốn xóa lịch làm này?",
+        async () => {
+            try {
+                const response = await fetch(`/lich-lam-viec/${lichId}`, { method: 'DELETE' });
+                const result = await response.json();
 
-    try {
-        const response = await fetch(`/lich-lam-viec/${lichId}`, { method: 'DELETE' });
-        const result = await response.json();
-
-        if (result.success) {
-            Toast.success(result.message || 'Xóa thành công');
-            loadScheduleByWeek();
-            closeShiftDetailModal();
-        } else {
-            Toast.error(result.message || 'Lỗi xóa lịch làm');
+                if (result.success) {
+                    Toast.success(result.message || 'Xóa thành công');
+                    loadScheduleByWeek();
+                    closeShiftDetailModal();
+                } else {
+                    Toast.error(result.message || 'Lỗi xóa lịch làm');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Toast.error('Lỗi kết nối server');
+            }
         }
-    } catch (error) {
-        console.error('Error:', error);
-        Toast.error('Lỗi kết nối server');
-    }
+    );
 }
 
 // Duyệt nhiều lịch làm cùng lúc
@@ -5763,23 +5824,27 @@ async function editThuongPhat(chiTietId) {
 
 // Xóa thưởng phạt
 async function deleteThuongPhat(chiTietId) {
-    if (!confirm("Bạn có chắc muốn xóa mục thưởng/phạt này?")) return;
+    showConfirmModal(
+        "Xác nhận xóa thưởng/phạt",
+        "Bạn có chắc muốn xóa mục thưởng/phạt này?",
+        async () => {
+            try {
+                const res = await fetch(`${THUONG_PHAT_API}/xoa/${chiTietId}`, { method: "DELETE" });
 
-    try {
-        const res = await fetch(`${THUONG_PHAT_API}/xoa/${chiTietId}`, { method: "DELETE" });
+                const result = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(result.error || result.message || "Không thể xóa");
+                }
 
-        const result = await res.json();
-        
-        if (!res.ok) {
-            throw new Error(result.error || result.message || "Không thể xóa");
+                showToast("Xóa thành công!", "success");
+                loadThuongPhat();
+            } catch (error) {
+                console.error("❌ Lỗi deleteThuongPhat:", error);
+                showToast("Lỗi: " + error.message, "error");
+            }
         }
-
-        showToast("Xóa thành công!", "success");
-        loadThuongPhat();
-    } catch (error) {
-        console.error("❌ Lỗi deleteThuongPhat:", error);
-        showToast("Lỗi: " + error.message, "error");
-    }
+    );
 }
 
 // Submit form thưởng phạt - SỬA ENDPOINT
@@ -6246,23 +6311,27 @@ async function editLuong(luongId) {
 
 // Xóa lương
 async function deleteLuong(luongId) {
-    if (!confirm("Bạn có chắc muốn xóa bảng lương này?\n⚠️ Các chi tiết thưởng/phạt liên quan cũng sẽ bị xóa!")) return;
+    showConfirmModal(
+        "Xác nhận xóa bảng lương",
+        "Bạn có chắc muốn xóa bảng lương này?\n⚠️ Các chi tiết thưởng/phạt liên quan cũng sẽ bị xóa!",
+        async () => {
+            try {
+                const res = await fetch(`${LUONG_API}/xoa/${luongId}`, { method: "DELETE" });
 
-    try {
-        const res = await fetch(`${LUONG_API}/xoa/${luongId}`, { method: "DELETE" });
+                const result = await res.json();
 
-        const result = await res.json();
+                if (!res.ok) {
+                    throw new Error(result.error || result.message || "Không thể xóa");
+                }
 
-        if (!res.ok) {
-            throw new Error(result.error || result.message || "Không thể xóa");
+                showToast("Xóa bảng lương thành công!", "success");
+                loadLuong();
+            } catch (error) {
+                console.error("❌ Lỗi deleteLuong:", error);
+                showToast("Lỗi: " + error.message, "error");
+            }
         }
-
-        showToast("Xóa bảng lương thành công!", "success");
-        loadLuong();
-    } catch (error) {
-        console.error("❌ Lỗi deleteLuong:", error);
-        showToast("Lỗi: " + error.message, "error");
-    }
+    );
 }
 
 // Cập nhật preview tổng lương
@@ -6506,4 +6575,65 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 // ******** end DOMContentLoaded - Auto load và refresh **********
 
-
+// ******** Modal xác nhận xóa chung **********
+function showConfirmModal(title, message, onConfirm) {
+  // Tạo modal động
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]';
+  modal.innerHTML = `
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-scale-in">
+      <div class="p-6">
+        <div class="flex items-center mb-4">
+          <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900">${title}</h3>
+          </div>
+        </div>
+        <p class="text-gray-600 mb-6">${message}</p>
+        <div class="flex gap-3 justify-end">
+          <button id="confirmModalCancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+            Hủy
+          </button>
+          <button id="confirmModalOk" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+            Xác nhận xóa
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Thêm animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes scale-in {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .animate-scale-in { animation: scale-in 0.2s ease-out; }
+  `;
+  document.head.appendChild(style);
+  
+  // Xử lý sự kiện
+  const closeModal = () => {
+    modal.remove();
+    style.remove();
+  };
+  
+  document.getElementById('confirmModalCancel').onclick = closeModal;
+  document.getElementById('confirmModalOk').onclick = () => {
+    closeModal();
+    onConfirm();
+  };
+  
+  // Click outside để đóng
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
+}
+// ******** end Modal xác nhận xóa chung end **********
