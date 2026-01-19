@@ -701,7 +701,9 @@
           const data = await response.json();
 
           if (data.success && data.data) {
-            comboList = data.data;
+            // Chỉ lấy những combo có trạng thái "active"
+            comboList = data.data.filter(combo => combo.trang_thai === 'active');
+            console.log("✅ Combo đang bán (active):", comboList.length);
             renderCombos();
           } else {
             console.error("Không thể tải danh sách combo");

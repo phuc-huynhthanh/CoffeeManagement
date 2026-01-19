@@ -331,9 +331,28 @@ async function loadTablesForReservation() {
     select.innerHTML = '<option value="">-- Chọn bàn --</option>';
 
     if (data && data.length > 0) {
-      data.forEach(table => {
+      // Lấy danh sách bàn đang có hóa đơn từ localStorage (POS)
+      const hoaDonTheoBan = JSON.parse(localStorage.getItem("hoaDonTheoBan")) || {};
+      const banDangSuDung = Object.keys(hoaDonTheoBan)
+        .filter(banId => hoaDonTheoBan[banId] && hoaDonTheoBan[banId].length > 0)
+        .map(banId => parseInt(banId));
+      
+      console.log("🔴 Bàn đang sử dụng (từ POS):", banDangSuDung);
+      
+      // Chỉ hiển thị những bàn có trạng thái "Trống" VÀ không có hóa đơn đang xử lý
+      const availableTables = data.filter(table => 
+        table.trang_thai === 'Trống' && !banDangSuDung.includes(table.ban_id)
+      );
+      
+      console.log("✅ Bàn có thể đặt:", availableTables.map(t => t.ten_ban));
+      
+      availableTables.forEach(table => {
         select.innerHTML += `<option value="${table.ban_id}">${table.ten_ban}</option>`;
       });
+      
+      if (availableTables.length === 0) {
+        select.innerHTML += '<option value="" disabled>Không có bàn trống</option>';
+      }
     }
   } catch (err) {
     console.error("❌ Lỗi khi tải danh sách bàn:", err);
