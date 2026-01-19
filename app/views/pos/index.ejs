@@ -120,6 +120,22 @@
         animation: slideOut 0.3s ease-in forwards;
       }
 
+      /* Confirm Modal Animation */
+      @keyframes scale-in {
+        from {
+          transform: scale(0.9);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .animate-scale-in {
+        animation: scale-in 0.2s ease-out;
+      }
+
       /* Tab Styles */
       .tab-button {
         padding: 12px 24px;
@@ -625,6 +641,42 @@
       };
 
       // ============================================
+      // CONFIRM MODAL SYSTEM
+      // ============================================
+      function showConfirmModal(title, message, onConfirm) {
+        const modal = document.createElement("div");
+        modal.className = "fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[300]";
+        modal.innerHTML = `
+          <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 animate-scale-in">
+            <h3 class="text-xl font-bold text-gray-800 mb-3">${title}</h3>
+            <p class="text-gray-600 mb-6">${message}</p>
+            <div class="flex gap-3">
+              <button id="confirmCancelBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 rounded-lg font-semibold transition">
+                Hủy
+              </button>
+              <button id="confirmOkBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold transition">
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        const okBtn = modal.querySelector("#confirmOkBtn");
+        const cancelBtn = modal.querySelector("#confirmCancelBtn");
+
+        okBtn.addEventListener("click", () => {
+          modal.remove();
+          if (onConfirm) onConfirm();
+        });
+
+        cancelBtn.addEventListener("click", () => modal.remove());
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) modal.remove();
+        });
+      }
+
+      // ============================================
       // BESTSELLER SYSTEM
       // ============================================
       let sanPhamBanChay = [];
@@ -929,17 +981,35 @@
         }, 0);
       }
 
-      function applyPercentDiscountToModal(modal, tongTienBan, percent, label = "") {
+      function applyPercentDiscountToModal(modal, tongTienBan, percent, label = "", discountType = "tier") {
         const p = Math.max(0, Math.min(100, Number(percent || 0)));
-        const tienSauGiam = tongTienBan * (1 - p / 100);
-
-        modal.dataset.phanTramGiam = String(p);
+        
+        // Lưu giảm giá theo loại (tier hoặc promo)
+        if (discountType === "tier") {
+          modal.dataset.phanTramGiamBac = String(p);
+        } else if (discountType === "promo") {
+          modal.dataset.phanTramGiamPromo = String(p);
+        }
+        
+        // Tính tổng phần trăm giảm (cộng dồn, tối đa 100%)
+        const giamBac = Number(modal.dataset.phanTramGiamBac || 0);
+        const giamPromo = Number(modal.dataset.phanTramGiamPromo || 0);
+        const tongPhanTramGiam = Math.min(100, giamBac + giamPromo);
+        
+        // Tính tiền sau giảm
+        const tienSauGiam = tongTienBan * (1 - tongPhanTramGiam / 100);
+        
+        modal.dataset.phanTramGiam = String(tongPhanTramGiam);
         modal.dataset.tienSauGiam = String(tienSauGiam);
 
         const discountEl = modal.querySelector("#memberDiscountInfo");
         if (discountEl) {
-          if (p > 0) {
-            discountEl.textContent = `${label} Giảm ${p}% → còn ${tienSauGiam.toLocaleString("vi-VN")}đ`;
+          if (tongPhanTramGiam > 0) {
+            let text = "";
+            if (giamBac > 0) text += `Bậc TV: ${giamBac}% `;
+            if (giamPromo > 0) text += `+ Mã KM: ${giamPromo}% `;
+            text += `→ Tổng giảm ${tongPhanTramGiam}% → còn ${tienSauGiam.toLocaleString("vi-VN")}đ`;
+            discountEl.textContent = text;
             discountEl.className = "text-blue-600 font-semibold text-sm";
           } else {
             discountEl.textContent = "";
@@ -1102,9 +1172,18 @@
         };
 
         window.removeItem = (i) => {
-          bill.splice(i, 1);
-          renderBill();
-          Toast.info("Đã xóa sản phẩm");
+          const item = bill[i];
+          const tenSanPham = item.is_combo ? item.ten_combo : item.ten_san_pham;
+          
+          showConfirmModal(
+            "Xác nhận xóa sản phẩm",
+            `Bạn có chắc muốn xóa "${tenSanPham}" khỏi hóa đơn không?`,
+            () => {
+              bill.splice(i, 1);
+              renderBill();
+              Toast.success("Đã xóa sản phẩm khỏi hóa đơn");
+            }
+          );
         };
 
         // --- User ---
@@ -1191,7 +1270,7 @@
           
           Toast.success(`Đang phục vụ ${tenBan}`);
           completeBtn.classList.remove("hidden");
-          chooseTableBtn.textContent = `🪑 ${tenBan} - Đổi bàn`;
+          chooseTableBtn.textContent = `${tenBan} - Đổi bàn`;
         }
 
         completeBtn.addEventListener("click", () => {
@@ -1240,19 +1319,22 @@
             return;
           }
 
-          const ok = confirm(`Bạn có chắc muốn xóa toàn bộ món của ${tenBan} không?`);
-          if (!ok) return;
+          showConfirmModal(
+            "Xác nhận xóa món",
+            `Bạn có chắc muốn xóa toàn bộ món của ${tenBan} không?`,
+            () => {
+              delete current[banId];
+              localStorage.setItem("hoaDonTheoBan", JSON.stringify(current));
 
-          delete current[banId];
-          localStorage.setItem("hoaDonTheoBan", JSON.stringify(current));
+              // cập nhật biến đang dùng
+              hoaDonTheoBan = current;
 
-          // cập nhật biến đang dùng
-          hoaDonTheoBan = current;
-
-          // render lại UI
-          renderViewBan();
-          renderBan();
-          Toast.success(`Đã xóa món của ${tenBan}`);
+              // render lại UI
+              renderViewBan();
+              renderBan();
+              Toast.success(`Đã xóa món của ${tenBan}`);
+            }
+          );
         }
 
         function renderViewBan() {
@@ -1289,14 +1371,15 @@
               // Nút thanh toán
               const payBtn = document.createElement("button");
               payBtn.className =
-                "absolute top-2 right-2 w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center font-semibold";
-              payBtn.textContent = "💰";
+                "absolute top-2 right-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-md flex items-center justify-center shadow-md hover:shadow-lg transition-all text-sm";
+              payBtn.textContent = "$";
+              payBtn.title = "Thanh toán";
 
               // ✅ NÚT XÓA NGAY DƯỚI NÚT THANH TOÁN
               const delBtn = document.createElement("button");
               delBtn.className =
-                "absolute top-14 right-2 w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center font-semibold";
-              delBtn.textContent = "🗑️";
+                "absolute top-11 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center shadow-md hover:shadow-lg transition-all text-sm";
+              delBtn.textContent = "X";
               delBtn.title = "Xóa món khỏi bàn";
 
               delBtn.addEventListener("click", () => {
@@ -1324,8 +1407,8 @@
                       </div>
                       <div class="flex-1 flex flex-col gap-3">
                         <h2 class="text-lg font-semibold mb-2 text-left">Chọn phương thức thanh toán</h2>
-                        <button id="cashBtn" class="bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold w-full">💵 Tiền mặt</button>
-                        <button id="bankingBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-semibold w-full">🏦 Banking</button>
+                        <button id="cashBtn" class="bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold w-full">Tiền mặt</button>
+                        <button id="bankingBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-semibold w-full">Banking</button>
                         <button id="cancelBtn" class="bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-semibold w-full">Hủy</button>
                       </div>
                     </div>
@@ -1367,7 +1450,7 @@
                       const monAn = hoaDonTheoBan[ban.ban_id] || [];
                       const tongTienBan = calcTongTienBan(monAn);
 
-                      applyPercentDiscountToModal(modal, tongTienBan, Number(data.data.phan_tram_giam), "🎟️ Mã KM:");
+                      applyPercentDiscountToModal(modal, tongTienBan, Number(data.data.phan_tram_giam), "🎟️ Mã KM:", "promo");
                     } else {
                       Toast.error("❌ Mã khuyến mãi không hợp lệ hoặc đã được sử dụng!");
                     }
@@ -1402,12 +1485,8 @@
 
                     const percentTier = await MEMBER_DISCOUNT.getDiscountByBacId(member.bac_id);
 
-                    const hasPromoApplied = !!modal.dataset.mucGiamGiaId;
-                    if (!hasPromoApplied) {
-                      applyPercentDiscountToModal(modal, tongTienBan, percentTier, "🎖️ Theo bậc:");
-                    } else {
-                      Toast.info("Đã tìm thấy thành viên (đang áp dụng ưu đãi theo mã KM)!");
-                    }
+                    // Áp dụng giảm giá theo bậc (sẽ tự động cộng dồn với mã KM nếu có)
+                    applyPercentDiscountToModal(modal, tongTienBan, percentTier, "🎖️ Theo bậc:", "tier");
 
                     Toast.success("Tìm thấy thành viên!");
                   } catch (err) {
@@ -1417,6 +1496,7 @@
                     modal.dataset.memberId = "";
                     modal.dataset.bacId = "";
                     delete modal.dataset.phanTramGiam;
+                    delete modal.dataset.phanTramGiamBac;
                     delete modal.dataset.tienSauGiam;
                     console.error(err);
                   }

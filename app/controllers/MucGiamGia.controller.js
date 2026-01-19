@@ -62,10 +62,26 @@ async layTatCa(req, res) {
   async xoa(req, res) {
     try {
       const { id } = req.params;
+      
+      // Kiểm tra xem mã khuyến mãi đã được sử dụng trong đơn hàng chưa
+      const [donHang] = await db.query(
+        "SELECT COUNT(*) as count FROM don_hang WHERE muc_giam_gia_id = ?",
+        [id]
+      );
+      
+      if (donHang[0].count > 0) {
+        return res.status(400).json({ 
+          message: "Không thể xóa mã khuyến mãi đã được sử dụng trong đơn hàng!" 
+        });
+      }
+      
       const rows = await MucGiamGiaModel.xoa(id);
       res.json({ message: rows ? "Xóa thành công" : "Không tìm thấy!" });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error("❌ Lỗi xóa mã khuyến mãi:", error);
+      res.status(500).json({ 
+        message: "Không thể xóa mã khuyến mãi. Có thể đã được sử dụng trong hệ thống." 
+      });
     }
   },
 

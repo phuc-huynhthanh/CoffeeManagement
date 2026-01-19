@@ -214,6 +214,30 @@ async function editProductFromRow(button, productId) {
   document.getElementById("productDesc").value = ""; // Nếu muốn, có thể thêm cột mô tả vào bảng
   document.getElementById("productModal").classList.remove("hidden");
 }
+
+// Xóa sản phẩm
+async function deleteProduct(id) {
+  showConfirmModal(
+    "Xác nhận xóa sản phẩm",
+    "Bạn có chắc chắn muốn xóa sản phẩm này không?",
+    async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/sanpham/xoa/${id}`, { 
+          method: "DELETE" 
+        });
+        const result = await res.json();
+        
+        if (!res.ok) throw new Error(result.message || "Không thể xóa sản phẩm");
+
+        showToast("✅ Xóa sản phẩm thành công!", "success");
+        loadProducts();
+      } catch (err) {
+        console.error("❌ Lỗi khi xóa sản phẩm:", err);
+        showToast("❌ Lỗi: " + err.message, "error");
+      }
+    }
+  );
+}
 //**********end Quan ly san pham end ***************
 
 
@@ -1554,7 +1578,7 @@ async function loadMembers() {
           <td class="px-4 py-3 border-b text-center space-x-2">
             <button onclick="viewMemberDetail(${m.thanh_vien_id})" 
                     class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm" title="Chi tiết">
-              👁️
+              Xem
             </button>
             <button onclick="editMember(${m.thanh_vien_id})" 
                     class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
@@ -5702,11 +5726,11 @@ function renderThuongPhatTable(items) {
                     <div class="flex gap-1 justify-center">
                         <button onclick="editThuongPhat(${item.chi_tiet_id})" 
                                 class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm transition-colors">
-                            ✏️ Sửa
+                            Sửa
                         </button>
                         <button onclick="deleteThuongPhat(${item.chi_tiet_id})" 
                                 class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-sm transition-colors">
-                            🗑️ Xóa
+                            Xóa
                         </button>
                     </div>
                 </td>
@@ -6049,7 +6073,7 @@ function renderLuongTable(items) {
                     <div class="flex gap-1 justify-center">
                         <button onclick="viewLuongDetail(${item.luong_id})" 
                                 class="bg-green-500 hover:bg-green-600 text-white px-2 py-1.5 rounded text-sm transition-colors" title="Chi tiết">
-                            👁️
+                            Xem
                         </button>
                     </div>
                 </td>
@@ -6441,41 +6465,48 @@ window.loadLuong = loadLuong;
 
 //====================Send mail Luong ===================
 async function guiBangLuongToanBo() {
-  if (!confirm("Bạn có chắc muốn gửi bảng lương cho toàn bộ nhân viên?")) return;
-
   const thang = document.getElementById("filterLuongThang").value;
   const nam = document.getElementById("filterLuongNam").value;
 
-  try {
-    const res = await fetch(
-      `http://localhost:3000/luong/laytatca?thang=${thang}&nam=${nam}`
-    );
-    const data = await res.json();
+  showConfirmModal(
+    "Xác nhận gửi bảng lương",
+    `Bạn có chắc muốn gửi bảng lương tháng ${thang}/${nam} cho toàn bộ nhân viên?`,
+    async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:3000/luong/laytatca?thang=${thang}&nam=${nam}`
+        );
+        const data = await res.json();
 
-    if (!data.length) {
-      alert("Không có dữ liệu lương để gửi");
-      return;
+        if (!data.length) {
+          showToast("❌ Không có dữ liệu lương để gửi", "error");
+          return;
+        }
+
+        showToast("⏳ Đang gửi email...", "info");
+
+        // Gửi mail từng nhân viên
+        for (const luong of data) {
+          const html = taoNoiDungEmailLuong(luong);
+
+          await fetch("http://localhost:3000/mail/sendmail", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: luong.email_nhan_vien,
+              subject: `Bảng lương ${luong.thang}/${luong.nam}`,
+              html,
+            }),
+          });
+        }
+
+        showToast("✅ Đã gửi bảng lương thành công!", "success");
+      } catch (err) {
+        console.error(err);
+        showToast("❌ Lỗi khi gửi bảng lương", "error");
+      }
     }
-
-    // Gửi mail từng nhân viên
-    for (const luong of data) {
-      const html = taoNoiDungEmailLuong(luong);
-
-      await fetch("http://localhost:3000/mail/sendmail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: luong.email_nhan_vien,
-          subject: `Bảng lương ${luong.thang}/${luong.nam}`,
-          html,
-        }),
-      });
-    }
-
-showToast("✅ Đã gửi bảng lương thành công!", "success");  } catch (err) {
-    console.error(err);
-    showToast("❌ Lỗi khi gửi bảng lương", "error");
-  }
+  );
 }
 function taoNoiDungEmailLuong(luong) {
   return `
@@ -6599,7 +6630,7 @@ function showConfirmModal(title, message, onConfirm) {
             Hủy
           </button>
           <button id="confirmModalOk" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-            Xác nhận xóa
+            Xác nhận
           </button>
         </div>
       </div>
